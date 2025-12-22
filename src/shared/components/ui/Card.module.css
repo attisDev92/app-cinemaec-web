@@ -1,0 +1,102 @@
+.card {
+  background-color: var(--color-surface);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Variantes de padding */
+.compact {
+  padding: var(--spacing-md);
+}
+
+.spacious {
+  padding: var(--spacing-3xl);
+}
+
+/* Variantes de elevación */
+.flat {
+  box-shadow: none;
+  border: var(--border-width-thin) solid var(--color-border-light);
+}
+
+.elevated {
+  box-shadow: var(--shadow-lg);
+  border: none;
+}
+
+/* Header y Footer del Card */
+.cardHeader {
+  padding-bottom: var(--spacing-lg);
+  border-bottom: var(--border-width-thin) solid var(--color-border-light);
+  margin-bottom: var(--spacing-lg);
+}
+
+.cardTitle {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.cardSubtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
+}
+
+.cardBody {
+  color: var(--color-text-primary);
+}
+
+.cardFooter {
+  padding-top: var(--spacing-lg);
+  border-top: var(--border-width-thin) solid var(--color-border-light);
+  margin-top: var(--spacing-lg);
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+/* Estados */
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
+}
+
+.clickable:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-base);
+}
+
+/* Variantes de color */
+.primary {
+  background-color: rgba(59, 130, 246, 0.05);
+  border-color: var(--color-primary);
+}
+
+.success {
+  background-color: rgba(16, 185, 129, 0.05);
+  border-color: var(--color-success);
+}
+
+.warning {
+  background-color: rgba(245, 158, 11, 0.05);
+  border-color: var(--color-warning);
+}
+
+.error {
+  background-color: rgba(239, 68, 68, 0.05);
+  border-color: var(--color-error);
+}
