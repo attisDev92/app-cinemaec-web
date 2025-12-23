@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Formik, Form } from "formik"
 import { useAuth } from "@/features/auth/hooks"
 import { authService } from "@/features/auth/services/auth.service"
+import { UserRole } from "@/shared/types"
 import { LegalStatus } from "@/features/profile/types"
 import { completeProfileValidationSchema } from "@/features/profile/lib/validations/complete-profile-schema.yup"
 import { Input } from "@/shared/components/ui"
@@ -27,6 +28,10 @@ export default function CompleteProfilePage() {
     // Redirigir si no está autenticado
     if (!authLoading && !isAuthenticated) {
       router.push("/login")
+    }
+    // Si es admin, redirigir al panel de admin (no necesita completar perfil)
+    else if (!authLoading && user && user.role === UserRole.ADMIN) {
+      router.push("/admin")
     }
     // Si el perfil ya está completado, verificar si tiene el acuerdo
     else if (!authLoading && user?.hasProfile) {

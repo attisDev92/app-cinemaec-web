@@ -44,14 +44,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Si el usuario está autenticado y trata de acceder a login o register, redirigir al dashboard
+  // Si el usuario está autenticado y trata de acceder a login o register
+  // redirigir al admin si es admin, o al dashboard si es user/editor
   if (token && (pathname === "/login" || pathname === "/register")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    // Aquí idealmente deberíamos decodificar el token para ver el role
+    // Por ahora redirigimos al dashboard y dejamos que el cliente maneje
+    return NextResponse.redirect(new URL("/home", request.url))
   }
-
-  // TODO: Aquí se podría agregar lógica adicional para verificar hasMediaAgreement
-  // cuando el backend proporcione esta información en el token o en una cookie separada
-  // Por ahora, la verificación se hace en el componente cliente
 
   return NextResponse.next()
 }

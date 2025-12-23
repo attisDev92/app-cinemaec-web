@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/shared/components/ui"
 import { UserRole } from "@/shared/types/auth"
 import { LegalStatus } from "@/features/profile/types"
+import { NotificationDropdown } from "@/shared/components/NotificationDropdown"
 import styles from "./Navbar.module.css"
 
 export function Navbar() {
@@ -95,6 +96,13 @@ export function Navbar() {
                       >
                         👤 Mi Perfil
                       </Link>
+                      <Link
+                        href="/notifications"
+                        className={styles.dropdownItem}
+                        onClick={() => setIsServicesOpen(false)}
+                      >
+                        🔔 Notificaciones
+                      </Link>
                       <div className={styles.dropdownDivider}></div>
                       <Link
                         href="/rea-spaces"
@@ -140,6 +148,7 @@ export function Navbar() {
           <div className={styles.rightSection}>
             {isAuthenticated ? (
               <>
+                <NotificationDropdown />
                 <span className={styles.greeting}>Hola, {displayName}</span>
                 <Button
                   onClick={handleLogout}

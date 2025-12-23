@@ -6,6 +6,7 @@ import {
   QuerySpacesDto,
   UpdateSpaceStatusDto,
 } from "@/shared/types"
+import type { ReviewForm, SpaceReview } from "@/features/spaces/types/space"
 
 export interface SpacesResponse {
   data: Space[]
@@ -79,5 +80,19 @@ export const spaceService = {
     data: UpdateSpaceStatusDto,
   ): Promise<Space> {
     return apiClient.put<Space>(`/spaces/${id}/status`, data)
+  },
+
+  /**
+   * Enviar revisión de espacio (solo admin con permiso ADMIN_SPACES)
+   */
+  async submitReview(id: number, review: ReviewForm): Promise<SpaceReview> {
+    return apiClient.post<SpaceReview>(`/spaces/${id}/review`, review)
+  },
+
+  /**
+   * Obtener historial de revisiones de un espacio
+   */
+  async getReviews(id: number): Promise<SpaceReview[]> {
+    return apiClient.get<SpaceReview[]>(`/spaces/${id}/reviews`)
   },
 }

@@ -3,6 +3,20 @@ import { environment } from "@/config/environment"
 const API_URL = environment.apiUrl
 
 class ApiClient {
+  async patch<T>(
+    endpoint: string,
+    data: unknown,
+    includeAuth = true,
+  ): Promise<T> {
+    return this.request<T>(
+      endpoint,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      },
+      includeAuth,
+    )
+  }
   private getHeaders(includeAuth = true): HeadersInit {
     const headers: HeadersInit = {
       "Content-Type": "application/json",

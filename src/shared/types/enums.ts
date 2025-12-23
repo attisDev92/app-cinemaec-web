@@ -7,6 +7,17 @@ export enum UserRole {
   USER = "user",
 }
 
+// Admin Permissions - Permisos granulares para administradores
+export enum PermissionEnum {
+  ADMIN_SPACES = "admin_spaces",
+  ADMIN_MOVIES = "admin_movies",
+  APPROVE_MOVIES_REQUEST = "approve_movies_request",
+  ADMIN_USERS = "admin_users",
+  ASSIGN_ROLES = "assign_roles",
+  VIEW_REPORTS = "view_reports",
+  EXPORT_DATA = "export_data",
+}
+
 // Legal Status (Profile)
 export enum LegalStatus {
   NATURAL_PERSON = "natural_person",

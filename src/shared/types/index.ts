@@ -8,6 +8,7 @@ export * from "./api"
 export * from "./space"
 export * from "./location"
 export * from "./company"
+export * from "./notification"
 
 // Re-export legacy types for backwards compatibility
 export type { User as AuthUser } from "./auth"

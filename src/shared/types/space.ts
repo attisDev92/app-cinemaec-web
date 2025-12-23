@@ -136,3 +136,26 @@ export interface QuerySpacesDto {
   page?: number
   limit?: number
 }
+
+// Review Types (Admin reviews)
+export interface Issue {
+  field: string
+  comment: string
+}
+
+export interface ReviewForm {
+  decision: "approve" | "request_changes" | "reject"
+  generalComment?: string
+  issues?: Issue[]
+}
+
+export interface SpaceReview {
+  id: number
+  spaceId: number
+  reviewerUserId: number
+  decision: "approve" | "request_changes" | "reject"
+  generalComment?: string
+  issues: Issue[]
+  createdAt: Date
+  updatedAt: Date
+}

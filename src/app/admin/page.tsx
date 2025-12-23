@@ -1,16 +1,29 @@
 "use client"
 
-import React, { useEffect } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/features/auth/hooks"
-import { UserRole } from "@/shared/types/auth"
+import { useAuth, usePermissions } from "@/features/auth/hooks"
+import { UserRole, PermissionEnum } from "@/shared/types"
 import { Navbar } from "@/shared/components/Navbar"
-import { Card, Button } from "@/shared/components/ui"
 import styles from "./page.module.css"
+
+interface AdminModule {
+  id: string
+  title: string
+  description: string
+  icon: string
+  route: string
+  permission: PermissionEnum
+}
 
 export default function AdminPage() {
   const { user, isAuthenticated, isLoading } = useAuth()
+  const { hasPermission } = usePermissions()
   const router = useRouter()
+
+  console.log("🔍 AdminPage - user:", user)
+  console.log("🔍 AdminPage - user?.permissions:", user?.permissions)
+  console.log("🔍 AdminPage - localStorage user:", localStorage.getItem("user"))
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -20,10 +33,78 @@ export default function AdminPage() {
     }
   }, [isAuthenticated, isLoading, user, router])
 
+  const modules: AdminModule[] = [
+    {
+      id: "spaces",
+      title: "Gestión de Espacios",
+      description: "Administrar espacios REA y solicitudes",
+      icon: "🎬",
+      route: "/admin/spaces",
+      permission: PermissionEnum.ADMIN_SPACES,
+    },
+    {
+      id: "movies",
+      title: "Gestión de Películas",
+      description: "Administrar películas y contenido",
+      icon: "🎥",
+      route: "/admin/movies",
+      permission: PermissionEnum.ADMIN_MOVIES,
+    },
+    {
+      id: "movie-requests",
+      title: "Solicitudes de Películas",
+      description: "Aprobar o rechazar solicitudes",
+      icon: "📋",
+      route: "/admin/movie-requests",
+      permission: PermissionEnum.APPROVE_MOVIES_REQUEST,
+    },
+    {
+      id: "users",
+      title: "Gestión de Usuarios",
+      description: "Administrar usuarios del sistema",
+      icon: "👥",
+      route: "/admin/users",
+      permission: PermissionEnum.ADMIN_USERS,
+    },
+    {
+      id: "roles",
+      title: "Roles y Permisos",
+      description: "Asignar roles y permisos",
+      icon: "🔐",
+      route: "/admin/roles",
+      permission: PermissionEnum.ASSIGN_ROLES,
+    },
+    {
+      id: "reports",
+      title: "Reportes",
+      description: "Ver reportes y estadísticas",
+      icon: "📊",
+      route: "/admin/reports",
+      permission: PermissionEnum.VIEW_REPORTS,
+    },
+    {
+      id: "export",
+      title: "Exportar Datos",
+      description: "Exportar información del sistema",
+      icon: "📥",
+      route: "/admin/export",
+      permission: PermissionEnum.EXPORT_DATA,
+    },
+  ]
+
+  // Filtrar módulos según permisos
+  const allowedModules = modules.filter((module) =>
+    hasPermission(module.permission),
+  )
+
   if (isLoading) {
     return (
-      <div className={styles.loading}>
-        <div className={styles.loadingText}>Cargando...</div>
+      <div className={styles.container}>
+        <Navbar />
+        <div className={styles.loadingPage}>
+          <div className={styles.spinner}></div>
+          <p>Cargando...</p>
+        </div>
       </div>
     )
   }
@@ -35,108 +116,35 @@ export default function AdminPage() {
   return (
     <div className={styles.container}>
       <Navbar />
-
-      <div className={styles.content}>
-        <h1 className={styles.title}>Panel de Administración</h1>
-
-        <div className={styles.grid}>
-          <Card title="Usuarios">
-            <p className={styles.cardContent}>
-              Gestiona los usuarios del sistema
-            </p>
-            <Button
-              onClick={() => router.push("/admin/users")}
-              variant="secondary"
-              className={styles.cardButton}
-            >
-              Administrar Usuarios →
-            </Button>
-          </Card>
-
-          <Card title="Películas">
-            <p className={styles.cardContent}>
-              Administra el catálogo de películas
-            </p>
-            <Button
-              onClick={() => router.push("/admin/movies")}
-              variant="secondary"
-              className={styles.cardButton}
-            >
-              Gestionar Películas →
-            </Button>
-          </Card>
-
-          <Card title="Salas">
-            <p className={styles.cardContent}>Configura las salas de cine</p>
-            <Button
-              onClick={() => router.push("/admin/rooms")}
-              variant="secondary"
-              className={styles.cardButton}
-            >
-              Gestionar Salas →
-            </Button>
-          </Card>
-
-          <Card title="Funciones">
-            <p className={styles.cardContent}>Programa las funciones de cine</p>
-            <Button
-              onClick={() => router.push("/admin/showings")}
-              variant="secondary"
-              className={styles.cardButton}
-            >
-              Programar Funciones →
-            </Button>
-          </Card>
-
-          <Card title="Reservas">
-            <p className={styles.cardContent}>
-              Monitorea las reservas del sistema
-            </p>
-            <Button
-              onClick={() => router.push("/admin/bookings")}
-              variant="secondary"
-              className={styles.cardButton}
-            >
-              Ver Reservas →
-            </Button>
-          </Card>
-
-          <Card title="Promociones">
-            <p className={styles.cardContent}>Crea y gestiona promociones</p>
-            <Button
-              onClick={() => router.push("/admin/promotions")}
-              variant="secondary"
-              className={styles.cardButton}
-            >
-              Gestionar Promociones →
-            </Button>
-          </Card>
-
-          <Card title="Reportes">
-            <p className={styles.cardContent}>Genera reportes y estadísticas</p>
-            <Button
-              onClick={() => router.push("/admin/reports")}
-              variant="secondary"
-              className={styles.cardButton}
-            >
-              Ver Reportes →
-            </Button>
-          </Card>
-
-          <Card title="Configuración">
-            <p className={styles.cardContent}>
-              Ajusta la configuración del sistema
-            </p>
-            <Button
-              onClick={() => router.push("/admin/settings")}
-              variant="secondary"
-              className={styles.cardButton}
-            >
-              Configurar Sistema →
-            </Button>
-          </Card>
+      <main className={styles.main}>
+        <div className={styles.header}>
+          <h1>Panel de Administración</h1>
+          <p className={styles.welcome}>
+            Bienvenido, {user.firstName || user.email}
+          </p>
         </div>
-      </div>
+
+        {allowedModules.length === 0 ? (
+          <div className={styles.noPermissions}>
+            <p>No tienes permisos asignados para acceder a ningún módulo.</p>
+            <p>Contacta al administrador principal para solicitar acceso.</p>
+          </div>
+        ) : (
+          <div className={styles.modulesGrid}>
+            {allowedModules.map((module) => (
+              <div
+                key={module.id}
+                className={styles.moduleCard}
+                onClick={() => router.push(module.route)}
+              >
+                <div className={styles.moduleIcon}>{module.icon}</div>
+                <h3>{module.title}</h3>
+                <p>{module.description}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   )
 }

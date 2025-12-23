@@ -35,11 +35,6 @@ export interface Space {
   images?: string[]
   createdAt: string
   updatedAt: string
-  // Admin review fields
-  status?: "pending" | "under_review" | "verified" | "rejected"
-  address?: string
-  ownerName?: string
-  ownerEmail?: string
 }
 
 export interface CreateSpaceData {

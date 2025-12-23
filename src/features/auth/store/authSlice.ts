@@ -59,6 +59,8 @@ export const loginAsync = createAsyncThunk(
   ) => {
     try {
       const response = await authService.login(credentials)
+      // La respuesta del login ya tiene los permisos
+      // No necesitamos llamar a getCurrentUser() que no devuelve permisos
       return response.user
     } catch (error) {
       return rejectWithValue(

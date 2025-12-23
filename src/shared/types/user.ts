@@ -1,7 +1,7 @@
-import { UserRole } from "./enums"
+import { UserRole, PermissionEnum } from "./enums"
 
-// Re-export UserRole for convenience
-export { UserRole } from "./enums"
+// Re-export UserRole and PermissionEnum for convenience
+export { UserRole, PermissionEnum } from "./enums"
 
 // User Entity
 export interface User {
@@ -9,6 +9,7 @@ export interface User {
   email: string
   cedula: string
   role: UserRole
+  permissions?: PermissionEnum[]
   isActive: boolean
   emailVerificationToken: string | null
   passwordResetToken: string | null
@@ -22,6 +23,7 @@ export interface User {
 export interface ExtendedUser
   extends Omit<User, "createdAt" | "lastLogin" | "passwordResetExpires"> {
   hasProfile: boolean
+  permissions?: PermissionEnum[]
   createdAt?: string
   lastLogin?: string | null
   passwordResetExpires?: string | null

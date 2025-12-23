@@ -18,11 +18,27 @@ export const authService = {
 
   // Transformar las claves del backend (snake_case) a camelCase
   transformUserFromBackend(backendUser: Record<string, unknown>): ExtendedUser {
-    return {
+    console.log("🔍 transformUserFromBackend - backendUser:", backendUser)
+    console.log(
+      "🔍 transformUserFromBackend - backendUser.permissions:",
+      backendUser.permissions,
+    )
+
+    const permissions = Array.isArray(backendUser.permissions)
+      ? (backendUser.permissions as string[])
+      : []
+
+    console.log(
+      "🔍 transformUserFromBackend - permissions extracted:",
+      permissions,
+    )
+
+    const transformed = {
       id: backendUser.id as number,
       email: backendUser.email as string,
       cedula: backendUser.cedula as string,
       role: backendUser.role as ExtendedUser["role"],
+      permissions: permissions as ExtendedUser["permissions"],
       isActive: backendUser.is_active as boolean,
       hasProfile: backendUser.has_profile as boolean,
       emailVerificationToken:
@@ -47,6 +63,14 @@ export const authService = {
         | undefined,
       updatedAt: backendUser.updated_at as string | undefined,
     }
+
+    console.log("🔍 transformUserFromBackend - transformed user:", transformed)
+    console.log(
+      "🔍 transformUserFromBackend - transformed.permissions:",
+      transformed.permissions,
+    )
+
+    return transformed
   },
 
   saveSession(token: string, user: ExtendedUser): void {
@@ -95,8 +119,17 @@ export const authService = {
       user: Record<string, unknown>
     }>("/users/login", credentials, false)
 
+    console.log("🔍 login - Backend response:", response)
+    console.log("🔍 login - Backend response.user:", response.user)
+
     if (response.accessToken && response.user) {
       const transformedUser = this.transformUserFromBackend(response.user)
+      console.log("🔍 login - transformedUser:", transformedUser)
+      console.log(
+        "🔍 login - transformedUser.permissions:",
+        transformedUser.permissions,
+      )
+
       this.saveSession(response.accessToken, transformedUser)
       return {
         accessToken: response.accessToken,
@@ -136,10 +169,23 @@ export const authService = {
     const userData =
       "data" in response && response.data ? response.data : response
 
+    // Mantener permisos previos si /users/me no los envía
+    const storedUser = this.getStoredUser()
+
     if (userData) {
       const transformedUser = this.transformUserFromBackend(
         userData as Record<string, unknown>,
       )
+
+      if (
+        (!transformedUser.permissions ||
+          transformedUser.permissions.length === 0) &&
+        storedUser?.permissions &&
+        storedUser.permissions.length > 0
+      ) {
+        transformedUser.permissions = storedUser.permissions
+      }
+
       localStorage.setItem("user", JSON.stringify(transformedUser))
       return transformedUser
     }
