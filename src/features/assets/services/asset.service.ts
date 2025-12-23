@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/api-client"
 import { environment } from "@/config/environment"
-import { AssetTypeEnum, AssetOwnerEnum } from "@/shared/types"
+import { AssetTypeEnum, AssetOwnerEnum, Asset } from "@/shared/types"
 
 const API_URL = environment.apiUrl
 
@@ -47,6 +47,26 @@ export const assetService = {
     }
 
     return response.json()
+  },
+
+  /**
+   * Obtener un asset individual por ID
+   */
+  async getAsset(id: number): Promise<Asset> {
+    const response = await apiClient.get<Asset>(`/assets/${id}`)
+    return response.data
+  },
+
+  /**
+   * Construir una URL pública para un asset
+   * Si la URL es relativa, la completa con el API_URL
+   */
+  getPublicAssetUrl(asset: Asset): string {
+    if (asset.url.startsWith("http://") || asset.url.startsWith("https://")) {
+      return asset.url
+    }
+    // Si es una URL relativa, construir la URL completa
+    return `${API_URL}${asset.url.startsWith("/") ? asset.url : "/" + asset.url}`
   },
 
   /**

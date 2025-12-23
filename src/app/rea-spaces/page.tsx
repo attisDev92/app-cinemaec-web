@@ -86,7 +86,7 @@ export default function REASpacesPage() {
 
     // Si ya tiene contrato y está aprobado o rechazado, ver detalles
     if (
-      space.status === SpaceStatus.APPROVED ||
+      space.status === SpaceStatus.VERIFIED ||
       space.status === SpaceStatus.REJECTED
     ) {
       router.push(`/rea-spaces/${space.id}`)
@@ -187,7 +187,7 @@ export default function REASpacesPage() {
                       <div className={styles.cardIcon}>🎥</div>
                       <div
                         className={`${styles.cardBadge} ${
-                          space.status === SpaceStatus.APPROVED
+                          space.status === SpaceStatus.VERIFIED
                             ? styles.approved
                             : space.status === SpaceStatus.UNDER_REVIEW
                               ? styles.underReview
@@ -196,7 +196,7 @@ export default function REASpacesPage() {
                                 : styles.rejected
                         }`}
                       >
-                        {space.status === SpaceStatus.APPROVED
+                        {space.status === SpaceStatus.VERIFIED
                           ? "Aprobado"
                           : space.status === SpaceStatus.UNDER_REVIEW
                             ? "Bajo Revisión"

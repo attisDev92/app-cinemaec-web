@@ -16,31 +16,23 @@ export const authService = {
   // Duración de la sesión: 7 días (en milisegundos)
   TOKEN_EXPIRATION_TIME: 7 * 24 * 60 * 60 * 1000,
 
-  // Transformar las claves del backend (snake_case) a camelCase
+  // Transformar claves snake_case a camelCase y asegurar permisos
   transformUserFromBackend(backendUser: Record<string, unknown>): ExtendedUser {
-    console.log("🔍 transformUserFromBackend - backendUser:", backendUser)
-    console.log(
-      "🔍 transformUserFromBackend - backendUser.permissions:",
-      backendUser.permissions,
-    )
-
     const permissions = Array.isArray(backendUser.permissions)
       ? (backendUser.permissions as string[])
       : []
 
-    console.log(
-      "🔍 transformUserFromBackend - permissions extracted:",
-      permissions,
-    )
-
-    const transformed = {
+    return {
       id: backendUser.id as number,
       email: backendUser.email as string,
       cedula: backendUser.cedula as string,
       role: backendUser.role as ExtendedUser["role"],
       permissions: permissions as ExtendedUser["permissions"],
-      isActive: backendUser.is_active as boolean,
-      hasProfile: backendUser.has_profile as boolean,
+      isActive:
+        (backendUser.is_active as boolean) ?? (backendUser.isActive as boolean),
+      hasProfile:
+        (backendUser.has_profile as boolean) ??
+        (backendUser.hasProfile as boolean),
       emailVerificationToken:
         (backendUser.email_verification_token as string | null) ?? null,
       passwordResetToken:
@@ -63,14 +55,6 @@ export const authService = {
         | undefined,
       updatedAt: backendUser.updated_at as string | undefined,
     }
-
-    console.log("🔍 transformUserFromBackend - transformed user:", transformed)
-    console.log(
-      "🔍 transformUserFromBackend - transformed.permissions:",
-      transformed.permissions,
-    )
-
-    return transformed
   },
 
   saveSession(token: string, user: ExtendedUser): void {
@@ -119,16 +103,8 @@ export const authService = {
       user: Record<string, unknown>
     }>("/users/login", credentials, false)
 
-    console.log("🔍 login - Backend response:", response)
-    console.log("🔍 login - Backend response.user:", response.user)
-
     if (response.accessToken && response.user) {
       const transformedUser = this.transformUserFromBackend(response.user)
-      console.log("🔍 login - transformedUser:", transformedUser)
-      console.log(
-        "🔍 login - transformedUser.permissions:",
-        transformedUser.permissions,
-      )
 
       this.saveSession(response.accessToken, transformedUser)
       return {

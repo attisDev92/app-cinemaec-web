@@ -46,3 +46,20 @@ export enum AssetOwnerEnum {
   MOVIE_STILLS = "movie_stills",
   MOVIE_POSTER = "movie_poster",
 }
+
+// Space Status
+export enum SpaceStatusEnum {
+  PENDING = "pending",
+  UNDER_REVIEW = "under_review",
+  VERIFIED = "verified",
+  REJECTED = "rejected",
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+}
+
+// Space Review Decisions
+export enum SpaceReviewDecisionEnum {
+  APPROVE = "approve",
+  REQUEST_CHANGES = "request_changes",
+  REJECT = "reject",
+}

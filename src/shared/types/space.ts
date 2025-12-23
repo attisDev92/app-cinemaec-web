@@ -11,8 +11,10 @@ export enum SpaceType {
 export enum SpaceStatus {
   PENDING = "pending",
   UNDER_REVIEW = "under_review",
-  APPROVED = "approved",
+  VERIFIED = "verified",
   REJECTED = "rejected",
+  ACTIVE = "active",
+  INACTIVE = "inactive",
 }
 
 // Space Entity
@@ -52,7 +54,7 @@ export interface Space {
   accessibilities: string[]
   services: string[]
   operatingHistory: string
-  // Assets
+  // Assets (IDs legacy - mantener por compatibilidad)
   logoId: number
   photosId: number[]
   ciDocument: number
@@ -61,6 +63,55 @@ export interface Space {
   serviceBill: number
   operatingLicense: number
   contractId?: number | null
+  // Assets embebidos (nuevo formato del backend)
+  assets?: {
+    logo: {
+      id: number
+      url: string
+      documentType: string
+      ownerType: string
+      createdAt: string
+    } | null
+    photos: Array<{
+      id: number
+      url: string
+      documentType: string
+      ownerType: string
+      createdAt: string
+    }>
+    documents: {
+      ci: {
+        id: number
+        url: string
+        documentType: string
+        createdAt: string
+      } | null
+      ruc: {
+        id: number
+        url: string
+        documentType: string
+        createdAt: string
+      } | null
+      manager: {
+        id: number
+        url: string
+        documentType: string
+        createdAt: string
+      } | null
+      serviceBill: {
+        id: number
+        url: string
+        documentType: string
+        createdAt: string
+      } | null
+      operatingLicense: {
+        id: number
+        url: string
+        documentType: string
+        createdAt: string
+      } | null
+    }
+  }
   // Estado
   status: SpaceStatus
   approvedBy: number | null
@@ -141,6 +192,7 @@ export interface QuerySpacesDto {
 export interface Issue {
   field: string
   comment: string
+  severity?: "low" | "medium" | "high"
 }
 
 export interface ReviewForm {
@@ -155,7 +207,6 @@ export interface SpaceReview {
   reviewerUserId: number
   decision: "approve" | "request_changes" | "reject"
   generalComment?: string
-  issues: Issue[]
+  issues?: Issue[] | null
   createdAt: Date
-  updatedAt: Date
 }

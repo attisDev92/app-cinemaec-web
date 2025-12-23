@@ -51,6 +51,7 @@ export interface LoginResponse {
     role: string
     is_active: boolean // Este campo se mantiene en snake_case en la respuesta
     has_profile: boolean // Este campo se mantiene en snake_case en la respuesta
+    permissions: string[]
   }
 }
 
