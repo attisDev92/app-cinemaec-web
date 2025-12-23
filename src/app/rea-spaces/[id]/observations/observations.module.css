@@ -209,3 +209,46 @@
 .error {
   color: var(--color-error-dark);
 }
+
+.resolvedBox {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 2px solid #10b981;
+  border-radius: 12px;
+  padding: 32px 24px;
+  margin-bottom: 32px;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.resolvedIcon {
+  font-size: 48px;
+  color: #10b981;
+  font-weight: bold;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 50%;
+}
+
+.resolvedContent {
+  flex: 1;
+}
+
+.resolvedContent h2 {
+  margin: 0 0 8px 0;
+  color: #065f46;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.resolvedContent p {
+  margin: 0;
+  color: #047857;
+  font-size: 15px;
+  line-height: 1.6;
+}

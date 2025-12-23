@@ -76,8 +76,12 @@ export default function SpaceObservationsPage() {
     )
   }
 
-  const lastReview = reviews.length > 0 ? reviews[reviews.length - 1] : null
+  const lastReview =
+    reviews.length > 0 ? reviews.filter((r) => !r.resolved).pop() || null : null
   const fieldIssues = lastReview?.issues || []
+
+  // Si todas las observaciones están resueltas
+  const allResolved = reviews.length > 0 && reviews.every((r) => r.resolved)
 
   return (
     <>
@@ -92,74 +96,103 @@ export default function SpaceObservationsPage() {
         </div>
 
         <div className={styles.content}>
-          {/* Mensaje principal */}
-          <div className={styles.alertBox}>
-            <div className={styles.alertIcon}>📋</div>
-            <div className={styles.alertContent}>
-              <h2>Cambios Solicitados</h2>
-              <p>
-                El administrador ha solicitado cambios en tu espacio. Revisa las
-                observaciones a continuación y edita los campos indicados.
-              </p>
-            </div>
-          </div>
-
-          {/* Observaciones */}
-          {lastReview && (
-            <div className={styles.reviewSection}>
-              <h2 className={styles.sectionTitle}>Observaciones del Admin</h2>
-
-              {/* Comentario general */}
-              {lastReview.generalComment && (
-                <div className={styles.generalCommentBox}>
-                  <h3>Comentario General</h3>
-                  <p>{lastReview.generalComment}</p>
-                </div>
-              )}
-
-              {/* Observaciones por campo */}
-              {fieldIssues.length > 0 ? (
-                <div className={styles.issuesContainer}>
-                  <h3>Campos a Corregir ({fieldIssues.length})</h3>
-                  <div className={styles.issuesList}>
-                    {fieldIssues.map((issue, index) => (
-                      <div key={index} className={styles.issueItem}>
-                        <div className={styles.issueIndicator}>⚠️</div>
-                        <div className={styles.issueContent}>
-                          <h4 className={styles.issueField}>
-                            {getFieldLabel(issue.field)}
-                          </h4>
-                          <p className={styles.issueComment}>{issue.comment}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.noIssues}>
-                  <p>No hay observaciones específicas de campos.</p>
-                </div>
-              )}
-
-              <div className={styles.reviewFooter}>
-                <p className={styles.reviewDate}>
-                  Revisión del{" "}
-                  {new Date(lastReview.createdAt).toLocaleDateString("es-EC", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+          {/* Mostrar mensaje si todas las observaciones están resueltas */}
+          {allResolved && (
+            <div className={styles.resolvedBox}>
+              <div className={styles.resolvedIcon}>✓</div>
+              <div className={styles.resolvedContent}>
+                <h2>Observaciones Resueltas</h2>
+                <p>
+                  Todas tus observaciones han sido resueltas. Tu espacio está
+                  siendo revisado nuevamente.
                 </p>
               </div>
             </div>
           )}
 
+          {/* Mostrar observaciones si hay alguna pendiente */}
+          {!allResolved && (
+            <>
+              {/* Mensaje principal */}
+              <div className={styles.alertBox}>
+                <div className={styles.alertIcon}>📋</div>
+                <div className={styles.alertContent}>
+                  <h2>Cambios Solicitados</h2>
+                  <p>
+                    El administrador ha solicitado cambios en tu espacio. Revisa
+                    las observaciones a continuación y edita los campos
+                    indicados.
+                  </p>
+                </div>
+              </div>
+
+              {/* Observaciones */}
+              {lastReview && (
+                <div className={styles.reviewSection}>
+                  <h2 className={styles.sectionTitle}>
+                    Observaciones del Admin
+                  </h2>
+
+                  {/* Comentario general */}
+                  {lastReview.generalComment && (
+                    <div className={styles.generalCommentBox}>
+                      <h3>Comentario General</h3>
+                      <p>{lastReview.generalComment}</p>
+                    </div>
+                  )}
+
+                  {/* Observaciones por campo */}
+                  {fieldIssues.length > 0 ? (
+                    <div className={styles.issuesContainer}>
+                      <h3>Campos a Corregir ({fieldIssues.length})</h3>
+                      <div className={styles.issuesList}>
+                        {fieldIssues.map((issue, index) => (
+                          <div key={index} className={styles.issueItem}>
+                            <div className={styles.issueIndicator}>⚠️</div>
+                            <div className={styles.issueContent}>
+                              <h4 className={styles.issueField}>
+                                {getFieldLabel(issue.field)}
+                              </h4>
+                              <p className={styles.issueComment}>
+                                {issue.comment}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.noIssues}>
+                      <p>No hay observaciones específicas de campos.</p>
+                    </div>
+                  )}
+
+                  <div className={styles.reviewFooter}>
+                    <p className={styles.reviewDate}>
+                      Revisión del{" "}
+                      {new Date(lastReview.createdAt).toLocaleDateString(
+                        "es-EC",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        },
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
           {/* Botón de acción */}
-          <div className={styles.actions}>
-            <Button variant="primary" onClick={handleEditSpace}>
-              ✏️ Editar Espacio
-            </Button>
-          </div>
+          {!allResolved && (
+            <div className={styles.actions}>
+              <Button variant="primary" onClick={handleEditSpace}>
+                ✏️ Editar Espacio
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </>
