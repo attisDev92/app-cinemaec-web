@@ -811,3 +811,36 @@
     grid-template-columns: 1fr 3fr;
   }
 }
+
+.timelineBadges {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.resolvedBadge {
+  display: inline-block;
+  background: #10b981;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.timelineItemResolved {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.resolvedNote {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border-left: 3px solid #10b981;
+  color: #059669;
+  font-size: 13px;
+  border-radius: 4px;
+}

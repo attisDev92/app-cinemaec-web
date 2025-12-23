@@ -83,6 +83,8 @@ export interface SpaceReview {
   decision: "approve" | "request_changes" | "reject"
   generalComment?: string
   issues: Issue[]
+  resolved?: boolean
+  resolvedAt?: string
   createdAt: string
   updatedAt: string
 }

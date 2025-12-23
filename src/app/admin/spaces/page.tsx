@@ -829,23 +829,35 @@ export default function AdminSpacesPage() {
                     ) : (
                       <div className={styles.timeline}>
                         {reviews.map((review) => (
-                          <div key={review.id} className={styles.timelineItem}>
+                          <div
+                            key={review.id}
+                            className={`${styles.timelineItem} ${
+                              review.resolved ? styles.timelineItemResolved : ""
+                            }`}
+                          >
                             <div className={styles.timelineHeader}>
-                              <span
-                                className={`${styles.badge} ${badgeClass(
-                                  review.decision === "approve"
-                                    ? SpaceStatus.VERIFIED
+                              <div className={styles.timelineBadges}>
+                                <span
+                                  className={`${styles.badge} ${badgeClass(
+                                    review.decision === "approve"
+                                      ? SpaceStatus.VERIFIED
+                                      : review.decision === "reject"
+                                        ? SpaceStatus.REJECTED
+                                        : SpaceStatus.PENDING,
+                                  )}`}
+                                >
+                                  {review.decision === "approve"
+                                    ? "Aprobado"
                                     : review.decision === "reject"
-                                      ? SpaceStatus.REJECTED
-                                      : SpaceStatus.PENDING,
-                                )}`}
-                              >
-                                {review.decision === "approve"
-                                  ? "Aprobado"
-                                  : review.decision === "reject"
-                                    ? "Rechazado"
-                                    : "Cambios solicitados"}
-                              </span>
+                                      ? "Rechazado"
+                                      : "Cambios solicitados"}
+                                </span>
+                                {review.resolved && (
+                                  <span className={styles.resolvedBadge}>
+                                    ✓ Resuelto
+                                  </span>
+                                )}
+                              </div>
                               <span className={styles.timelineDate}>
                                 {new Date(review.createdAt).toLocaleDateString(
                                   "es-EC",
@@ -888,6 +900,19 @@ export default function AdminSpacesPage() {
                                   },
                                 )}
                               </div>
+                            )}
+                            {review.resolved && review.resolvedAt && (
+                              <p className={styles.resolvedNote}>
+                                Cambios aplicados el{" "}
+                                {new Date(review.resolvedAt).toLocaleDateString(
+                                  "es-EC",
+                                  {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  },
+                                )}
+                              </p>
                             )}
                           </div>
                         ))}
