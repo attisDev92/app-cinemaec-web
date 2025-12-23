@@ -7,6 +7,7 @@ import { Button, Input } from "@/shared/components/ui"
 import { useAuth, usePermissions } from "@/features/auth/hooks"
 import { spaceService } from "@/features/spaces/services/space.service"
 import { SpaceReview } from "@/features/spaces/types/space"
+import { FIELD_LABELS } from "@/features/spaces/lib/fieldLabels"
 import {
   Issue,
   PermissionEnum,
@@ -14,6 +15,7 @@ import {
   ReviewForm,
   Space,
   SpaceStatus,
+  SpaceType,
   UserRole,
 } from "@/shared/types"
 import styles from "./page.module.css"
@@ -27,10 +29,16 @@ const statusFilters: { label: string; value: SpaceStatus | "all" }[] = [
   { label: "Todos", value: "all" },
 ]
 
-const decisionToStatus: Record<ReviewForm["decision"], SpaceStatus> = {
-  approve: SpaceStatus.VERIFIED,
-  request_changes: SpaceStatus.PENDING,
-  reject: SpaceStatus.REJECTED,
+const spaceTypeLabels: Record<SpaceType, string> = {
+  [SpaceType.THEATER]: "Teatro",
+  [SpaceType.CINEMA]: "Cine",
+  [SpaceType.CULTURAL_CENTER]: "Centro cultural",
+  [SpaceType.MULTIPURPOSE]: "Multipropósito",
+  [SpaceType.OTHER]: "Otro",
+}
+
+const getSpaceTypeLabel = (type: SpaceType | string): string => {
+  return spaceTypeLabels[type as SpaceType] || type
 }
 
 export default function AdminSpacesPage() {
@@ -59,11 +67,9 @@ export default function AdminSpacesPage() {
   const [issueDraft, setIssueDraft] = useState<{
     field: string
     comment: string
-    severity: Issue["severity"]
   }>({
     field: "",
     comment: "",
-    severity: "medium",
   })
 
   const selectedSpace = useMemo(
@@ -71,100 +77,8 @@ export default function AdminSpacesPage() {
     [spaces, selectedSpaceId],
   )
 
-  const reviewableFields = [
-    { value: "name", label: "Nombre del espacio", section: "Básica" },
-    { value: "type", label: "Tipo de espacio", section: "Básica" },
-    { value: "province", label: "Provincia", section: "Básica" },
-    { value: "city", label: "Ciudad", section: "Básica" },
-    { value: "address", label: "Dirección", section: "Básica" },
-    { value: "email", label: "Email del espacio", section: "Básica" },
-    { value: "phone", label: "Teléfono", section: "Básica" },
-    { value: "description", label: "Descripción", section: "Básica" },
-    { value: "target", label: "Público objetivo", section: "Básica" },
-    { value: "mainActivity", label: "Actividad principal", section: "Básica" },
-    {
-      value: "managerName",
-      label: "Nombre del responsable",
-      section: "Personal administrativo",
-    },
-    {
-      value: "managerPhone",
-      label: "Teléfono del responsable",
-      section: "Personal administrativo",
-    },
-    {
-      value: "managerEmail",
-      label: "Email del responsable",
-      section: "Personal administrativo",
-    },
-    {
-      value: "technicianInCharge",
-      label: "Técnico a cargo",
-      section: "Personal técnico",
-    },
-    {
-      value: "technicianRole",
-      label: "Rol del técnico",
-      section: "Personal técnico",
-    },
-    {
-      value: "technicianPhone",
-      label: "Teléfono del técnico",
-      section: "Personal técnico",
-    },
-    {
-      value: "technicianEmail",
-      label: "Email del técnico",
-      section: "Personal técnico",
-    },
-    { value: "capacity", label: "Capacidad", section: "Infraestructura" },
-    {
-      value: "projectionEquipment",
-      label: "Equipos de proyección",
-      section: "Infraestructura",
-    },
-    {
-      value: "soundEquipment",
-      label: "Equipos de sonido",
-      section: "Infraestructura",
-    },
-    { value: "screen", label: "Pantalla", section: "Infraestructura" },
-    {
-      value: "boxofficeRegistration",
-      label: "Registro de taquilla",
-      section: "Servicios",
-    },
-    {
-      value: "accessibilities",
-      label: "Accesibilidades",
-      section: "Servicios",
-    },
-    { value: "services", label: "Servicios", section: "Servicios" },
-    {
-      value: "operatingHistory",
-      label: "Historial operativo",
-      section: "Servicios",
-    },
-    { value: "logoId", label: "Logo", section: "Archivos" },
-    { value: "photosId", label: "Fotos", section: "Archivos" },
-    {
-      value: "ciDocument",
-      label: "Documento de identidad",
-      section: "Archivos",
-    },
-    { value: "rucDocument", label: "Documento RUC", section: "Archivos" },
-    {
-      value: "managerDocument",
-      label: "Documento del responsable",
-      section: "Archivos",
-    },
-    { value: "serviceBill", label: "Factura de servicio", section: "Archivos" },
-    {
-      value: "operatingLicense",
-      label: "Licencia de operación",
-      section: "Archivos",
-    },
-  ]
+  // Usar el mapeo centralizado de campos
+  const reviewableFields = FIELD_LABELS
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -277,16 +191,7 @@ export default function AdminSpacesPage() {
     setError(null)
 
     try {
-      const nextStatus = decisionToStatus[reviewForm.decision]
-
-      await spaceService.updateSpaceStatus(selectedSpace.id, {
-        status: nextStatus,
-        rejectionReason:
-          reviewForm.decision === "reject"
-            ? reviewForm.generalComment
-            : undefined,
-      })
-
+      // El backend ahora maneja el cambio de estado automáticamente según la decisión
       await spaceService.submitReview(selectedSpace.id, {
         ...reviewForm,
         issues:
@@ -306,7 +211,6 @@ export default function AdminSpacesPage() {
       setIssueDraft({
         field: "",
         comment: "",
-        severity: "medium",
       })
     } catch (err) {
       const message =
@@ -325,7 +229,7 @@ export default function AdminSpacesPage() {
       issues: [...(prev.issues || []), { ...issueDraft }],
     }))
 
-    setIssueDraft({ field: "", comment: "", severity: "medium" })
+    setIssueDraft({ field: "", comment: "" })
   }
 
   const removeIssue = (index: number) => {
@@ -535,7 +439,7 @@ export default function AdminSpacesPage() {
                         <div>
                           <p className={styles.fieldLabel}>Tipo</p>
                           <p className={styles.fieldValue}>
-                            {selectedSpace.type}
+                            {getSpaceTypeLabel(selectedSpace.type)}
                           </p>
                         </div>
                         <div>
@@ -933,7 +837,7 @@ export default function AdminSpacesPage() {
                                     ? SpaceStatus.VERIFIED
                                     : review.decision === "reject"
                                       ? SpaceStatus.REJECTED
-                                      : SpaceStatus.UNDER_REVIEW,
+                                      : SpaceStatus.PENDING,
                                 )}`}
                               >
                                 {review.decision === "approve"
@@ -966,21 +870,22 @@ export default function AdminSpacesPage() {
                                   Observaciones:
                                 </p>
                                 {review.issues.map(
-                                  (issue: Issue, idx: number) => (
-                                    <div
-                                      key={idx}
-                                      className={styles.timelineIssue}
-                                    >
-                                      <strong>{issue.field}:</strong>{" "}
-                                      {issue.comment}
-                                      {issue.severity && (
-                                        <span className={styles.issueSeverity}>
-                                          {" "}
-                                          ({issue.severity})
-                                        </span>
-                                      )}
-                                    </div>
-                                  ),
+                                  (issue: Issue, idx: number) => {
+                                    const fieldInfo = reviewableFields.find(
+                                      (f) => f.value === issue.field,
+                                    )
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className={styles.timelineIssue}
+                                      >
+                                        <strong>
+                                          {fieldInfo?.label || issue.field}:
+                                        </strong>{" "}
+                                        {issue.comment}
+                                      </div>
+                                    )
+                                  },
                                 )}
                               </div>
                             )}
@@ -991,169 +896,191 @@ export default function AdminSpacesPage() {
                   </div>
                 )}
 
-                <div className={styles.section}>
-                  <h3>Notas de revisión</h3>
-                  <div className={styles.radioGroup}>
-                    {[
-                      { value: "approve", label: "Aprobar" },
-                      { value: "request_changes", label: "Solicitar cambios" },
-                      { value: "reject", label: "Rechazar" },
-                    ].map((option) => (
-                      <label key={option.value} className={styles.radioOption}>
-                        <input
-                          type="radio"
-                          name="decision"
-                          value={option.value}
-                          checked={reviewForm.decision === option.value}
+                {selectedSpace.status === SpaceStatus.UNDER_REVIEW && (
+                  <>
+                    <div className={styles.section}>
+                      <h3>Notas de revisión</h3>
+                      <div className={styles.radioGroup}>
+                        {[
+                          { value: "approve", label: "Aprobar" },
+                          {
+                            value: "request_changes",
+                            label: "Solicitar cambios",
+                          },
+                          { value: "reject", label: "Rechazar" },
+                        ].map((option) => (
+                          <label
+                            key={option.value}
+                            className={styles.radioOption}
+                          >
+                            <input
+                              type="radio"
+                              name="decision"
+                              value={option.value}
+                              checked={reviewForm.decision === option.value}
+                              onChange={(e) =>
+                                setReviewForm((prev) => ({
+                                  ...prev,
+                                  decision: e.target
+                                    .value as ReviewForm["decision"],
+                                }))
+                              }
+                            />
+                            <span>{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+
+                      <div className={styles.controlGroup}>
+                        <label>Observaciones puntuales</label>
+
+                        {selectedSpace.status !== SpaceStatus.UNDER_REVIEW && (
+                          <p className={styles.helperText}>
+                            Las observaciones solo se pueden agregar cuando el
+                            espacio está bajo revisión.
+                          </p>
+                        )}
+
+                        <div
+                          className={styles.issueComposer}
+                          style={{
+                            opacity:
+                              selectedSpace.status !== SpaceStatus.UNDER_REVIEW
+                                ? 0.5
+                                : 1,
+                            pointerEvents:
+                              selectedSpace.status !== SpaceStatus.UNDER_REVIEW
+                                ? "none"
+                                : "auto",
+                          }}
+                        >
+                          <div className={styles.selectWrapper}>
+                            <label>Campo a observar</label>
+                            <select
+                              value={issueDraft.field}
+                              onChange={(e) =>
+                                setIssueDraft((prev) => ({
+                                  ...prev,
+                                  field: e.target.value,
+                                }))
+                              }
+                              disabled={
+                                selectedSpace.status !==
+                                SpaceStatus.UNDER_REVIEW
+                              }
+                            >
+                              <option value="">Selecciona un campo...</option>
+                              {Array.from(
+                                new Set(reviewableFields.map((f) => f.section)),
+                              ).map((section) => (
+                                <optgroup key={section} label={section}>
+                                  {reviewableFields
+                                    .filter((f) => f.section === section)
+                                    .map((f) => (
+                                      <option key={f.value} value={f.value}>
+                                        {f.label}
+                                      </option>
+                                    ))}
+                                </optgroup>
+                              ))}
+                            </select>
+                          </div>
+                          <Input
+                            label="Comentario"
+                            placeholder="Qué falta o se debe corregir"
+                            value={issueDraft.comment}
+                            onChange={(e) =>
+                              setIssueDraft((prev) => ({
+                                ...prev,
+                                comment: e.target.value,
+                              }))
+                            }
+                            disabled={
+                              selectedSpace.status !== SpaceStatus.UNDER_REVIEW
+                            }
+                          />
+                          <Button
+                            variant="secondary"
+                            className={styles.ghostButton}
+                            onClick={addIssue}
+                            disabled={
+                              selectedSpace.status !== SpaceStatus.UNDER_REVIEW
+                            }
+                          >
+                            Añadir observación
+                          </Button>
+                        </div>
+
+                        {(reviewForm.issues || []).length > 0 && (
+                          <div className={styles.issuesList}>
+                            {(reviewForm.issues || []).map((issue, index) => {
+                              const fieldInfo = reviewableFields.find(
+                                (f) => f.value === issue.field,
+                              )
+                              return (
+                                <div
+                                  key={`${issue.field}-${index}`}
+                                  className={styles.issueItem}
+                                >
+                                  <div>
+                                    <p className={styles.issueField}>
+                                      {fieldInfo?.label || issue.field}
+                                    </p>
+                                    <p className={styles.issueComment}>
+                                      {issue.comment}
+                                    </p>
+                                  </div>
+                                  <button
+                                    className={styles.removeBtn}
+                                    onClick={() => removeIssue(index)}
+                                    aria-label="Quitar observación"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className={styles.controlGroup}>
+                        <label htmlFor="generalComment">
+                          Comentario general
+                        </label>
+                        <textarea
+                          id="generalComment"
+                          className={styles.textarea}
+                          placeholder="Notas generales visibles para el solicitante (opcional)"
+                          value={reviewForm.generalComment || ""}
                           onChange={(e) =>
                             setReviewForm((prev) => ({
                               ...prev,
-                              decision: e.target
-                                .value as ReviewForm["decision"],
+                              generalComment: e.target.value,
                             }))
                           }
                         />
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
+                      </div>
+                    </div>
 
-                  <div className={styles.controlGroup}>
-                    <label htmlFor="generalComment">Comentario general</label>
-                    <textarea
-                      id="generalComment"
-                      className={styles.textarea}
-                      placeholder="Notas visibles para el solicitante"
-                      value={reviewForm.generalComment || ""}
-                      onChange={(e) =>
-                        setReviewForm((prev) => ({
-                          ...prev,
-                          generalComment: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-
-                  <div className={styles.controlGroup}>
-                    <div className={styles.controlHeader}>
-                      <label>Observaciones puntuales</label>
+                    <div className={styles.actions}>
                       <Button
                         variant="secondary"
-                        className={styles.ghostButton}
-                        onClick={addIssue}
+                        onClick={fetchSpaces}
+                        disabled={saving}
                       >
-                        Añadir observación
+                        Volver a cargar
+                      </Button>
+                      <Button
+                        variant="primary"
+                        onClick={handleSubmitReview}
+                        disabled={saving}
+                      >
+                        {saving ? "Guardando..." : "Guardar revisión"}
                       </Button>
                     </div>
-
-                    <div className={styles.issueComposer}>
-                      <div className={styles.selectWrapper}>
-                        <label>Campo a observar</label>
-                        <select
-                          value={issueDraft.field}
-                          onChange={(e) =>
-                            setIssueDraft((prev) => ({
-                              ...prev,
-                              field: e.target.value,
-                            }))
-                          }
-                        >
-                          <option value="">Selecciona un campo...</option>
-                          {reviewableFields.map((field) => (
-                            <optgroup key={field.section} label={field.section}>
-                              {reviewableFields
-                                .filter((f) => f.section === field.section)
-                                .map((f) => (
-                                  <option key={f.value} value={f.value}>
-                                    {f.label}
-                                  </option>
-                                ))}
-                            </optgroup>
-                          ))}
-                        </select>
-                      </div>
-                      <Input
-                        label="Comentario"
-                        placeholder="Qué falta o se debe corregir"
-                        value={issueDraft.comment}
-                        onChange={(e) =>
-                          setIssueDraft((prev) => ({
-                            ...prev,
-                            comment: e.target.value,
-                          }))
-                        }
-                      />
-                      <div className={styles.selectWrapper}>
-                        <label>Severidad</label>
-                        <select
-                          value={issueDraft.severity}
-                          onChange={(e) =>
-                            setIssueDraft((prev) => ({
-                              ...prev,
-                              severity: e.target.value as Issue["severity"],
-                            }))
-                          }
-                        >
-                          <option value="low">Baja</option>
-                          <option value="medium">Media</option>
-                          <option value="high">Alta</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {(reviewForm.issues || []).length > 0 && (
-                      <div className={styles.issuesList}>
-                        {(reviewForm.issues || []).map((issue, index) => {
-                          const fieldInfo = reviewableFields.find(
-                            (f) => f.value === issue.field,
-                          )
-                          return (
-                            <div
-                              key={`${issue.field}-${index}`}
-                              className={styles.issueItem}
-                            >
-                              <div>
-                                <p className={styles.issueField}>
-                                  {fieldInfo?.label || issue.field}
-                                </p>
-                                <p className={styles.issueComment}>
-                                  {issue.comment}
-                                </p>
-                                <p className={styles.issueSeverity}>
-                                  Severidad: {issue.severity}
-                                </p>
-                              </div>
-                              <button
-                                className={styles.removeBtn}
-                                onClick={() => removeIssue(index)}
-                                aria-label="Quitar observación"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className={styles.actions}>
-                  <Button
-                    variant="secondary"
-                    onClick={fetchSpaces}
-                    disabled={saving}
-                  >
-                    Volver a cargar
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={handleSubmitReview}
-                    disabled={saving}
-                  >
-                    {saving ? "Guardando..." : "Guardar revisión"}
-                  </Button>
-                </div>
+                  </>
+                )}
               </div>
             </div>
           )}

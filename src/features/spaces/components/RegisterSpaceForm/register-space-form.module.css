@@ -141,3 +141,37 @@
     width: 100%;
   }
 }
+
+.sectionDescription {
+  color: var(--color-text-secondary, #666);
+  margin: 0 0 var(--spacing-lg, 1.5rem) 0;
+  font-size: var(--font-size-sm, 0.875rem);
+}
+
+.observedField {
+  margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.observationBox {
+  background: linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%);
+  border-left: 4px solid #f59e0b;
+  padding: var(--spacing-md, 1rem);
+  border-radius: var(--border-radius, 4px);
+  margin-bottom: var(--spacing-md, 1rem);
+}
+
+.observationLabel {
+  display: block;
+  color: #b45309;
+  font-size: var(--font-size-sm, 0.875rem);
+  margin-bottom: var(--spacing-xs, 0.25rem);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.observationText {
+  margin: 0;
+  color: #78350f;
+  font-size: var(--font-size-base, 1rem);
+  line-height: 1.5;
+}

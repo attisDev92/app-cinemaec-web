@@ -84,12 +84,19 @@ export default function REASpacesPage() {
       return
     }
 
-    // Si ya tiene contrato y está aprobado o rechazado, ver detalles
+    // Si está PENDING, mostrar observaciones y permitir editar
+    if (space.status === SpaceStatus.PENDING) {
+      router.push(`/rea-spaces/${space.id}/observations`)
+      return
+    }
+
+    // Si está VERIFIED o REJECTED, ver detalles
     if (
       space.status === SpaceStatus.VERIFIED ||
       space.status === SpaceStatus.REJECTED
     ) {
       router.push(`/rea-spaces/${space.id}`)
+      return
     }
 
     // Si está UNDER_REVIEW, el botón está deshabilitado, no hace nada
@@ -229,7 +236,9 @@ export default function REASpacesPage() {
                       >
                         {!space.contractId
                           ? "Completar Registro"
-                          : "Ver detalles"}
+                          : space.status === SpaceStatus.PENDING
+                            ? "Ver Observaciones"
+                            : "Ver detalles"}
                       </Button>
                     </div>
                   </div>

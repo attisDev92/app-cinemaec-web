@@ -239,6 +239,25 @@
   margin-bottom: 12px;
 }
 
+.helperText {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  padding: 8px;
+  background: var(--color-background-secondary);
+  border-radius: 6px;
+}
+
+.reviewDisabledMessage {
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  color: #92400e;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: var(--font-size-sm);
+}
+
 .detailPane {
   min-height: 480px;
 }
@@ -496,7 +515,7 @@
 
 .issueComposer {
   display: grid;
-  grid-template-columns: 2fr 3fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   align-items: end;
 }
@@ -581,6 +600,8 @@
   background: var(--color-background-secondary) !important;
   border-color: var(--color-border) !important;
   color: var(--color-text-primary) !important;
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 
 .actions {
