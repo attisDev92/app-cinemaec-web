@@ -106,3 +106,25 @@ export interface AuthResponse {
   accessToken: string
   user: ExtendedUser
 }
+
+// Update User Permissions DTO
+export interface UpdateUserPermissionsDto {
+  permissions: string[]
+}
+
+// Update User Role DTO
+export interface UpdateUserRoleDto {
+  role: UserRole
+  permissions?: string[]
+}
+
+// User List Item (para tablas/listas)
+export interface UserListItem {
+  id: number
+  email: string
+  cedula: string
+  role: UserRole
+  permissions?: PermissionEnum[]
+  isActive: boolean
+  createdAt: Date
+}

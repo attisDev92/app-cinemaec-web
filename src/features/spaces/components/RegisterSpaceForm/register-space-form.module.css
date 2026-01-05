@@ -76,6 +76,37 @@
   gap: var(--spacing-sm, 0.5rem);
 }
 
+.checkboxItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xs, 0.5rem);
+  padding: var(--spacing-xs, 0.5rem);
+}
+
+.checkboxItem input[type="checkbox"] {
+  margin-top: 0.25rem;
+  cursor: pointer;
+}
+
+.checkboxLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 0.5rem);
+  cursor: pointer;
+  flex: 1;
+}
+
+.checkboxText {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.checkboxRange {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-secondary);
+}
+
 .checkbox {
   display: flex;
   align-items: center;

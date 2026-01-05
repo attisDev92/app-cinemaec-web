@@ -32,14 +32,9 @@ export default function EditSpacePage() {
           spaceService.getReviews(spaceId),
         ])
 
-        // Validar que el espacio pertenece al usuario y está en PENDING
+        // Validar que el espacio pertenece al usuario
         if (spaceData.userId !== user.id) {
           router.push("/rea-spaces")
-          return
-        }
-
-        if (spaceData.status !== SpaceStatus.PENDING) {
-          router.push(`/rea-spaces`)
           return
         }
 
@@ -91,14 +86,17 @@ export default function EditSpacePage() {
 
         <div className={styles.info}>
           <p>
-            Actualiza los campos que el administrador ha señalado como
-            observaciones. Tu espacio está pendiente de revisión.
+            Puedes actualizar tu espacio en cualquier momento. Si editas, el
+            estado cambiará a &quot;Bajo revisión&quot; hasta que el equipo
+            verifique los nuevos cambios.
           </p>
         </div>
 
         <RegisterSpaceForm
           spaceToEdit={space}
-          observedIssues={reviews[reviews.length - 1]?.issues || []}
+          observedIssues={
+            reviews.filter((r) => !r.resolved).pop()?.issues || []
+          }
         />
       </div>
     </>

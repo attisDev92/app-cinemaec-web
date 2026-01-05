@@ -68,6 +68,33 @@ const SERVICES_OPTIONS = [
   "Venta de snacks",
 ]
 
+const MAIN_ACTIVITY_OPTIONS = [
+  "Actividades culturales",
+  "Programación Artística",
+  "Formación, Talleres, Conferencias y Seminarios",
+  "Charlas y conversatorios",
+  "Proyección de películas",
+  "Exposiciones y Exhibiciones",
+  "Residencia Artística",
+  "Preservación de la memoria",
+  "Ferias y Mercados",
+  "Asambleas comunitarias",
+  "Servicios gastronómicos – café cultural",
+  "Alquiler de espacio",
+  "Servicios técnicos",
+  "Coworking",
+  "Galería",
+  "Otros (especifique)",
+]
+
+const TARGET_AUDIENCE_OPTIONS = [
+  { label: "Niñez", range: "0 - 12 años" },
+  { label: "Adolescencia", range: "12 - 17 años" },
+  { label: "Juventud", range: "18 - 29 años" },
+  { label: "Adultez", range: "30 - 64 años" },
+  { label: "Adulto Mayor", range: "65+ años" },
+]
+
 interface FormValues {
   // Información básica
   name: string
@@ -80,8 +107,9 @@ interface FormValues {
   latitude: number
   longitude: number
   description: string
-  target: string
+  target: string[]
   mainActivity: string
+  mainActivityOther: string
   otherActivities: string[]
   commercialActivities: string[]
   // Personal administrativo
@@ -116,25 +144,58 @@ export function RegisterSpaceForm({
   const { profile } = useProfile()
   const isLegalEntity = profile?.legalStatus === LegalStatus.LEGAL_ENTITY
 
-  const [logoId, setLogoId] = useState<number | undefined>(spaceToEdit?.logoId)
-  const [photosId, setPhotosId] = useState<number[]>(
-    spaceToEdit?.photosId || [],
-  )
+  const initialLogoId = spaceToEdit?.logoId ?? spaceToEdit?.assets?.logo?.id
+  const initialPhotosId =
+    spaceToEdit?.photosId ??
+    spaceToEdit?.assets?.photos?.map((photo) => photo.id) ??
+    []
+  const initialCiDocumentId =
+    spaceToEdit?.ciDocument ?? spaceToEdit?.assets?.documents?.ci?.id
+  const initialRucDocumentId =
+    (spaceToEdit?.rucDocument as number | undefined) ??
+    spaceToEdit?.assets?.documents?.ruc?.id ??
+    undefined
+  const initialManagerDocumentId =
+    spaceToEdit?.managerDocument ?? spaceToEdit?.assets?.documents?.manager?.id
+  const initialServiceBillId =
+    spaceToEdit?.serviceBill ?? spaceToEdit?.assets?.documents?.serviceBill?.id
+  const initialOperatingLicenseId =
+    spaceToEdit?.operatingLicense ??
+    spaceToEdit?.assets?.documents?.operatingLicense?.id
+
+  const [logoId, setLogoId] = useState<number | undefined>(initialLogoId)
+  const [photosId, setPhotosId] = useState<number[]>(initialPhotosId)
   const [ciDocumentId, setCiDocumentId] = useState<number | undefined>(
-    spaceToEdit?.ciDocument,
+    initialCiDocumentId,
   )
   const [rucDocumentId, setRucDocumentId] = useState<number | undefined>(
-    (spaceToEdit?.rucDocument as number | undefined) || undefined,
+    initialRucDocumentId,
   )
   const [managerDocumentId, setManagerDocumentId] = useState<
     number | undefined
-  >(spaceToEdit?.managerDocument)
+  >(initialManagerDocumentId)
   const [serviceBillId, setServiceBillId] = useState<number | undefined>(
-    spaceToEdit?.serviceBill,
+    initialServiceBillId,
   )
   const [operatingLicenseId, setOperatingLicenseId] = useState<
     number | undefined
-  >(spaceToEdit?.operatingLicense)
+  >(initialOperatingLicenseId)
+
+  const currentLogoUrl = spaceToEdit?.assets?.logo?.url
+  const currentPhotos =
+    spaceToEdit?.assets?.photos?.map((photo) => ({
+      id: photo.id,
+      url: photo.url,
+      localId: `existing-${photo.id}`,
+    })) ?? []
+  const currentCiUrl = spaceToEdit?.assets?.documents?.ci?.url ?? undefined
+  const currentRucUrl = spaceToEdit?.assets?.documents?.ruc?.url ?? undefined
+  const currentManagerDocUrl =
+    spaceToEdit?.assets?.documents?.manager?.url ?? undefined
+  const currentServiceBillUrl =
+    spaceToEdit?.assets?.documents?.serviceBill?.url ?? undefined
+  const currentOperatingLicenseUrl =
+    spaceToEdit?.assets?.documents?.operatingLicense?.url ?? undefined
 
   const initialValues: FormValues = {
     name: spaceToEdit?.name || "",
@@ -147,8 +208,28 @@ export function RegisterSpaceForm({
     latitude: spaceToEdit?.coordinates?.[0] || 0,
     longitude: spaceToEdit?.coordinates?.[1] || 0,
     description: spaceToEdit?.description || "",
-    target: spaceToEdit?.target || "",
-    mainActivity: spaceToEdit?.mainActivity || "",
+    target: Array.isArray(spaceToEdit?.target)
+      ? spaceToEdit.target
+      : typeof spaceToEdit?.target === "string" && spaceToEdit.target
+        ? spaceToEdit.target
+            .split(",")
+            .map((t) => t.trim())
+            .filter((t) =>
+              TARGET_AUDIENCE_OPTIONS.some((opt) => opt.label === t),
+            )
+        : [],
+    mainActivity:
+      spaceToEdit?.mainActivity &&
+      MAIN_ACTIVITY_OPTIONS.includes(spaceToEdit.mainActivity)
+        ? spaceToEdit.mainActivity
+        : spaceToEdit?.mainActivity
+          ? "Otros (especifique)"
+          : "",
+    mainActivityOther:
+      spaceToEdit?.mainActivity &&
+      !MAIN_ACTIVITY_OPTIONS.includes(spaceToEdit.mainActivity)
+        ? spaceToEdit.mainActivity
+        : "",
     otherActivities: spaceToEdit?.otherActivities || [],
     commercialActivities: spaceToEdit?.commercialActivities || [],
     managerName: spaceToEdit?.managerName || "",
@@ -215,7 +296,7 @@ export function RegisterSpaceForm({
               name="description"
               className={styles.textarea}
               rows={4}
-              placeholder="Describe el espacio, su historia, características especiales..."
+              placeholder="Describe el espacio, periodicidad con la que programa, si realiza algun evento, características especiales, etc.."
             />
             {errors.description && touched.description && (
               <div className={styles.error}>{errors.description}</div>
@@ -316,16 +397,34 @@ export function RegisterSpaceForm({
       case "target":
         return (
           <div className={styles.field}>
-            <label htmlFor="target" className={styles.label}>
-              Público objetivo *
-            </label>
-            <Field
-              type="text"
-              id="target"
-              name="target"
-              className={styles.input}
-              placeholder="Ej: Público general, estudiantes, familias..."
-            />
+            <label className={styles.label}>Público objetivo *</label>
+            <div className={styles.checkboxGroup}>
+              {TARGET_AUDIENCE_OPTIONS.map((option) => (
+                <div key={option.label} className={styles.checkboxItem}>
+                  <input
+                    type="checkbox"
+                    id={`target-${option.label}`}
+                    name="target"
+                    value={option.label}
+                    checked={values.target.includes(option.label)}
+                    onChange={(e) => {
+                      const newTarget = e.target.checked
+                        ? [...values.target, option.label]
+                        : values.target.filter((t) => t !== option.label)
+                      setFieldValue("target", newTarget)
+                    }}
+                    className={styles.checkbox}
+                  />
+                  <label
+                    htmlFor={`target-${option.label}`}
+                    className={styles.checkboxLabel}
+                  >
+                    <span className={styles.checkboxText}>{option.label}</span>
+                    <span className={styles.checkboxRange}>{option.range}</span>
+                  </label>
+                </div>
+              ))}
+            </div>
             {errors.target && touched.target && (
               <div className={styles.error}>{errors.target}</div>
             )}
@@ -333,32 +432,85 @@ export function RegisterSpaceForm({
         )
       case "mainActivity":
         return (
-          <div className={styles.field}>
-            <label htmlFor="mainActivity" className={styles.label}>
-              Actividad principal *
-            </label>
-            <Field
-              type="text"
-              id="mainActivity"
-              name="mainActivity"
-              className={styles.input}
-              placeholder="Ej: Proyección de películas, teatro en vivo, eventos culturales..."
-            />
-            {errors.mainActivity && touched.mainActivity && (
-              <div className={styles.error}>{errors.mainActivity}</div>
+          <>
+            <div className={styles.field}>
+              <label htmlFor="mainActivity" className={styles.label}>
+                Actividad principal *
+              </label>
+              <Field
+                as="select"
+                id="mainActivity"
+                name="mainActivity"
+                className={styles.input}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                  setFieldValue("mainActivity", e.target.value)
+                  if (e.target.value !== "Otros (especifique)") {
+                    setFieldValue("mainActivityOther", "")
+                  }
+                }}
+              >
+                <option value="">Selecciona una opción</option>
+                {MAIN_ACTIVITY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </Field>
+              {errors.mainActivity && touched.mainActivity && (
+                <div className={styles.error}>{errors.mainActivity}</div>
+              )}
+            </div>
+            {values.mainActivity === "Otros (especifique)" && (
+              <div className={styles.field}>
+                <label htmlFor="mainActivityOther" className={styles.label}>
+                  Especifique la actividad *
+                </label>
+                <Field
+                  type="text"
+                  id="mainActivityOther"
+                  name="mainActivityOther"
+                  className={styles.input}
+                  placeholder="Especifique la actividad principal"
+                />
+                {errors.mainActivityOther && touched.mainActivityOther && (
+                  <div className={styles.error}>{errors.mainActivityOther}</div>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )
       case "otherActivities":
         return (
           <div className={styles.field}>
-            <label className={styles.label}>Otras actividades</label>
-            <TagInput
-              value={values.otherActivities}
-              onChange={(tags) => setFieldValue("otherActivities", tags)}
-              placeholder="Ej: Talleres, conferencias, exposiciones"
-              maxLength={100}
-            />
+            <label className={styles.label}>Actividades secundarias</label>
+            <div className={styles.checkboxGroup}>
+              {MAIN_ACTIVITY_OPTIONS.filter(
+                (opt) => opt !== "Otros (especifique)",
+              ).map((option) => (
+                <div key={option} className={styles.checkboxItem}>
+                  <input
+                    type="checkbox"
+                    id={`otherActivities-${option}`}
+                    name="otherActivities"
+                    value={option}
+                    checked={values.otherActivities.includes(option)}
+                    onChange={(e) => {
+                      const newActivities = e.target.checked
+                        ? [...values.otherActivities, option]
+                        : values.otherActivities.filter((a) => a !== option)
+                      setFieldValue("otherActivities", newActivities)
+                    }}
+                    className={styles.checkbox}
+                  />
+                  <label
+                    htmlFor={`otherActivities-${option}`}
+                    className={styles.checkboxLabel}
+                  >
+                    <span className={styles.checkboxText}>{option}</span>
+                  </label>
+                </div>
+              ))}
+            </div>
             {errors.otherActivities && touched.otherActivities && (
               <div className={styles.error}>{errors.otherActivities}</div>
             )}
@@ -638,7 +790,7 @@ export function RegisterSpaceForm({
         return (
           <div className={styles.field}>
             <label htmlFor="operatingHistory" className={styles.label}>
-              Historial operativo
+              Historial
             </label>
             <Field
               as="textarea"
@@ -646,17 +798,127 @@ export function RegisterSpaceForm({
               name="operatingHistory"
               className={styles.textarea}
               rows={4}
-              placeholder="Describe el historial de operaciones del espacio"
+              placeholder="Describe el historial del espacio, actividades realizadas en los últimos años, etc..."
             />
             {errors.operatingHistory && touched.operatingHistory && (
               <div className={styles.error}>{errors.operatingHistory}</div>
             )}
           </div>
         )
-      // Archivos (no mostrados directamente en campos observados aún)
+      case "logoId":
+        return (
+          <div className={styles.field}>
+            <label className={styles.label}>Logo del espacio *</label>
+            <ImageUpload
+              documentType={AssetTypeEnum.LOGO}
+              ownerType={AssetOwnerEnum.SPACE_LOGO}
+              currentImageUrl={currentLogoUrl}
+              onUploadComplete={(id) => setLogoId(id)}
+              onRemove={() => setLogoId(undefined)}
+              label="Subir logo"
+            />
+          </div>
+        )
+      case "photosId":
+        return (
+          <div className={styles.field}>
+            <label className={styles.label}>Fotos del espacio *</label>
+            <p>Subir mínimo 3 fotos: Sala en general, butacas, pantalla</p>
+            <MultiImageUpload
+              documentType={AssetTypeEnum.IMAGE}
+              ownerType={AssetOwnerEnum.SPACE_PHOTO}
+              currentImages={currentPhotos}
+              onImagesChange={(ids) => setPhotosId(ids)}
+              maxImages={6}
+              label="Fotos del espacio"
+            />
+          </div>
+        )
+      case "ciDocument":
+        return (
+          <div className={styles.field}>
+            <label className={styles.label}>
+              {isLegalEntity
+                ? "Cédula de identidad del representante legal *"
+                : "Cédula de identidad *"}
+            </label>
+            <DocumentUpload
+              documentType={AssetTypeEnum.DOCUMENT}
+              ownerType={AssetOwnerEnum.SPACE_DOCUMENT}
+              currentDocumentUrl={currentCiUrl}
+              onUploadComplete={(id) => setCiDocumentId(id)}
+              onRemove={() => setCiDocumentId(undefined)}
+              label="Subir CI (PDF)"
+            />
+          </div>
+        )
+      case "rucDocument":
+        return (
+          <div className={styles.field}>
+            <label className={styles.label}>
+              RUC {isLegalEntity ? "*" : "(opcional)"}
+            </label>
+            <DocumentUpload
+              documentType={AssetTypeEnum.DOCUMENT}
+              ownerType={AssetOwnerEnum.SPACE_DOCUMENT}
+              currentDocumentUrl={currentRucUrl}
+              onUploadComplete={(id) => setRucDocumentId(id)}
+              onRemove={() => setRucDocumentId(undefined)}
+              label="Subir RUC (PDF)"
+            />
+          </div>
+        )
+      case "managerDocument":
+        return (
+          <div className={styles.field}>
+            <label className={styles.label}>
+              Documento de acreditación del administrador *
+            </label>
+            <DocumentUpload
+              documentType={AssetTypeEnum.DOCUMENT}
+              ownerType={AssetOwnerEnum.SPACE_DOCUMENT}
+              currentDocumentUrl={currentManagerDocUrl}
+              onUploadComplete={(id) => setManagerDocumentId(id)}
+              onRemove={() => setManagerDocumentId(undefined)}
+              label="Subir documento (PDF)"
+            />
+          </div>
+        )
+      case "serviceBill":
+        return (
+          <div className={styles.field}>
+            <label className={styles.label}>
+              Planilla de servicio básico *
+            </label>
+            <DocumentUpload
+              documentType={AssetTypeEnum.DOCUMENT}
+              ownerType={AssetOwnerEnum.SPACE_DOCUMENT}
+              currentDocumentUrl={currentServiceBillUrl}
+              onUploadComplete={(id) => setServiceBillId(id)}
+              onRemove={() => setServiceBillId(undefined)}
+              label="Subir planilla (PDF)"
+            />
+          </div>
+        )
+      case "operatingLicense":
+        return (
+          <div className={styles.field}>
+            <label className={styles.label}>Licencia de funcionamiento *</label>
+            <DocumentUpload
+              documentType={AssetTypeEnum.DOCUMENT}
+              ownerType={AssetOwnerEnum.SPACE_DOCUMENT}
+              currentDocumentUrl={currentOperatingLicenseUrl}
+              onUploadComplete={(id) => setOperatingLicenseId(id)}
+              onRemove={() => setOperatingLicenseId(undefined)}
+              label="Subir licencia (PDF)"
+            />
+          </div>
+        )
       default:
         return null
     }
+
+    // Fin renderObservedField
   }
 
   const handleSubmit = async (values: FormValues) => {
@@ -694,7 +956,6 @@ export function RegisterSpaceForm({
         )
         return
       }
-
       const spaceData = {
         // Información básica
         name: values.name,
@@ -707,7 +968,10 @@ export function RegisterSpaceForm({
         coordinates: [values.latitude, values.longitude] as [number, number],
         description: values.description,
         target: values.target,
-        mainActivity: values.mainActivity,
+        mainActivity:
+          values.mainActivity === "Otros (especifique)"
+            ? values.mainActivityOther
+            : values.mainActivity,
         otherActivities: values.otherActivities,
         commercialActivities: values.commercialActivities,
         // Personal administrativo
@@ -897,16 +1161,38 @@ export function RegisterSpaceForm({
                 </div>
 
                 <div className={styles.field}>
-                  <label htmlFor="target" className={styles.label}>
-                    Público objetivo *
-                  </label>
-                  <Field
-                    type="text"
-                    id="target"
-                    name="target"
-                    className={styles.input}
-                    placeholder="Ej: Público general, estudiantes, familias..."
-                  />
+                  <label className={styles.label}>Público objetivo *</label>
+                  <div className={styles.checkboxGroup}>
+                    {TARGET_AUDIENCE_OPTIONS.map((option) => (
+                      <div key={option.label} className={styles.checkboxItem}>
+                        <input
+                          type="checkbox"
+                          id={`target-${option.label}`}
+                          name="target"
+                          value={option.label}
+                          checked={values.target.includes(option.label)}
+                          onChange={(e) => {
+                            const newTarget = e.target.checked
+                              ? [...values.target, option.label]
+                              : values.target.filter((t) => t !== option.label)
+                            setFieldValue("target", newTarget)
+                          }}
+                          className={styles.checkbox}
+                        />
+                        <label
+                          htmlFor={`target-${option.label}`}
+                          className={styles.checkboxLabel}
+                        >
+                          <span className={styles.checkboxText}>
+                            {option.label}
+                          </span>
+                          <span className={styles.checkboxRange}>
+                            {option.range}
+                          </span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                   {errors.target && touched.target && (
                     <div className={styles.error}>{errors.target}</div>
                   )}
@@ -917,25 +1203,83 @@ export function RegisterSpaceForm({
                     Actividad principal *
                   </label>
                   <Field
-                    type="text"
+                    as="select"
                     id="mainActivity"
                     name="mainActivity"
                     className={styles.input}
-                    placeholder="Ej: Proyección de películas, teatro en vivo, eventos culturales..."
-                  />
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                      setFieldValue("mainActivity", e.target.value)
+                      if (e.target.value !== "Otros (especifique)") {
+                        setFieldValue("mainActivityOther", "")
+                      }
+                    }}
+                  >
+                    <option value="">Selecciona una opción</option>
+                    {MAIN_ACTIVITY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Field>
                   {errors.mainActivity && touched.mainActivity && (
                     <div className={styles.error}>{errors.mainActivity}</div>
                   )}
                 </div>
 
+                {values.mainActivity === "Otros (especifique)" && (
+                  <div className={styles.field}>
+                    <label htmlFor="mainActivityOther" className={styles.label}>
+                      Especifique la actividad *
+                    </label>
+                    <Field
+                      type="text"
+                      id="mainActivityOther"
+                      name="mainActivityOther"
+                      className={styles.input}
+                      placeholder="Especifique la actividad principal"
+                    />
+                    {errors.mainActivityOther && touched.mainActivityOther && (
+                      <div className={styles.error}>
+                        {errors.mainActivityOther}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className={styles.field}>
-                  <label className={styles.label}>Otras actividades</label>
-                  <TagInput
-                    value={values.otherActivities}
-                    onChange={(tags) => setFieldValue("otherActivities", tags)}
-                    placeholder="Ej: Talleres, conferencias, exposiciones"
-                    maxLength={100}
-                  />
+                  <label className={styles.label}>
+                    Actividades secundarias
+                  </label>
+                  <div className={styles.checkboxGroup}>
+                    {MAIN_ACTIVITY_OPTIONS.filter(
+                      (opt) => opt !== "Otros (especifique)",
+                    ).map((option) => (
+                      <div key={option} className={styles.checkboxItem}>
+                        <input
+                          type="checkbox"
+                          id={`otherActivities-${option}`}
+                          name="otherActivities"
+                          value={option}
+                          checked={values.otherActivities.includes(option)}
+                          onChange={(e) => {
+                            const newActivities = e.target.checked
+                              ? [...values.otherActivities, option]
+                              : values.otherActivities.filter(
+                                  (a) => a !== option,
+                                )
+                            setFieldValue("otherActivities", newActivities)
+                          }}
+                          className={styles.checkbox}
+                        />
+                        <label
+                          htmlFor={`otherActivities-${option}`}
+                          className={styles.checkboxLabel}
+                        >
+                          <span className={styles.checkboxText}>{option}</span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                   {errors.otherActivities && touched.otherActivities && (
                     <div className={styles.error}>{errors.otherActivities}</div>
                   )}
@@ -1351,7 +1695,9 @@ export function RegisterSpaceForm({
                   <ImageUpload
                     documentType={AssetTypeEnum.LOGO}
                     ownerType={AssetOwnerEnum.SPACE_LOGO}
+                    currentImageUrl={currentLogoUrl}
                     onUploadComplete={(id) => setLogoId(id)}
+                    onRemove={() => setLogoId(undefined)}
                     label="Subir logo"
                   />
                 </div>
@@ -1364,6 +1710,7 @@ export function RegisterSpaceForm({
                   <MultiImageUpload
                     documentType={AssetTypeEnum.IMAGE}
                     ownerType={AssetOwnerEnum.SPACE_PHOTO}
+                    currentImages={currentPhotos}
                     onImagesChange={(ids) => setPhotosId(ids)}
                     maxImages={6}
                     label="Fotos del espacio"
@@ -1379,7 +1726,9 @@ export function RegisterSpaceForm({
                   <DocumentUpload
                     documentType={AssetTypeEnum.DOCUMENT}
                     ownerType={AssetOwnerEnum.SPACE_DOCUMENT}
+                    currentDocumentUrl={currentCiUrl}
                     onUploadComplete={(id) => setCiDocumentId(id)}
+                    onRemove={() => setCiDocumentId(undefined)}
                     label="Subir CI (PDF)"
                   />
                 </div>
@@ -1391,7 +1740,9 @@ export function RegisterSpaceForm({
                   <DocumentUpload
                     documentType={AssetTypeEnum.DOCUMENT}
                     ownerType={AssetOwnerEnum.SPACE_DOCUMENT}
+                    currentDocumentUrl={currentRucUrl}
                     onUploadComplete={(id) => setRucDocumentId(id)}
+                    onRemove={() => setRucDocumentId(undefined)}
                     label="Subir RUC (PDF)"
                   />
                 </div>
@@ -1403,7 +1754,9 @@ export function RegisterSpaceForm({
                   <DocumentUpload
                     documentType={AssetTypeEnum.DOCUMENT}
                     ownerType={AssetOwnerEnum.SPACE_DOCUMENT}
+                    currentDocumentUrl={currentManagerDocUrl}
                     onUploadComplete={(id) => setManagerDocumentId(id)}
+                    onRemove={() => setManagerDocumentId(undefined)}
                     label="Subir documento (PDF)"
                   />
                 </div>
@@ -1415,7 +1768,9 @@ export function RegisterSpaceForm({
                   <DocumentUpload
                     documentType={AssetTypeEnum.DOCUMENT}
                     ownerType={AssetOwnerEnum.SPACE_DOCUMENT}
+                    currentDocumentUrl={currentServiceBillUrl}
                     onUploadComplete={(id) => setServiceBillId(id)}
+                    onRemove={() => setServiceBillId(undefined)}
                     label="Subir planilla (PDF)"
                   />
                 </div>
@@ -1427,7 +1782,9 @@ export function RegisterSpaceForm({
                   <DocumentUpload
                     documentType={AssetTypeEnum.DOCUMENT}
                     ownerType={AssetOwnerEnum.SPACE_DOCUMENT}
+                    currentDocumentUrl={currentOperatingLicenseUrl}
                     onUploadComplete={(id) => setOperatingLicenseId(id)}
+                    onRemove={() => setOperatingLicenseId(undefined)}
                     label="Subir licencia (PDF)"
                   />
                 </div>

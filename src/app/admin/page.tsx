@@ -21,10 +21,6 @@ export default function AdminPage() {
   const { hasPermission } = usePermissions()
   const router = useRouter()
 
-  console.log("🔍 AdminPage - user:", user)
-  console.log("🔍 AdminPage - user?.permissions:", user?.permissions)
-  console.log("🔍 AdminPage - localStorage user:", localStorage.getItem("user"))
-
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/login")
@@ -71,7 +67,7 @@ export default function AdminPage() {
       title: "Roles y Permisos",
       description: "Asignar roles y permisos",
       icon: "🔐",
-      route: "/admin/roles",
+      route: "/admin/users",
       permission: PermissionEnum.ASSIGN_ROLES,
     },
     {

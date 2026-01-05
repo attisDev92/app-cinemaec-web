@@ -22,11 +22,30 @@ export const registerSpaceValidationSchema = Yup.object().shape({
     .max(1000, "La descripción no puede exceder 1000 caracteres")
     .required("La descripción es requerida"),
 
-  target: Yup.string()
-    .trim()
-    .min(5, "El público objetivo debe tener al menos 5 caracteres")
-    .max(200, "El público objetivo no puede exceder 200 caracteres")
+  target: Yup.array()
+    .of(Yup.string())
+    .min(1, "Selecciona al menos un grupo etario")
     .required("El público objetivo es requerido"),
+
+  mainActivity: Yup.string()
+    .trim()
+    .required("La actividad principal es requerida"),
+
+  mainActivityOther: Yup.string()
+    .trim()
+    .when("mainActivity", {
+      is: "Otros (especifique)",
+      then: (schema) =>
+        schema
+          .min(3, "Especifica la actividad principal (mínimo 3 caracteres)")
+          .max(200, "La actividad principal no puede exceder 200 caracteres")
+          .required("Debes especificar la actividad principal"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+
+  otherActivities: Yup.array().of(Yup.string()).default([]),
+
+  commercialActivities: Yup.array().of(Yup.string()).default([]),
 
   capacity: Yup.number()
     .min(1, "La capacidad debe ser al menos 1")

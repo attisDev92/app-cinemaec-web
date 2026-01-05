@@ -90,16 +90,8 @@ export default function REASpacesPage() {
       return
     }
 
-    // Si está VERIFIED o REJECTED, ver detalles
-    if (
-      space.status === SpaceStatus.VERIFIED ||
-      space.status === SpaceStatus.REJECTED
-    ) {
-      router.push(`/rea-spaces/${space.id}`)
-      return
-    }
-
-    // Si está UNDER_REVIEW, el botón está deshabilitado, no hace nada
+    // Para VERIFIED, REJECTED o UNDER_REVIEW, mostrar detalles
+    router.push(`/rea-spaces/${space.id}`)
   }
 
   // Mostrar loading mientras verifica autenticación
