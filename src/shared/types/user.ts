@@ -127,4 +127,5 @@ export interface UserListItem {
   permissions?: PermissionEnum[]
   isActive: boolean
   createdAt: Date
+  lastLogin?: string | Date | null
 }
