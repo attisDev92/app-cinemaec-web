@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Formik, Form, Field } from "formik"
+import { Formik, Form, Field, FormikErrors } from "formik"
 import { ImageUpload } from "@/shared/components/ui/ImageUpload"
 import { MultiImageUpload } from "@/shared/components/ui/MultiImageUpload"
 import { DocumentUpload } from "@/shared/components/ui/DocumentUpload"
@@ -261,9 +261,9 @@ export function RegisterSpaceForm({
   const renderObservedField = (
     fieldName: string,
     values: FormValues,
-    errors: any,
-    touched: any,
-    setFieldValue: any,
+    errors: FormikErrors<FormValues>,
+    touched: Partial<Record<keyof FormValues, boolean>>,
+    setFieldValue: (field: string, value: FormValues[keyof FormValues]) => void,
   ) => {
     switch (fieldName) {
       case "name":
@@ -967,7 +967,7 @@ export function RegisterSpaceForm({
         phone: values.phone,
         coordinates: [values.latitude, values.longitude] as [number, number],
         description: values.description,
-        target: values.target,
+        target: values.target.join(","),
         mainActivity:
           values.mainActivity === "Otros (especifique)"
             ? values.mainActivityOther

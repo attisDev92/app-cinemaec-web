@@ -53,7 +53,7 @@ export const assetService = {
    * Obtener un asset individual por ID
    */
   async getAsset(id: number): Promise<Asset> {
-    const response = await apiClient.get<Asset>(`/assets/${id}`)
+    const response = await apiClient.get<{ data: Asset }>(`/assets/${id}`)
     return response.data
   },
 
