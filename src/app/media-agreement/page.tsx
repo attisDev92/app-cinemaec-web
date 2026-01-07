@@ -407,8 +407,9 @@ export default function MediaAgreementPage() {
                 <li>Suba el documento a través de esta plataforma</li>
               </ol>
               <p className={styles.warning}>
-                ⚠️ <strong>Importante:</strong> Sin este documento firmado no
-                podrá acceder a los servicios del sistema.
+                ⚠️ <strong>Importante:</strong> Para acceder a los servicios del
+                sistema es necesario firmar este documento y cargarlo al
+                sistema.
               </p>
             </div>
 
