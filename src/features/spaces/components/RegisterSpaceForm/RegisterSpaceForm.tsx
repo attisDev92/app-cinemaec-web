@@ -208,16 +208,7 @@ export function RegisterSpaceForm({
     latitude: spaceToEdit?.coordinates?.[0] || 0,
     longitude: spaceToEdit?.coordinates?.[1] || 0,
     description: spaceToEdit?.description || "",
-    target: Array.isArray(spaceToEdit?.target)
-      ? spaceToEdit.target
-      : typeof spaceToEdit?.target === "string" && spaceToEdit.target
-        ? spaceToEdit.target
-            .split(",")
-            .map((t) => t.trim())
-            .filter((t) =>
-              TARGET_AUDIENCE_OPTIONS.some((opt) => opt.label === t),
-            )
-        : [],
+    target: spaceToEdit?.target || [],
     mainActivity:
       spaceToEdit?.mainActivity &&
       MAIN_ACTIVITY_OPTIONS.includes(spaceToEdit.mainActivity)
@@ -967,7 +958,7 @@ export function RegisterSpaceForm({
         phone: values.phone,
         coordinates: [values.latitude, values.longitude] as [number, number],
         description: values.description,
-        target: values.target.join(","),
+        target: values.target,
         mainActivity:
           values.mainActivity === "Otros (especifique)"
             ? values.mainActivityOther

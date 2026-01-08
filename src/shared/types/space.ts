@@ -31,7 +31,7 @@ export interface Space {
   phone: string
   coordinates: [number, number]
   description: string
-  target: string
+  target: string[]
   mainActivity: string
   otherActivities: string[]
   commercialActivities: string[]
@@ -133,7 +133,7 @@ export interface CreateSpaceDto {
   phone: string
   coordinates: [number, number]
   description: string
-  target: string
+  target: string[]
   mainActivity: string
   otherActivities: string[]
   commercialActivities: string[]
