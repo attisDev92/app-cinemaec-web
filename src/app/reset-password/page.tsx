@@ -13,7 +13,7 @@ import styles from "./page.module.css"
 
 const resetPasswordSchema = Yup.object({
   password: Yup.string()
-    .min(6, "La contraseña debe tener al menos 6 caracteres")
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
     .required("La contraseña es requerida"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password")], "Las contraseñas no coinciden")
