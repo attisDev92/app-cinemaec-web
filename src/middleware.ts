@@ -16,6 +16,14 @@ const adminRoutes = ["/admin"]
 // Rutas que requieren que el perfil esté completo pero no necesitan el acuerdo de medios
 const profileRoutes = ["/complete-profile", "/media-agreement"]
 
+// Rutas públicas que no requieren autenticación
+const publicRoutes = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+]
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -30,6 +38,7 @@ export function middleware(request: NextRequest) {
   const isProfileRoute = profileRoutes.some((route) =>
     pathname.startsWith(route),
   )
+  const isPublicRoute = publicRoutes.some((route) => pathname === route)
 
   // Si es una ruta protegida y no hay token, redirigir al login
   if (isProtectedRoute && !token) {
