@@ -41,7 +41,7 @@ export default function AdminPage() {
     {
       id: "movies",
       title: "Gestión de Películas",
-      description: "Administrar películas y contenido",
+      description: "Administrar películas y contenido (En desarrollo)",
       icon: "🎥",
       route: "/admin/movies",
       permission: PermissionEnum.ADMIN_MOVIES,
@@ -49,7 +49,7 @@ export default function AdminPage() {
     {
       id: "movie-requests",
       title: "Solicitudes de Películas",
-      description: "Aprobar o rechazar solicitudes",
+      description: "Aprobar o rechazar solicitudes (En desarrollo)",
       icon: "📋",
       route: "/admin/movie-requests",
       permission: PermissionEnum.APPROVE_MOVIES_REQUEST,
@@ -65,15 +65,15 @@ export default function AdminPage() {
     {
       id: "roles",
       title: "Roles y Permisos",
-      description: "Asignar roles y permisos",
+      description: "Asignar roles y permisos (En desarrollo)",
       icon: "🔐",
-      route: "/admin/users",
+      route: "/admin/roles",
       permission: PermissionEnum.ASSIGN_ROLES,
     },
     {
       id: "reports",
       title: "Reportes",
-      description: "Ver reportes y estadísticas",
+      description: "Ver reportes y estadísticas (En desarrollo)",
       icon: "📊",
       route: "/admin/reports",
       permission: PermissionEnum.VIEW_REPORTS,
@@ -81,7 +81,7 @@ export default function AdminPage() {
     {
       id: "export",
       title: "Exportar Datos",
-      description: "Exportar información del sistema",
+      description: "Exportar información del sistema (En desarrollo)",
       icon: "📥",
       route: "/admin/export",
       permission: PermissionEnum.EXPORT_DATA,

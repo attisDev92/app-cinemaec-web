@@ -61,6 +61,13 @@ export function Navbar() {
 
   const adminModules = [
     {
+      id: "dashboard",
+      label: "Panel de Control",
+      icon: "📊",
+      route: "/admin",
+      permission: PermissionEnum.ADMIN_SPACES,
+    },
+    {
       id: "spaces",
       label: "Gestión de Espacios",
       icon: "🎬",
