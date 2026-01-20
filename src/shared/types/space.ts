@@ -29,6 +29,7 @@ export interface Space {
   address: string
   email: string
   phone: string
+  ruc: string
   coordinates: [number, number]
   description: string
   target: string[]
@@ -131,6 +132,7 @@ export interface CreateSpaceDto {
   address: string
   email: string
   phone: string
+  ruc: string
   coordinates: [number, number]
   description: string
   target: string[]
