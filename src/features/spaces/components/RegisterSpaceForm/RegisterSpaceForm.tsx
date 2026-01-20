@@ -104,6 +104,7 @@ interface FormValues {
   address: string
   email: string
   phone: string
+  ruc: string
   latitude: number
   longitude: number
   description: string
@@ -205,6 +206,7 @@ export function RegisterSpaceForm({
     address: spaceToEdit?.address || "",
     email: spaceToEdit?.email || "",
     phone: spaceToEdit?.phone || "",
+    ruc: spaceToEdit?.ruc || "",
     latitude: spaceToEdit?.coordinates?.[0] || 0,
     longitude: spaceToEdit?.coordinates?.[1] || 0,
     description: spaceToEdit?.description || "",
@@ -349,6 +351,25 @@ export function RegisterSpaceForm({
             />
             {errors.phone && touched.phone && (
               <div className={styles.error}>{errors.phone}</div>
+            )}
+          </div>
+        )
+      case "ruc":
+        return (
+          <div className={styles.field}>
+            <label htmlFor="ruc" className={styles.label}>
+              RUC *
+            </label>
+            <Field
+              type="text"
+              id="ruc"
+              name="ruc"
+              className={styles.input}
+              placeholder="Ej: 1718122797001"
+              maxLength={13}
+            />
+            {errors.ruc && touched.ruc && (
+              <div className={styles.error}>{errors.ruc}</div>
             )}
           </div>
         )
@@ -956,6 +977,7 @@ export function RegisterSpaceForm({
         address: values.address,
         email: values.email,
         phone: values.phone,
+        ruc: values.ruc,
         coordinates: [values.latitude, values.longitude] as [number, number],
         description: values.description,
         target: values.target,
@@ -1389,6 +1411,23 @@ export function RegisterSpaceForm({
                     />
                     {errors.phone && touched.phone && (
                       <div className={styles.error}>{errors.phone}</div>
+                    )}
+                  </div>
+
+                  <div className={styles.field}>
+                    <label htmlFor="ruc" className={styles.label}>
+                      RUC *
+                    </label>
+                    <Field
+                      type="text"
+                      id="ruc"
+                      name="ruc"
+                      className={styles.input}
+                      placeholder="1718122797001"
+                      maxLength={13}
+                    />
+                    {errors.ruc && touched.ruc && (
+                      <div className={styles.error}>{errors.ruc}</div>
                     )}
                   </div>
                 </div>

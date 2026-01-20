@@ -102,6 +102,11 @@ export const registerSpaceValidationSchema = Yup.object().shape({
     .matches(/^[0-9]{10}$/, "El teléfono debe tener 10 dígitos")
     .required("El teléfono de contacto es requerido"),
 
+  ruc: Yup.string()
+    .trim()
+    .matches(/^[0-9]{13}$/, "El RUC debe tener exactamente 13 dígitos")
+    .required("El RUC es requerido"),
+
   // Personal administrativo
   managerName: Yup.string()
     .trim()
