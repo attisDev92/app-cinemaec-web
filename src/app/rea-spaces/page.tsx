@@ -56,11 +56,9 @@ export default function REASpacesPage() {
         if (Array.isArray(userSpaces)) {
           setSpaces(userSpaces)
         } else {
-          console.error("La respuesta no es un array:", userSpaces)
           setSpaces([])
         }
       } catch (error) {
-        console.error("Error al cargar espacios:", error)
         setSpaces([])
       } finally {
         setLoadingSpaces(false)

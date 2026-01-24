@@ -28,7 +28,7 @@ export function Navbar() {
     try {
       await logout()
     } catch (error) {
-      console.error("Error al cerrar sesión:", error)
+      // Error handled by logout function
     }
   }
 

@@ -217,11 +217,13 @@ export default function AgreementPage() {
     pdf.text(space.name || "", margin + 60, yPosition)
     yPosition += lineHeight
 
-    const currentDate = new Date().toLocaleDateString("es-EC", {
+    const dateFormatOptions: Intl.DateTimeFormatOptions = {
       year: "numeric",
       month: "long",
       day: "numeric",
-    })
+    }
+
+    const currentDate = new Date().toLocaleDateString("es-EC", dateFormatOptions)
 
     pdf.setFont("helvetica", "bold")
     pdf.text("Fecha de aceptación:", margin, yPosition)
@@ -231,6 +233,10 @@ export default function AgreementPage() {
 
     const twoYearsFromNow = new Date()
     twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2)
+    const twoYearsFromNowFormatted = twoYearsFromNow.toLocaleDateString(
+      "es-EC",
+      dateFormatOptions,
+    )
 
     // Información institucional al final
     pdf.setFont("helvetica", "normal")
@@ -247,7 +253,7 @@ export default function AgreementPage() {
     })
     yPosition += lineHeight + 2
     pdf.text(
-      `Vigencia: ${currentDate} - ${twoYearsFromNow.toLocaleDateString("es-EC")}`,
+      `Vigencia: ${currentDate} - ${twoYearsFromNowFormatted}`,
       pageWidth / 2,
       yPosition,
       { align: "center" },
@@ -532,8 +538,8 @@ export default function AgreementPage() {
                 totalidad de los términos contenidos en esta Carta Compromiso,
                 asumiendo que mi incumplimiento puede llevar a la suspensión o
                 exclusión según corresponda, de conformidad con lo establecido
-                en el "Reglamento para la operación de la Red de Espacios
-                Audiovisuales y del Banco de Contenidos".
+                en el &quot;Reglamento para la operación de la Red de Espacios
+                Audiovisuales y del Banco de Contenidos&quot;.
               </p>
               <p>
                 Adicionalmente, comprendo que el INSTITUTO DE CINE Y CREACIÓN

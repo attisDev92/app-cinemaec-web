@@ -261,9 +261,7 @@ export const userService = {
 
   async getProfile() {
     const response = await apiClient.get<Record<string, unknown>>("/profiles")
-    console.log("📦 Respuesta del backend (getProfile):", response)
     const transformed = this.transformProfileFromBackend(response)
-    console.log("✅ Perfil transformado:", transformed)
     return transformed
   },
 
