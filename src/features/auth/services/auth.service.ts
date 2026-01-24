@@ -16,7 +16,7 @@ export const authService = {
   // Duración de la sesión: 7 días (en milisegundos)
   TOKEN_EXPIRATION_TIME: 7 * 24 * 60 * 60 * 1000,
 
-  // Transformar claves snake_case a camelCase y asegurar permisos
+  // Mapejar response del backend (ya en camelCase) a ExtendedUser
   transformUserFromBackend(backendUser: Record<string, unknown>): ExtendedUser {
     const permissions = Array.isArray(backendUser.permissions)
       ? (backendUser.permissions as string[])
@@ -28,32 +28,34 @@ export const authService = {
       cedula: backendUser.cedula as string,
       role: backendUser.role as ExtendedUser["role"],
       permissions: permissions as ExtendedUser["permissions"],
-      isActive:
-        (backendUser.is_active as boolean) ?? (backendUser.isActive as boolean),
-      hasProfile:
-        (backendUser.has_profile as boolean) ??
-        (backendUser.hasProfile as boolean),
+      // Backend ahora devuelve camelCase (isActive, hasProfile, hasUploadedAgreement)
+      isActive: (backendUser.isActive as boolean) ?? false,
+      hasProfile: (backendUser.hasProfile as boolean) ?? false,
       emailVerificationToken:
-        (backendUser.email_verification_token as string | null) ?? null,
+        (backendUser.emailVerificationToken as string | null) ?? null,
       passwordResetToken:
-        (backendUser.password_reset_token as string | null) ?? null,
+        (backendUser.passwordResetToken as string | null) ?? null,
       passwordResetExpires:
-        (backendUser.password_reset_expires as string | null) ?? undefined,
-      profileId: (backendUser.profile_id as number | null) ?? null,
-      lastLogin: (backendUser.last_login as string | null) ?? undefined,
-      createdAt: backendUser.created_at as string | undefined,
-      firstName: backendUser.first_name as string | undefined,
-      lastName: backendUser.last_name as string | undefined,
+        (backendUser.passwordResetExpires as string | null) ?? undefined,
+      profileId: (backendUser.profileId as number | null) ?? null,
+      lastLogin: (backendUser.lastLogin as string | null) ?? undefined,
+      createdAt: backendUser.createdAt as string | undefined,
+      firstName: backendUser.firstName as string | undefined,
+      lastName: backendUser.lastName as string | undefined,
       phone: backendUser.phone as string | undefined,
-      hasLocation: backendUser.has_location as boolean | undefined,
-      hasCompany: backendUser.has_company as boolean | undefined,
-      hasSpace: backendUser.has_space as boolean | undefined,
-      isUserCB: backendUser.is_user_cb as boolean | undefined,
-      userCBApproved: backendUser.user_cb_approved as boolean | undefined,
-      hasUploadedAgreement: backendUser.has_uploaded_agreement as
+      hasLocation: backendUser.hasLocation as boolean | undefined,
+      hasCompany: backendUser.hasCompany as boolean | undefined,
+      hasSpace: backendUser.hasSpace as boolean | undefined,
+      isUserCB: backendUser.isUserCB as boolean | undefined,
+      userCBApproved: backendUser.userCBApproved as boolean | undefined,
+      hasUploadedAgreement: (backendUser.hasUploadedAgreement as
         | boolean
-        | undefined,
-      updatedAt: backendUser.updated_at as string | undefined,
+        | undefined) ?? false,
+      agreementDocumentId: (backendUser.agreementDocumentId as
+        | number
+        | null
+        | undefined) ?? null,
+      updatedAt: backendUser.updatedAt as string | undefined,
     }
   },
 

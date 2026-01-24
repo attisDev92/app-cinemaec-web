@@ -38,6 +38,7 @@ export interface ExtendedUser
   isUserCB?: boolean
   userCBApproved?: boolean
   hasUploadedAgreement?: boolean
+  agreementDocumentId?: number | null
   updatedAt?: string
 }
 
@@ -49,9 +50,9 @@ export interface LoginResponse {
     email: string
     cedula: string
     role: string
-    is_active: boolean // Este campo se mantiene en snake_case en la respuesta
-    has_profile: boolean // Este campo se mantiene en snake_case en la respuesta
-    permissions: string[]
+    isActive: boolean
+    hasProfile: boolean
+    permissions: string[] | null
   }
 }
 
@@ -61,9 +62,11 @@ export interface UserProfileResponse {
   email: string
   cedula: string
   role: string
-  is_active: boolean // Este campo se mantiene en snake_case en la respuesta
-  has_profile: boolean // Este campo se mantiene en snake_case en la respuesta
-  last_login: Date | null // Este campo se mantiene en snake_case en la respuesta
+  isActive: boolean
+  hasProfile: boolean
+  hasUploadedAgreement: boolean
+  lastLogin: Date | null
+  permissions: string[] | null
 }
 
 // Register DTO
