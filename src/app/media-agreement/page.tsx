@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/features/auth/hooks"
 import { useProfile } from "@/features/profile/hooks/useProfile"
 import { profileService } from "@/features/profile/services/profile.service"
-import { Card } from "@/shared/components/ui"
-import { Button } from "@/shared/components/ui"
+import { Card, Button, Loader } from "@/shared/components/ui"
 import styles from "./page.module.css"
 import jsPDF from "jspdf"
 
@@ -41,6 +40,21 @@ export default function MediaAgreementPage() {
       loadProfile()
     }
   }, [isAuthenticated, authLoading, user, router, profile, loadProfile])
+
+  // Mostrar loader mientras se verifica el estado
+  if (authLoading || !user) {
+    return <Loader message="Verificando información..." />
+  }
+
+  // Si ya tiene el acuerdo subido, no mostrar nada (el useEffect redirigirá)
+  if (user.hasUploadedAgreement) {
+    return null
+  }
+
+  // Si no tiene perfil, no mostrar nada (el useEffect redirigirá)
+  if (!user.hasProfile) {
+    return null
+  }
 
   const handleDownloadAgreement = async () => {
     const pdf = new jsPDF()

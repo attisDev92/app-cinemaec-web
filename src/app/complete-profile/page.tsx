@@ -8,9 +8,7 @@ import { authService } from "@/features/auth/services/auth.service"
 import { UserRole } from "@/shared/types"
 import { LegalStatus } from "@/features/profile/types"
 import { completeProfileValidationSchema } from "@/features/profile/lib/validations/complete-profile-schema.yup"
-import { Input } from "@/shared/components/ui"
-import { Button } from "@/shared/components/ui"
-import { Card } from "@/shared/components/ui"
+import { Input, Button, Card, Loader } from "@/shared/components/ui"
 import { ProvinceSelector } from "@/shared/components/ProvinceSelector"
 import { CitySelector } from "@/shared/components/CitySelector"
 import styles from "./page.module.css"
@@ -48,6 +46,16 @@ export default function CompleteProfilePage() {
       router.push("/verify-email?email=" + encodeURIComponent(user.email))
     }
   }, [isAuthenticated, authLoading, user, router])
+
+  // Mostrar loader mientras se verifica el estado
+  if (authLoading || !user) {
+    return <Loader message="Verificando información..." />
+  }
+
+  // Si ya tiene perfil, no mostrar nada (el useEffect redirigirá)
+  if (user.hasProfile) {
+    return null
+  }
 
   const handleSubmit = async (
     values: {

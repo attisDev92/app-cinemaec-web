@@ -106,11 +106,8 @@
   font-weight: var(--font-weight-semibold);
 }
 
-@media (max-width: 640px) {
-  .container {
-    padding: var(--spacing-lg) var(--spacing-md);
-  }
-
+/* Responsive */
+@media (max-width: 768px) {
   .title {
     font-size: var(--font-size-2xl);
   }
