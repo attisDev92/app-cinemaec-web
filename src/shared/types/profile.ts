@@ -16,6 +16,8 @@ export interface Profile {
   address: string | null
   phone: string | null
   userId: number
+  agreementDocumentId?: number | null
+  hasUploadedAgreement?: boolean
   createdAt: Date
   updatedAt: Date
 }

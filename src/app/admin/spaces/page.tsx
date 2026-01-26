@@ -21,12 +21,11 @@ import {
 import styles from "./page.module.css"
 
 const statusFilters: { label: string; value: SpaceStatus | "all" }[] = [
-  { label: "Pendientes", value: SpaceStatus.PENDING },
-  { label: "En revisión", value: SpaceStatus.UNDER_REVIEW },
-  { label: "Aprobados", value: SpaceStatus.VERIFIED },
-  { label: "Rechazados", value: SpaceStatus.REJECTED },
-  { label: "Activos", value: SpaceStatus.ACTIVE },
   { label: "Todos", value: "all" },
+  { label: "En revisión", value: SpaceStatus.UNDER_REVIEW },
+  { label: "Pendientes", value: SpaceStatus.PENDING },
+  { label: "Rechazados", value: SpaceStatus.REJECTED },
+  { label: "Aprobados", value: SpaceStatus.VERIFIED },
 ]
 
 const spaceTypeLabels: Record<SpaceType, string> = {
@@ -47,9 +46,7 @@ export default function AdminSpacesPage() {
   const { hasPermission } = usePermissions()
 
   const [spaces, setSpaces] = useState<Space[]>([])
-  const [statusFilter, setStatusFilter] = useState<SpaceStatus | "all">(
-    SpaceStatus.PENDING,
-  )
+  const [statusFilter, setStatusFilter] = useState<SpaceStatus | "all">("all")
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
   const [loadingSpaces, setLoadingSpaces] = useState(true)
   const [saving, setSaving] = useState(false)

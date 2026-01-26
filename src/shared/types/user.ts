@@ -129,6 +129,7 @@ export interface UserListItem {
   role: UserRole
   permissions?: PermissionEnum[]
   isActive: boolean
+  profileId?: number | null
   createdAt: Date
   lastLogin?: string | Date | null
 }
