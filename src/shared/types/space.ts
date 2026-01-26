@@ -1,21 +1,10 @@
-// Space Types (alineados con el backend)
+import {
+  SpaceReviewDecisionEnum,
+  SpaceStatusEnum,
+  SpaceTypeEnum,
+} from "./enums"
 
-export enum SpaceType {
-  THEATER = "theater",
-  CINEMA = "cinema",
-  CULTURAL_CENTER = "cultural_center",
-  MULTIPURPOSE = "multipurpose",
-  OTHER = "other",
-}
-
-export enum SpaceStatus {
-  PENDING = "pending",
-  UNDER_REVIEW = "under_review",
-  VERIFIED = "verified",
-  REJECTED = "rejected",
-  ACTIVE = "active",
-  INACTIVE = "inactive",
-}
+export { SpaceTypeEnum as SpaceType, SpaceStatusEnum as SpaceStatus, SpaceReviewDecisionEnum }
 
 // Space Entity
 export interface Space {
@@ -23,7 +12,7 @@ export interface Space {
   userId: number
   // Información básica
   name: string
-  type: SpaceType
+  type: SpaceTypeEnum
   province: string
   city: string
   address: string
@@ -114,7 +103,7 @@ export interface Space {
     }
   }
   // Estado
-  status: SpaceStatus
+  status: SpaceStatusEnum
   approvedBy: number | null
   approvedAt: Date | null
   rejectionReason: string | null
@@ -126,7 +115,7 @@ export interface Space {
 export interface CreateSpaceDto {
   // Información básica
   name: string
-  type: SpaceType
+  type: SpaceTypeEnum
   province: string
   city: string
   address: string
@@ -171,21 +160,21 @@ export interface CreateSpaceDto {
 
 // Update Space DTO
 export interface UpdateSpaceDto extends Partial<CreateSpaceDto> {
-  status?: SpaceStatus
+  status?: SpaceStatusEnum
 }
 
 // Update Space Status DTO (solo admin)
 export interface UpdateSpaceStatusDto {
-  status: SpaceStatus
+  status: SpaceStatusEnum
   rejectionReason?: string
 }
 
 // Query Spaces DTO
 export interface QuerySpacesDto {
-  type?: SpaceType
+  type?: SpaceTypeEnum
   province?: string
   city?: string
-  status?: SpaceStatus
+  status?: SpaceStatusEnum
   page?: number
   limit?: number
 }
@@ -198,7 +187,7 @@ export interface Issue {
 }
 
 export interface ReviewForm {
-  decision: "approve" | "request_changes" | "reject"
+  decision: SpaceReviewDecisionEnum
   generalComment?: string
   issues?: Issue[]
 }
@@ -207,7 +196,7 @@ export interface SpaceReview {
   id: number
   spaceId: number
   reviewerUserId: number
-  decision: "approve" | "request_changes" | "reject"
+  decision: SpaceReviewDecisionEnum
   generalComment?: string
   issues?: Issue[] | null
   createdAt: Date

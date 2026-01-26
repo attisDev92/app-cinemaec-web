@@ -47,7 +47,16 @@ export enum AssetOwnerEnum {
   MOVIE_POSTER = "movie_poster",
 }
 
-// Space Status
+// Space Types (alineados con backend)
+export enum SpaceTypeEnum {
+  THEATER = "theater",
+  CINEMA = "cinema",
+  CULTURAL_CENTER = "cultural_center",
+  MULTIPURPOSE = "multipurpose",
+  OTHER = "other",
+}
+
+// Space Status (alineados con backend)
 export enum SpaceStatusEnum {
   PENDING = "pending",
   UNDER_REVIEW = "under_review",
@@ -57,7 +66,7 @@ export enum SpaceStatusEnum {
   INACTIVE = "inactive",
 }
 
-// Space Review Decisions
+// Space Review Decisions (alineados con backend)
 export enum SpaceReviewDecisionEnum {
   APPROVE = "approve",
   REQUEST_CHANGES = "request_changes",

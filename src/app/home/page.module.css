@@ -160,8 +160,6 @@
   flex-shrink: 0;
 }
 
-.panelContent {}
-
 .panelTitleRow {
   display: flex;
   align-items: center;
