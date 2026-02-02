@@ -4,7 +4,11 @@ import {
   SpaceTypeEnum,
 } from "./enums"
 
-export { SpaceTypeEnum as SpaceType, SpaceStatusEnum as SpaceStatus, SpaceReviewDecisionEnum }
+export {
+  SpaceTypeEnum as SpaceType,
+  SpaceStatusEnum as SpaceStatus,
+  SpaceReviewDecisionEnum,
+}
 
 // Space Entity
 export interface Space {

@@ -1,56 +1,69 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head><title>Test LocalStorage</title></head>
-<body>
-<h1>Test de persistencia de datos</h1>
-<button onclick="checkStorage()">Ver datos almacenados</button>
-<button onclick="testExpiration()">Verificar expiración</button>
-<pre id="output"></pre>
-<script>
-function checkStorage() {
-  const token = localStorage.getItem('token');
-  const user = localStorage.getItem('user');
-  const expiresAt = localStorage.getItem('tokenExpiresAt');
-  
-  let output = '=== DATOS EN LOCALSTORAGE ===\n\n';
-  output += 'Token: ' + (token ? token.substring(0, 50) + '...' : 'NO ENCONTRADO') + '\n\n';
-  output += 'Usuario: ' + (user || 'NO ENCONTRADO') + '\n\n';
-  output += 'Expira en: ' + expiresAt + '\n';
-  
-  if (expiresAt) {
-    const now = Date.now();
-    const expires = parseInt(expiresAt);
-    const diff = expires - now;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    output += '\nTiempo restante: ' + days + ' días, ' + hours + ' horas\n';
-    output += 'Estado: ' + (diff > 0 ? '✅ VÁLIDO' : '❌ EXPIRADO');
-  }
-  
-  document.getElementById('output').textContent = output;
-}
+  <head>
+    <title>Test LocalStorage</title>
+  </head>
+  <body>
+    <h1>Test de persistencia de datos</h1>
+    <button onclick="checkStorage()">Ver datos almacenados</button>
+    <button onclick="testExpiration()">Verificar expiración</button>
+    <pre id="output"></pre>
+    <script>
+      function checkStorage() {
+        const token = localStorage.getItem("token")
+        const user = localStorage.getItem("user")
+        const expiresAt = localStorage.getItem("tokenExpiresAt")
 
-function testExpiration() {
-  const expiresAt = localStorage.getItem('tokenExpiresAt');
-  const now = Date.now();
-  
-  let output = '=== TEST DE EXPIRACIÓN ===\n\n';
-  output += 'Fecha actual: ' + new Date(now).toLocaleString() + '\n';
-  output += 'Timestamp actual: ' + now + '\n\n';
-  
-  if (expiresAt) {
-    const expires = parseInt(expiresAt);
-    output += 'Fecha expiración: ' + new Date(expires).toLocaleString() + '\n';
-    output += 'Timestamp expiración: ' + expires + '\n\n';
-    output += 'Diferencia: ' + (expires - now) + ' ms\n';
-    output += 'Resultado: ' + (now >= expires ? '❌ EXPIRADO (now >= expires)' : '✅ VÁLIDO (now < expires)');
-  } else {
-    output += '❌ No hay tokenExpiresAt en localStorage';
-  }
-  
-  document.getElementById('output').textContent = output;
-}
-</script>
-</body>
+        let output = "=== DATOS EN LOCALSTORAGE ===\n\n"
+        output +=
+          "Token: " +
+          (token ? token.substring(0, 50) + "..." : "NO ENCONTRADO") +
+          "\n\n"
+        output += "Usuario: " + (user || "NO ENCONTRADO") + "\n\n"
+        output += "Expira en: " + expiresAt + "\n"
+
+        if (expiresAt) {
+          const now = Date.now()
+          const expires = parseInt(expiresAt)
+          const diff = expires - now
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+          const hours = Math.floor(
+            (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+          )
+
+          output +=
+            "\nTiempo restante: " + days + " días, " + hours + " horas\n"
+          output += "Estado: " + (diff > 0 ? "✅ VÁLIDO" : "❌ EXPIRADO")
+        }
+
+        document.getElementById("output").textContent = output
+      }
+
+      function testExpiration() {
+        const expiresAt = localStorage.getItem("tokenExpiresAt")
+        const now = Date.now()
+
+        let output = "=== TEST DE EXPIRACIÓN ===\n\n"
+        output += "Fecha actual: " + new Date(now).toLocaleString() + "\n"
+        output += "Timestamp actual: " + now + "\n\n"
+
+        if (expiresAt) {
+          const expires = parseInt(expiresAt)
+          output +=
+            "Fecha expiración: " + new Date(expires).toLocaleString() + "\n"
+          output += "Timestamp expiración: " + expires + "\n\n"
+          output += "Diferencia: " + (expires - now) + " ms\n"
+          output +=
+            "Resultado: " +
+            (now >= expires
+              ? "❌ EXPIRADO (now >= expires)"
+              : "✅ VÁLIDO (now < expires)")
+        } else {
+          output += "❌ No hay tokenExpiresAt en localStorage"
+        }
+
+        document.getElementById("output").textContent = output
+      }
+    </script>
+  </body>
 </html>

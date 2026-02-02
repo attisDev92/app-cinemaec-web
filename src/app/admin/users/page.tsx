@@ -142,7 +142,9 @@ export default function AdminUsersPage() {
                               ✅ Completo
                             </span>
                           ) : (
-                            <span className={`${styles.statusBadge} ${styles.inactive}`}>
+                            <span
+                              className={`${styles.statusBadge} ${styles.inactive}`}
+                            >
                               ❌ Incompleto
                             </span>
                           )}
@@ -192,14 +194,17 @@ export default function AdminUsersPage() {
               <h3>ℹ️ Información</h3>
               <ul>
                 <li>
-                  Esta sección muestra solo usuarios con rol <strong>USER</strong>
+                  Esta sección muestra solo usuarios con rol{" "}
+                  <strong>USER</strong>
                 </li>
                 <li>
-                  Puedes ver el perfil completo de cada usuario haciendo clic en &quot;Ver Perfil&quot;
+                  Puedes ver el perfil completo de cada usuario haciendo clic en
+                  &quot;Ver Perfil&quot;
                 </li>
                 <li>
                   Para gestionar roles y permisos de administradores, ve a{" "}
-                  <strong>Roles y Permisos</strong> en el panel de administración
+                  <strong>Roles y Permisos</strong> en el panel de
+                  administración
                 </li>
               </ul>
             </div>

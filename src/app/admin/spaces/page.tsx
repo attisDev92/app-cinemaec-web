@@ -13,6 +13,7 @@ import {
   PermissionEnum,
   QuerySpacesDto,
   ReviewForm,
+  SpaceReviewDecisionEnum,
   Space,
   SpaceStatus,
   SpaceType,
@@ -57,7 +58,7 @@ export default function AdminSpacesPage() {
     "info" | "files" | "history" | "review"
   >("info")
   const [reviewForm, setReviewForm] = useState<ReviewForm>({
-    decision: "approve",
+    decision: SpaceReviewDecisionEnum.APPROVE,
     generalComment: "",
     issues: [],
   })
@@ -201,7 +202,7 @@ export default function AdminSpacesPage() {
 
       // Reset form
       setReviewForm({
-        decision: "approve",
+        decision: SpaceReviewDecisionEnum.APPROVE,
         generalComment: "",
         issues: [],
       })

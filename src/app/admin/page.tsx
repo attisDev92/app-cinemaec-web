@@ -41,9 +41,9 @@ export default function AdminPage() {
     {
       id: "movies",
       title: "Gestión de Películas",
-      description: "Administrar películas y contenido (En desarrollo)",
+      description: "Crear y administrar películas del catálogo",
       icon: "🎥",
-      route: "/admin/movies",
+      route: "/admin/movies-management",
       permission: PermissionEnum.ADMIN_MOVIES,
     },
     {

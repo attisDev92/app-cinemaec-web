@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { ReviewForm, Issue } from "@/shared/types"
+import { ReviewForm, Issue, SpaceReviewDecisionEnum } from "@/shared/types"
 import { spaceService } from "@/features/spaces/services/space.service"
 import styles from "./ReviewModal.module.css"
 
@@ -38,9 +38,9 @@ export const ReviewModal = ({
   onClose,
   onSuccess,
 }: ReviewModalProps) => {
-  const [decision, setDecision] = useState<
-    "approve" | "request_changes" | "reject"
-  >("approve")
+  const [decision, setDecision] = useState<SpaceReviewDecisionEnum>(
+    SpaceReviewDecisionEnum.APPROVE,
+  )
   const [generalComment, setGeneralComment] = useState("")
   const [issues, setIssues] = useState<Issue[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -48,7 +48,7 @@ export const ReviewModal = ({
   const [success, setSuccess] = useState<string | null>(null)
 
   const isRequestChanges = useMemo(
-    () => decision === "request_changes",
+    () => decision === SpaceReviewDecisionEnum.REQUEST_CHANGES,
     [decision],
   )
 
@@ -98,9 +98,9 @@ export const ReviewModal = ({
       await spaceService.submitReview(Number(space.id), reviewData)
 
       setSuccess(
-        decision === "approve"
+        decision === SpaceReviewDecisionEnum.APPROVE
           ? "Espacio aprobado exitosamente"
-          : decision === "reject"
+          : decision === SpaceReviewDecisionEnum.REJECT
             ? "Espacio rechazado"
             : "Cambios solicitados al propietario",
       )
@@ -123,7 +123,7 @@ export const ReviewModal = ({
   }
 
   const resetForm = () => {
-    setDecision("approve")
+    setDecision(SpaceReviewDecisionEnum.APPROVE)
     setGeneralComment("")
     setIssues([])
     setError(null)
@@ -166,14 +166,9 @@ export const ReviewModal = ({
                   type="radio"
                   name="decision"
                   value="approve"
-                  checked={decision === "approve"}
+                  checked={decision === SpaceReviewDecisionEnum.APPROVE}
                   onChange={(e) =>
-                    setDecision(
-                      e.target.value as
-                        | "approve"
-                        | "request_changes"
-                        | "reject",
-                    )
+                    setDecision(e.target.value as SpaceReviewDecisionEnum)
                   }
                 />
                 <span className={styles.radioLabel}>✓ Aprobar</span>
@@ -183,14 +178,11 @@ export const ReviewModal = ({
                   type="radio"
                   name="decision"
                   value="request_changes"
-                  checked={decision === "request_changes"}
+                  checked={
+                    decision === SpaceReviewDecisionEnum.REQUEST_CHANGES
+                  }
                   onChange={(e) =>
-                    setDecision(
-                      e.target.value as
-                        | "approve"
-                        | "request_changes"
-                        | "reject",
-                    )
+                    setDecision(e.target.value as SpaceReviewDecisionEnum)
                   }
                 />
                 <span className={styles.radioLabel}>⚠ Solicitar Cambios</span>
@@ -200,14 +192,9 @@ export const ReviewModal = ({
                   type="radio"
                   name="decision"
                   value="reject"
-                  checked={decision === "reject"}
+                  checked={decision === SpaceReviewDecisionEnum.REJECT}
                   onChange={(e) =>
-                    setDecision(
-                      e.target.value as
-                        | "approve"
-                        | "request_changes"
-                        | "reject",
-                    )
+                    setDecision(e.target.value as SpaceReviewDecisionEnum)
                   }
                 />
                 <span className={styles.radioLabel}>✕ Rechazar</span>
@@ -322,9 +309,9 @@ export const ReviewModal = ({
             <button
               type="submit"
               className={`${styles.submitButton} ${
-                decision === "approve"
+                decision === SpaceReviewDecisionEnum.APPROVE
                   ? styles.approveButton
-                  : decision === "reject"
+                  : decision === SpaceReviewDecisionEnum.REJECT
                     ? styles.rejectButton
                     : styles.changesButton
               }`}

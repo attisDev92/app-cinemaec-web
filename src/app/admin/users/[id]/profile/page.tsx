@@ -28,7 +28,9 @@ export default function UserProfilePage() {
   const handleRemoveAgreement = async () => {
     if (!userData?.profile) return
 
-    if (!window.confirm("¿Está seguro que desea eliminar el acuerdo firmado?")) {
+    if (
+      !window.confirm("¿Está seguro que desea eliminar el acuerdo firmado?")
+    ) {
       return
     }
 
@@ -102,7 +104,9 @@ export default function UserProfilePage() {
       const statusText = newStatus ? "activado" : "desactivado"
       alert(`Usuario ${statusText} exitosamente`)
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al actualizar el usuario")
+      alert(
+        err instanceof Error ? err.message : "Error al actualizar el usuario",
+      )
     } finally {
       setActionLoading(false)
     }
@@ -258,9 +262,7 @@ export default function UserProfilePage() {
                   <label>Estado</label>
                   <span
                     className={`${styles.statusBadge} ${
-                      userData.user.isActive
-                        ? styles.active
-                        : styles.inactive
+                      userData.user.isActive ? styles.active : styles.inactive
                     }`}
                   >
                     {userData.user.isActive ? "Activo" : "Inactivo"}
@@ -332,14 +334,13 @@ export default function UserProfilePage() {
                     <div className={styles.profileField}>
                       <label>Fecha de Nacimiento</label>
                       <span className={styles.date}>
-                        {new Date(userData.profile.birthdate).toLocaleDateString(
-                          "es-EC",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          },
-                        )}
+                        {new Date(
+                          userData.profile.birthdate,
+                        ).toLocaleDateString("es-EC", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
                       </span>
                     </div>
                   )}
@@ -362,7 +363,9 @@ export default function UserProfilePage() {
                     </div>
                   )}
                   {userData.profile.address && (
-                    <div className={`${styles.profileField} ${styles.fullWidth}`}>
+                    <div
+                      className={`${styles.profileField} ${styles.fullWidth}`}
+                    >
                       <label>Dirección</label>
                       <span>{userData.profile.address}</span>
                     </div>
@@ -378,12 +381,17 @@ export default function UserProfilePage() {
 
             {/* Sección de Acciones */}
             <div className={styles.profileSection}>
-              <h2 className={styles.sectionTitle}>⚙️ Acciones del Administrador</h2>
+              <h2 className={styles.sectionTitle}>
+                ⚙️ Acciones del Administrador
+              </h2>
               <div className={styles.actionsGrid}>
                 {userData.profile?.agreementDocumentId && (
                   <div className={styles.actionCard}>
                     <h3>📋 Media-Agreement</h3>
-                    <p>Acuerdo de uso de medios electrónicos firmado por el usuario</p>
+                    <p>
+                      Acuerdo de uso de medios electrónicos firmado por el
+                      usuario
+                    </p>
                     <div className={styles.actionButtons}>
                       <button
                         className={styles.btnPrimary}
@@ -428,7 +436,9 @@ export default function UserProfilePage() {
                   <h3>Estado del Usuario</h3>
                   <p>
                     Este usuario está actualmente{" "}
-                    <strong>{userData.user.isActive ? "ACTIVO" : "INACTIVO"}</strong>
+                    <strong>
+                      {userData.user.isActive ? "ACTIVO" : "INACTIVO"}
+                    </strong>
                   </p>
                   <div className={styles.actionButtons}>
                     <button

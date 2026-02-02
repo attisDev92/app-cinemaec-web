@@ -70,7 +70,9 @@
   padding: var(--spacing-2xl);
   box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
     transform 0.1s ease;
 }
 
@@ -97,10 +99,9 @@
   font-weight: var(--font-weight-medium);
 }
 
-
-
 @keyframes chevronNudge {
-  0%, 100% {
+  0%,
+  100% {
     margin-top: 0;
   }
   50% {
@@ -283,7 +284,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -295,11 +297,11 @@
   .optionsGrid {
     grid-template-columns: 1fr;
   }
-  
+
   .title {
     font-size: var(--font-size-2xl);
   }
-  
+
   .content {
     padding: var(--spacing-lg) var(--spacing-md);
   }

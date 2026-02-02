@@ -120,8 +120,11 @@ function HomePanels({ router }: { router: ReturnType<typeof useRouter> }) {
                   Vive Cine
                 </h2>
               </div>
-              <p className={`${styles.panelDescription} ${styles.viveDescription}`}>
-                Registra tu espacio audiovisual y accede a otros beneficios de Vive Cine.
+              <p
+                className={`${styles.panelDescription} ${styles.viveDescription}`}
+              >
+                Registra tu espacio audiovisual y accede a otros beneficios de
+                Vive Cine.
               </p>
               <Button
                 onClick={(e) => {
@@ -152,7 +155,8 @@ function HomePanels({ router }: { router: ReturnType<typeof useRouter> }) {
           <div className={styles.optionsGrid}>
             <Card title="Espacios Audiovisuales de Vive Cine (REA)">
               <p className={styles.cardContent}>
-                Registra y accede a tus espacios audiovisuales para formar parte de Vive Cine (Red de Espacios Audiovisuales)
+                Registra y accede a tus espacios audiovisuales para formar parte
+                de Vive Cine (Red de Espacios Audiovisuales)
               </p>
               <Button
                 onClick={() => router.push("/rea-spaces")}
@@ -165,21 +169,25 @@ function HomePanels({ router }: { router: ReturnType<typeof useRouter> }) {
 
             <Card title="Usuario del Banco de Contenidos">
               <p className={styles.cardContent}>
-                Accede al préstamo de obras cinematográficas para gestores con proyectos de exhibición itinerante o espacios en el exterior como misiones diplomáticas de Ecuador en el mundo.
+                Accede al préstamo de obras cinematográficas para gestores con
+                proyectos de exhibición itinerante o espacios en el exterior
+                como misiones diplomáticas de Ecuador en el mundo.
               </p>
               <p className={styles.tag}>Próximamente</p>
             </Card>
 
             <Card title="Banco de Contenidos">
               <p className={styles.cardContent}>
-                Plataforma de acceso a obras cinematográficas para exhibición de Espacios Audiovisuales y Gestores registrados en Vive Cine.
+                Plataforma de acceso a obras cinematográficas para exhibición de
+                Espacios Audiovisuales y Gestores registrados en Vive Cine.
               </p>
               <p className={styles.tag}>Próximamente</p>
             </Card>
 
             <Card title="Talleres y Capacitaciones">
               <p className={styles.cardContent}>
-                Accede a talleres, capacitaciones y recursos educativos para Espacios Audiovisuales y Gestores registrados en Vive Cine.
+                Accede a talleres, capacitaciones y recursos educativos para
+                Espacios Audiovisuales y Gestores registrados en Vive Cine.
               </p>
               <p className={styles.tag}>Próximamente</p>
             </Card>
@@ -205,10 +213,15 @@ function HomePanels({ router }: { router: ReturnType<typeof useRouter> }) {
                 <h2 className={`${styles.sectionTitle} ${styles.hazTitle}`}>
                   Haz Cine
                 </h2>
-                <span className={`${styles.badge} ${styles.hazBadge}`}>Próximamente</span>
+                <span className={`${styles.badge} ${styles.hazBadge}`}>
+                  Próximamente
+                </span>
               </div>
-              <p className={`${styles.panelDescription} ${styles.hazDescription}`}>
-                Gestiona y registrate en los catálogos de profesionales, productoras, locaciones del cine ecuatoriano.  (próximamente)
+              <p
+                className={`${styles.panelDescription} ${styles.hazDescription}`}
+              >
+                Gestiona y registrate en los catálogos de profesionales,
+                productoras, locaciones del cine ecuatoriano. (próximamente)
               </p>
             </div>
           </div>
@@ -229,8 +242,8 @@ function HomePanels({ router }: { router: ReturnType<typeof useRouter> }) {
           <div className={styles.optionsGrid}>
             <Card title="Catálogo de Locaciones">
               <p className={styles.cardContent}>
-                Registra y gestiona tus locaciones para producciones audiovisuales
-                en la web de la Ecuador Film Commission.
+                Registra y gestiona tus locaciones para producciones
+                audiovisuales en la web de la Ecuador Film Commission.
               </p>
               <p className={styles.tag}>Próximamente</p>
             </Card>
@@ -245,14 +258,16 @@ function HomePanels({ router }: { router: ReturnType<typeof useRouter> }) {
 
             <Card title="Perfil de Profesionales">
               <p className={styles.cardContent}>
-                Registra tu perfil como profesional del audiovisual en el directorio de profesionales ecuatorianos.
+                Registra tu perfil como profesional del audiovisual en el
+                directorio de profesionales ecuatorianos.
               </p>
               <p className={styles.tag}>Próximamente</p>
             </Card>
 
             <Card title="Catálogo de Películas Ecuatorianas">
               <p className={styles.cardContent}>
-                Explora y consulta el catálogo de películas ecuatorianas producidas y reconocidas internacionalmente.
+                Explora y consulta el catálogo de películas ecuatorianas
+                producidas y reconocidas internacionalmente.
               </p>
               <p className={styles.tag}>Próximamente</p>
             </Card>

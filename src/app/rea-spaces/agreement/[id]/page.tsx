@@ -223,7 +223,10 @@ export default function AgreementPage() {
       day: "numeric",
     }
 
-    const currentDate = new Date().toLocaleDateString("es-EC", dateFormatOptions)
+    const currentDate = new Date().toLocaleDateString(
+      "es-EC",
+      dateFormatOptions,
+    )
 
     pdf.setFont("helvetica", "bold")
     pdf.text("Fecha de aceptación:", margin, yPosition)

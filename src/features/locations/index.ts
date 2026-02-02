@@ -1,2 +1,2 @@
 // Locations Feature Exports
-export * from './types';
+export * from "./types"

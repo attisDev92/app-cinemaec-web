@@ -48,13 +48,10 @@ export const authService = {
       hasSpace: backendUser.hasSpace as boolean | undefined,
       isUserCB: backendUser.isUserCB as boolean | undefined,
       userCBApproved: backendUser.userCBApproved as boolean | undefined,
-      hasUploadedAgreement: (backendUser.hasUploadedAgreement as
-        | boolean
-        | undefined) ?? false,
-      agreementDocumentId: (backendUser.agreementDocumentId as
-        | number
-        | null
-        | undefined) ?? null,
+      hasUploadedAgreement:
+        (backendUser.hasUploadedAgreement as boolean | undefined) ?? false,
+      agreementDocumentId:
+        (backendUser.agreementDocumentId as number | null | undefined) ?? null,
       updatedAt: backendUser.updatedAt as string | undefined,
     }
   },

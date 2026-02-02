@@ -78,7 +78,7 @@ export function Navbar() {
       id: "movies",
       label: "Gestión de Películas",
       icon: "🎥",
-      route: "/admin/movies",
+      route: "/admin/movies-management",
       permission: PermissionEnum.ADMIN_MOVIES,
     },
     {

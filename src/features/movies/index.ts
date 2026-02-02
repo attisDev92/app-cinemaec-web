@@ -1,2 +1,3 @@
-// Movies Feature Exports
-export * from './types';
+export * from "./types"
+export * from "./services/movie.service"
+export * from "./components/MovieManagementTable"
