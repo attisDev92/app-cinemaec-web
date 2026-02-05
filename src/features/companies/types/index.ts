@@ -28,6 +28,13 @@ export interface Company {
   updatedAt: string
 }
 
+export interface CompanyListItem {
+  id: number
+  legalName: string | null
+  commercialName: string | null
+  ruc: string
+}
+
 export interface CreateCompanyData {
   name: string
   legalName: string

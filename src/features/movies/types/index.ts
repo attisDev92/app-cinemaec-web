@@ -1,34 +1,10 @@
-export type MovieType = "cortometraje" | "mediometraje" | "largometraje"
+export type MovieType = "Cortometraje" | "Mediometraje" | "Largometraje"
 
 export type MovieGenre =
-  | "animacion"
-  | "antropologico"
-  | "aventura"
-  | "biografico"
-  | "ciencia_ficcion"
-  | "cine_guerrilla"
-  | "comedia"
-  | "deportivo"
-  | "drama"
-  | "etnografico"
-  | "experimental"
-  | "familiar"
-  | "fantastico"
-  | "genero"
-  | "historico"
-  | "infantil"
-  | "medioambiente"
-  | "musical"
-  | "policial"
-  | "religioso"
-  | "resistencia"
-  | "romance"
-  | "suspenso"
-  | "terror"
-  | "thriller"
-  | "vida_rural"
-  | "western"
-  | "otros"
+  | "Ficción"
+  | "Documental"
+  | "Docu-ficción"
+  | "Falso Documental"
 
 export type MovieClassification =
   | "todo_publico"
@@ -42,7 +18,7 @@ export type MovieClassification =
 export type ProjectStatus =
   | "desarrollo"
   | "produccion"
-  | "post_produccion"
+  | "postproduccion"
   | "distribucion"
   | "finalizado"
 
@@ -53,12 +29,31 @@ export type MovieStatus =
   | "rejected"
   | "archived"
 
+export type MovieReleaseType =
+  | "Comercial"
+  | "Festival o muestra"
+  | "Alternativo o itinerante"
+
+export type FestivalNominationResult =
+  | "Ganador"
+  | "Nominado"
+  | "Selección oficial"
+
+export type ContactPosition =
+  | "Director"
+  | "Productora"
+  | "Agente de ventas"
+  | "Distribuidor"
+
+export type ExhibitionWindow = "Nacional" | "Internacional" | "VOD"
+
 export interface CreateMoviePayload {
   title: string
   titleEn?: string
   durationMinutes: number
   type: MovieType
-  genres: MovieGenre[]
+  genre: MovieGenre
+  subGenreIds?: number[]
   languages: string[]
   countryCode: string
   provinces: string[]
@@ -68,6 +63,63 @@ export interface CreateMoviePayload {
   synopsisEn?: string
   logLine?: string
   logLineEn?: string
+  projectNeed?: string
+  projectNeedEn?: string
+  directors?: number[]
+  producers?: number[]
+  mainActors?: number[]
+  crew?: Array<{ cinematicRoleId: number; professionalId: number }>
+  producerCompanyId?: number
+  coProducerCompanyIds?: number[]
+  internationalCoProducer?: string
+  totalBudget?: number
+  economicRecovery?: number
+  totalAudience?: number
+  crewTotal?: number
+  actorsTotal?: number
+  funding?: Array<{
+    fundId: number
+    year: number
+    amountGranted?: number
+    fundingStage: ProjectStatus
+  }>
+  nationalReleases?: Array<{
+    exhibitionSpaceId: number
+    cityId: number
+    year: number
+    type: MovieReleaseType
+  }>
+  internationalReleases?: Array<{
+    spaceName?: string
+    countryId: number
+    year: number
+    type: MovieReleaseType
+  }>
+  festivalNominations?: Array<{
+    fundId: number
+    year: number
+    category: string
+    result: FestivalNominationResult
+  }>
+  platforms?: Array<{
+    platformId: number
+    link?: string
+  }>
+  contact?: {
+    name: string
+    position: ContactPosition
+    phone: string
+    email: string
+  }
+  contentBank?: {
+    licensingStartDate: string
+    licensingEndDate: string
+    subtitles: string[]
+    exhibitionWindow: ExhibitionWindow[]
+    geolocationRestrictionCountryIds?: number[]
+  }
+  filmingCitiesEc?: string[]
+  filmingCountries?: string[]
   classification: MovieClassification
   projectStatus: ProjectStatus
 }

@@ -37,9 +37,9 @@ const MOVIE_STATUS_COLORS: Record<MovieStatus, string> = {
 }
 
 const MOVIE_TYPE_LABELS: Record<string, string> = {
-  cortometraje: "Cortometraje",
-  mediometraje: "Mediometraje",
-  largometraje: "Largometraje",
+  Cortometraje: "Cortometraje",
+  Mediometraje: "Mediometraje",
+  Largometraje: "Largometraje",
 }
 
 export function MovieManagementTable({

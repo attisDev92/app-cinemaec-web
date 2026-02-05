@@ -1,0 +1,56 @@
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-base);
+}
+
+.checkbox:hover {
+  opacity: 0.8;
+}
+
+.input {
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+/* Pill variant for multi-select options */
+.pill {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--border-radius-full);
+  background-color: var(--color-surface);
+  transition: all var(--transition-base);
+}
+
+.pill .input {
+  display: none;
+}
+
+.pill .label {
+  font-size: 0.9rem;
+}
+
+.pill:hover {
+  border-color: var(--color-primary);
+  opacity: 1;
+}
+
+.pill.checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.pill.checked .label {
+  color: var(--color-text-inverse);
+}
