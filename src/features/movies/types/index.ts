@@ -40,10 +40,10 @@ export type FestivalNominationResult =
   | "Selección oficial"
 
 export type ContactPosition =
-  | "Director"
-  | "Productora"
+  | "Director/a"
+  | "Productor/a"
   | "Agente de ventas"
-  | "Distribuidor"
+  | "Distribuidor/a"
 
 export type ExhibitionWindow = "Nacional" | "Internacional" | "VOD"
 
@@ -54,10 +54,8 @@ export interface CreateMoviePayload {
   type: MovieType
   genre: MovieGenre
   subGenreIds?: number[]
-  languages: string[]
-  countryCode: string
-  provinces: string[]
-  cities: string[]
+  subtitleLanguageIds?: number[]
+  countryId: number
   releaseYear: number
   synopsis: string
   synopsisEn?: string
@@ -71,7 +69,10 @@ export interface CreateMoviePayload {
   crew?: Array<{ cinematicRoleId: number; professionalId: number }>
   producerCompanyId?: number
   coProducerCompanyIds?: number[]
-  internationalCoProducer?: string
+  internationalCoproductions?: Array<{
+    companyName: string
+    countryId: number
+  }>
   totalBudget?: number
   economicRecovery?: number
   totalAudience?: number
@@ -105,19 +106,25 @@ export interface CreateMoviePayload {
     platformId: number
     link?: string
   }>
-  contact?: {
+  contacts?: Array<{
     name: string
-    position: ContactPosition
-    phone: string
-    email: string
-  }
-  contentBank?: {
+    role: ContactPosition
+    phone?: string
+    email?: string
+  }>
+  contentBank?: Array<{
+    exhibitionWindow: ExhibitionWindow
     licensingStartDate: string
     licensingEndDate: string
-    subtitles: string[]
-    exhibitionWindow: ExhibitionWindow[]
     geolocationRestrictionCountryIds?: number[]
-  }
+  }>
+  posterAssetId?: number
+  dossierAssetId?: number
+  dossierEnAssetId?: number
+  pedagogicalGuideAssetId?: number
+  trailerLink?: string
+  makingOfLink?: string
+  stillAssetIds?: number[]
   filmingCitiesEc?: string[]
   filmingCountries?: string[]
   classification: MovieClassification

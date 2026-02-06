@@ -53,10 +53,8 @@ interface FormValues {
   type: MovieType
   genre: MovieGenre
   subGenres: number[]
-  languages: string[]
-  countryCode: string
-  provinces: string[]
-  cities: string[]
+  languages: number[]
+  countryId: number | ""
   releaseYear: number | ""
   synopsis: string
   synopsisEn: string
@@ -70,7 +68,10 @@ interface FormValues {
   crew: Array<{ roleId: number | ""; professionalId: number | "" }>
   producerCompanyId: number | ""
   coProducerCompanyIds: number[]
-  internationalCoProducer: string
+  internationalCoProductions: Array<{
+    companyName: string
+    countryId: number | ""
+  }>
   totalBudget: number | ""
   economicRecovery: number | ""
   totalAudience: number | ""
@@ -104,19 +105,18 @@ interface FormValues {
     platformId: number | ""
     link: string
   }>
-  contact: {
+  contacts: Array<{
     name: string
-    position: ContactPosition | ""
+    role: ContactPosition | ""
     phone: string
     email: string
-  }
-  contentBank: {
+  }>
+  contentBank: Array<{
+    exhibitionWindow: ExhibitionWindow | ""
     licensingStartDate: string
     licensingEndDate: string
-    subtitles: string[]
-    exhibitionWindow: ExhibitionWindow[]
     geolocationRestrictionCountryIds: number[]
-  }
+  }>
   posterAssetId: number | null
   trailerLink: string
   makingOffLink: string
@@ -179,10 +179,10 @@ const FESTIVAL_RESULT_OPTIONS: {
 ]
 
 const CONTACT_POSITION_OPTIONS: { label: string; value: ContactPosition }[] = [
-  { value: "Director", label: "Director" },
-  { value: "Productora", label: "Productora" },
+  { value: "Director/a", label: "Director/a" },
+  { value: "Productor/a", label: "Productor/a" },
   { value: "Agente de ventas", label: "Agente de ventas" },
-  { value: "Distribuidor", label: "Distribuidor" },
+  { value: "Distribuidor/a", label: "Distribuidor/a" },
 ]
 
 const EXHIBITION_WINDOW_OPTIONS: { label: string; value: ExhibitionWindow }[] =
@@ -208,11 +208,10 @@ const validationSchema = Yup.object().shape({
     .min(1, "Selecciona al menos un subgénero")
     .required("Selecciona al menos un subgénero"),
   languages: Yup.array()
-    .min(1, "Selecciona al menos un idioma")
-    .required("Selecciona al menos un idioma"),
-  countryCode: Yup.string().required("Selecciona un país de origen"),
-  provinces: Yup.array(),
-  cities: Yup.array(),
+    .min(1, "Selecciona al menos un subtítulo")
+    .required("Selecciona al menos un subtítulo"),
+  countryId: Yup.number().required("Selecciona un país de origen"),
+  
   releaseYear: Yup.number()
     .required("El año de estreno es obligatorio")
     .min(1888, "Ingresa un año válido (mínimo 1888)")
@@ -238,7 +237,7 @@ const validationSchema = Yup.object().shape({
   crew: Yup.array(),
   producerCompanyId: Yup.number().required("Selecciona un productor"),
   coProducerCompanyIds: Yup.array(),
-  internationalCoProducer: Yup.string(),
+  internationalCoProductions: Yup.array(),
   totalBudget: Yup.number(),
   economicRecovery: Yup.number(),
   totalAudience: Yup.number(),
@@ -249,8 +248,8 @@ const validationSchema = Yup.object().shape({
   internationalRelease: Yup.object(),
   festivalNominations: Yup.array(),
   platforms: Yup.array(),
-  contact: Yup.object(),
-  contentBank: Yup.object(),
+  contacts: Yup.array(),
+  contentBank: Yup.array(),
   filmingCitiesEc: Yup.array(),
   filmingCountries: Yup.array(),
   classification: Yup.string(),
@@ -265,9 +264,7 @@ const initialValues: FormValues = {
   genre: "Ficción",
   subGenres: [],
   languages: [],
-  countryCode: "EC",
-  provinces: [],
-  cities: [],
+  countryId: "",
   releaseYear: "",
   synopsis: "",
   synopsisEn: "",
@@ -281,7 +278,7 @@ const initialValues: FormValues = {
   crew: [],
   producerCompanyId: "",
   coProducerCompanyIds: [],
-  internationalCoProducer: "",
+  internationalCoProductions: [],
   totalBudget: "",
   economicRecovery: "",
   totalAudience: "",
@@ -302,19 +299,22 @@ const initialValues: FormValues = {
   },
   festivalNominations: [],
   platforms: [],
-  contact: {
-    name: "",
-    position: "",
-    phone: "",
-    email: "",
-  },
-  contentBank: {
-    licensingStartDate: "",
-    licensingEndDate: "",
-    subtitles: [],
-    exhibitionWindow: [],
-    geolocationRestrictionCountryIds: [],
-  },
+  contacts: [
+    {
+      name: "",
+      role: "",
+      phone: "",
+      email: "",
+    },
+  ],
+  contentBank: [
+    {
+      exhibitionWindow: "",
+      licensingStartDate: "",
+      licensingEndDate: "",
+      geolocationRestrictionCountryIds: [],
+    },
+  ],
   posterAssetId: null,
   trailerLink: "",
   makingOffLink: "",
@@ -355,6 +355,9 @@ export default function MoviesAdminPage() {
   const [festivalFundSearches, setFestivalFundSearches] = useState<string[]>([])
   const [filmingCitySearch, setFilmingCitySearch] = useState("")
   const [filmingCountrySearch, setFilmingCountrySearch] = useState("")
+  const [openGeoblockIndex, setOpenGeoblockIndex] = useState<number | null>(
+    null,
+  )
 
   const tabs = [
     { id: "basic", label: "Información básica" },
@@ -395,10 +398,8 @@ export default function MoviesAdminPage() {
           type: values.type,
           genre: values.genre,
           subGenreIds: values.subGenres,
-          languages: values.languages,
-          countryCode: values.countryCode,
-          provinces: values.provinces,
-          cities: values.cities,
+          subtitleLanguageIds: values.languages,
+          countryId: Number(values.countryId),
           releaseYear: Number(values.releaseYear),
           synopsis: values.synopsis.trim(),
           synopsisEn: values.synopsisEn.trim() || undefined,
@@ -415,8 +416,15 @@ export default function MoviesAdminPage() {
               ? undefined
               : Number(values.producerCompanyId),
           coProducerCompanyIds: values.coProducerCompanyIds,
-          internationalCoProducer:
-            values.internationalCoProducer.trim() || undefined,
+          internationalCoproductions:
+            values.internationalCoProductions
+              .filter(
+                (entry) => entry.companyName.trim() && entry.countryId,
+              )
+              .map((entry) => ({
+                companyName: entry.companyName.trim(),
+                countryId: Number(entry.countryId),
+              })) || undefined,
           totalBudget:
             values.totalBudget === ""
               ? undefined
@@ -497,35 +505,41 @@ export default function MoviesAdminPage() {
                 platformId: Number(entry.platformId),
                 link: entry.link.trim() || undefined,
               })) || undefined,
-          contact:
-            values.contact.name.trim() ||
-            values.contact.email.trim() ||
-            values.contact.phone.trim() ||
-            values.contact.position
-              ? {
-                  name: values.contact.name.trim(),
-                  position: values.contact.position as ContactPosition,
-                  phone: values.contact.phone.trim(),
-                  email: values.contact.email.trim(),
-                }
-              : undefined,
+          contacts:
+            values.contacts
+              .filter((entry) => entry.name.trim() && entry.role)
+              .map((entry) => ({
+                name: entry.name.trim(),
+                role: entry.role as ContactPosition,
+                phone: entry.phone.trim() || undefined,
+                email: entry.email.trim() || undefined,
+              })) || undefined,
           contentBank:
-            values.contentBank.licensingStartDate ||
-            values.contentBank.licensingEndDate ||
-            values.contentBank.subtitles.length > 0 ||
-            values.contentBank.exhibitionWindow.length > 0 ||
-            values.contentBank.geolocationRestrictionCountryIds.length > 0
-              ? {
-                  licensingStartDate: values.contentBank.licensingStartDate,
-                  licensingEndDate: values.contentBank.licensingEndDate,
-                  subtitles: values.contentBank.subtitles,
-                  exhibitionWindow: values.contentBank.exhibitionWindow,
-                  geolocationRestrictionCountryIds:
-                    values.contentBank.geolocationRestrictionCountryIds
-                      .length > 0
-                      ? values.contentBank.geolocationRestrictionCountryIds
-                      : undefined,
-                }
+            values.contentBank
+              .filter(
+                (entry) =>
+                  entry.exhibitionWindow &&
+                  entry.licensingStartDate &&
+                  entry.licensingEndDate,
+              )
+              .map((entry) => ({
+                exhibitionWindow: entry.exhibitionWindow as ExhibitionWindow,
+                licensingStartDate: entry.licensingStartDate,
+                licensingEndDate: entry.licensingEndDate,
+                geolocationRestrictionCountryIds:
+                  entry.geolocationRestrictionCountryIds.length > 0
+                    ? entry.geolocationRestrictionCountryIds
+                    : undefined,
+              })) || undefined,
+          posterAssetId: values.posterAssetId ?? undefined,
+          dossierAssetId: values.dossierAssetId ?? undefined,
+          dossierEnAssetId: values.dossierEnAssetId ?? undefined,
+          pedagogicalGuideAssetId: values.pedagogicalGuideAssetId ?? undefined,
+          trailerLink: values.trailerLink.trim() || undefined,
+          makingOfLink: values.makingOffLink.trim() || undefined,
+          stillAssetIds:
+            values.stillAssetIds.length > 0
+              ? values.stillAssetIds
               : undefined,
           filmingCitiesEc: values.filmingCitiesEc,
           filmingCountries: values.filmingCountries,
@@ -695,20 +709,10 @@ export default function MoviesAdminPage() {
     )
   }, [filmingCountrySearch, sortedCountries])
 
-  const availableCities = useMemo(() => {
-    const citiesByProvince = formik.values.provinces.flatMap((provinceName) => {
-      const province = ecuadorProvinces.find((p) => p.name === provinceName)
-      return province ? province.cities : []
-    })
-    return Array.from(new Set(citiesByProvince)).sort()
-  }, [formik.values.provinces])
-
   const handleCheckboxToggle = (
     arrayName:
       | "subGenres"
       | "languages"
-      | "provinces"
-      | "cities"
       | "directors"
       | "producers"
       | "coProducerCompanyIds"
@@ -724,27 +728,6 @@ export default function MoviesAdminPage() {
       : [...currentArray, value]
 
     formik.setFieldValue(arrayName, newArray)
-  }
-
-  const handleProvincesChange = (value: string) => {
-    const newProvinces = formik.values.provinces.includes(value)
-      ? formik.values.provinces.filter((p) => p !== value)
-      : [...formik.values.provinces, value]
-
-    formik.setFieldValue("provinces", newProvinces)
-
-    // Limpiar ciudades que no correspondan a las nuevas provincias
-    const allowedCities = new Set(
-      newProvinces.flatMap((provinceName) => {
-        const province = ecuadorProvinces.find((p) => p.name === provinceName)
-        return province ? province.cities : []
-      }),
-    )
-
-    const validCities = formik.values.cities.filter((city) =>
-      allowedCities.has(city),
-    )
-    formik.setFieldValue("cities", validCities)
   }
 
   const addCrewRow = () => {
@@ -858,6 +841,28 @@ export default function MoviesAdminPage() {
     ])
   }
 
+  const addContactRow = () => {
+    formik.setFieldValue("contacts", [
+      ...formik.values.contacts,
+      { name: "", role: "", phone: "", email: "" },
+    ])
+  }
+
+  const updateContactRow = (
+    index: number,
+    field: "name" | "role" | "phone" | "email",
+    value: string,
+  ) => {
+    const next = [...formik.values.contacts]
+    next[index] = { ...next[index], [field]: value }
+    formik.setFieldValue("contacts", next)
+  }
+
+  const removeContactRow = (index: number) => {
+    const next = formik.values.contacts.filter((_, i) => i !== index)
+    formik.setFieldValue("contacts", next)
+  }
+
   const updatePlatformRow = (
     index: number,
     field: "platformId" | "link",
@@ -871,6 +876,30 @@ export default function MoviesAdminPage() {
   const removePlatformRow = (index: number) => {
     const next = formik.values.platforms.filter((_, i) => i !== index)
     formik.setFieldValue("platforms", next)
+  }
+
+  const addInternationalCoproductionRow = () => {
+    formik.setFieldValue("internationalCoProductions", [
+      ...formik.values.internationalCoProductions,
+      { companyName: "", countryId: "" },
+    ])
+  }
+
+  const updateInternationalCoproductionRow = (
+    index: number,
+    field: "companyName" | "countryId",
+    value: string | number | "",
+  ) => {
+    const next = [...formik.values.internationalCoProductions]
+    next[index] = { ...next[index], [field]: value }
+    formik.setFieldValue("internationalCoProductions", next)
+  }
+
+  const removeInternationalCoproductionRow = (index: number) => {
+    const next = formik.values.internationalCoProductions.filter(
+      (_, i) => i !== index,
+    )
+    formik.setFieldValue("internationalCoProductions", next)
   }
 
   const handlePosterUpload = (id: number) => {
@@ -905,21 +934,31 @@ export default function MoviesAdminPage() {
     formik.setFieldValue("pedagogicalGuideAssetId", null)
   }
 
-  const toggleContentBankArray = (
-    field:
-      | "subtitles"
-      | "exhibitionWindow"
-      | "geolocationRestrictionCountryIds",
-    value: string | number | ExhibitionWindow,
+  const addContentBankRow = () => {
+    formik.setFieldValue("contentBank", [
+      ...formik.values.contentBank,
+      {
+        exhibitionWindow: "",
+        licensingStartDate: "",
+        licensingEndDate: "",
+        geolocationRestrictionCountryIds: [],
+      },
+    ])
+  }
+
+  const updateContentBankRow = (
+    index: number,
+    field: "exhibitionWindow" | "licensingStartDate" | "licensingEndDate",
+    value: string,
   ) => {
-    const current = formik.values.contentBank[field] as Array<
-      string | number | ExhibitionWindow
-    >
-    const exists = current.includes(value)
-    const next = exists
-      ? current.filter((item) => item !== value)
-      : [...current, value]
-    formik.setFieldValue(`contentBank.${field}`, next)
+    const next = [...formik.values.contentBank]
+    next[index] = { ...next[index], [field]: value }
+    formik.setFieldValue("contentBank", next)
+  }
+
+  const removeContentBankRow = (index: number) => {
+    const next = formik.values.contentBank.filter((_, i) => i !== index)
+    formik.setFieldValue("contentBank", next)
   }
 
   const getFieldError = (fieldName: keyof FormValues): string | undefined => {
@@ -1028,10 +1067,6 @@ export default function MoviesAdminPage() {
 
                 <div className={styles.field}>
                   <div className={styles.label}>Estreno nacional</div>
-                  <p className={styles.helper}>
-                    Agrega espacios nacionales con ciudad, año y tipo de
-                    estreno.
-                  </p>
                   <div className={styles.crewList}>
                     <div className={styles.crewRow}>
                       <div className={styles.field}>
@@ -1391,50 +1426,93 @@ export default function MoviesAdminPage() {
 
                 <div className={styles.field}>
                   <div className={styles.label}>Contacto</div>
-                  <div className={styles.grid}>
-                    <Input
-                      label="Nombre"
-                      name="contact.name"
-                      value={formik.values.contact.name}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      placeholder="Nombre del contacto"
-                    />
+                  <div className={styles.crewList}>
+                    {formik.values.contacts.map((entry, index) => (
+                      <div
+                        key={`contact-${index}`}
+                        className={styles.crewRow}
+                      >
+                        <Input
+                          label="Nombre y apellido"
+                          name={`contact-name-${index}`}
+                          value={entry.name}
+                          onChange={(event) =>
+                            updateContactRow(
+                              index,
+                              "name",
+                              event.target.value,
+                            )
+                          }
+                          placeholder="Nombre del contacto"
+                        />
 
-                    <Select
-                      label="Cargo"
-                      name="contact.position"
-                      value={formik.values.contact.position}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                    >
-                      <option value="">Selecciona un cargo</option>
-                      {CONTACT_POSITION_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Select>
+                        <Select
+                          label="Cargo"
+                          name={`contact-role-${index}`}
+                          value={entry.role}
+                          onChange={(event) =>
+                            updateContactRow(
+                              index,
+                              "role",
+                              event.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Selecciona un cargo</option>
+                          {CONTACT_POSITION_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </Select>
 
-                    <Input
-                      label="Teléfono"
-                      name="contact.phone"
-                      value={formik.values.contact.phone}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      placeholder="Ej: +593 99 123 4567"
-                    />
+                        <Input
+                          label="Teléfono"
+                          name={`contact-phone-${index}`}
+                          value={entry.phone}
+                          onChange={(event) =>
+                            updateContactRow(
+                              index,
+                              "phone",
+                              event.target.value,
+                            )
+                          }
+                          placeholder="Ej: +593 99 123 4567"
+                        />
 
-                    <Input
-                      label="Email"
-                      name="contact.email"
-                      type="email"
-                      value={formik.values.contact.email}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      placeholder="contacto@ejemplo.com"
-                    />
+                        <Input
+                          label="Email"
+                          name={`contact-email-${index}`}
+                          type="email"
+                          value={entry.email}
+                          onChange={(event) =>
+                            updateContactRow(
+                              index,
+                              "email",
+                              event.target.value,
+                            )
+                          }
+                          placeholder="contacto@ejemplo.com"
+                        />
+
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => removeContactRow(index)}
+                          disabled={formik.values.contacts.length === 1}
+                        >
+                          Quitar
+                        </Button>
+                      </div>
+                    ))}
                   </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={addContactRow}
+                  >
+                    Agregar contacto
+                  </Button>
                 </div>
               </section>
             )}
@@ -1503,12 +1581,12 @@ export default function MoviesAdminPage() {
 
                   <Select
                     label="País de realización *"
-                    name="countryCode"
-                    value={formik.values.countryCode}
+                    name="countryId"
+                    value={formik.values.countryId}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     disabled={countriesLoading}
-                    error={getFieldError("countryCode")}
+                    error={getFieldError("countryId")}
                   >
                     <option value="">
                       {countriesLoading
@@ -1516,7 +1594,7 @@ export default function MoviesAdminPage() {
                         : "Selecciona un país"}
                     </option>
                     {sortedCountries.map((c) => (
-                      <option key={c.code} value={c.code}>
+                      <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
                     ))}
@@ -1624,14 +1702,72 @@ export default function MoviesAdminPage() {
                   </p>
                 </div>
 
-                <Input
-                  label="Coproductor internacional"
-                  name="internationalCoProducer"
-                  value={formik.values.internationalCoProducer}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  placeholder="Nombre del coproductor internacional"
-                />
+                <div className={styles.field}>
+                  <div className={styles.label}>Coproducción internacional</div>
+                  <div className={styles.crewList}>
+                    {formik.values.internationalCoProductions.map(
+                      (entry, index) => (
+                        <div
+                          key={`international-coproduction-${index}`}
+                          className={styles.crewRow}
+                        >
+                          <Input
+                            label="Nombre de la empresa"
+                            name={`international-company-${index}`}
+                            value={entry.companyName}
+                            onChange={(event) =>
+                              updateInternationalCoproductionRow(
+                                index,
+                                "companyName",
+                                event.target.value,
+                              )
+                            }
+                            placeholder="Nombre del coproductor internacional"
+                          />
+
+                          <Select
+                            label="País"
+                            name={`international-country-${index}`}
+                            value={entry.countryId}
+                            onChange={(event) =>
+                              updateInternationalCoproductionRow(
+                                index,
+                                "countryId",
+                                event.target.value
+                                  ? Number(event.target.value)
+                                  : "",
+                              )
+                            }
+                          >
+                            <option value="">Selecciona un país</option>
+                            {sortedCountries.map((country) => (
+                              <option key={country.id} value={country.id}>
+                                {country.name}
+                              </option>
+                            ))}
+                          </Select>
+
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() =>
+                              removeInternationalCoproductionRow(index)
+                            }
+                          >
+                            Quitar
+                          </Button>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={addInternationalCoproductionRow}
+                  >
+                    Agregar coproducción internacional
+                  </Button>
+                </div>
 
                 <div className={styles.field}>
                   <div className={styles.label}>Subgéneros</div>
@@ -2389,193 +2525,189 @@ export default function MoviesAdminPage() {
                   </p>
                 </div>
 
-                <div className={styles.grid}>
-                  <Input
-                    label="Fecha de inicio de licencia"
-                    name="contentBank.licensingStartDate"
-                    type="date"
-                    value={formik.values.contentBank.licensingStartDate}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                  />
+                <div className={styles.crewList}>
+                  {formik.values.contentBank.map((entry, index) => {
+                    const usedTerritories = formik.values.contentBank
+                      .map((item) => item.exhibitionWindow)
+                      .filter((value) => value)
+                    return (
+                    <div
+                      key={`content-bank-${index}`}
+                      className={styles.crewRow}
+                    >
+                      <Select
+                        label="Territorio"
+                        name={`content-territory-${index}`}
+                        value={entry.exhibitionWindow}
+                        onChange={(event) =>
+                          updateContentBankRow(
+                            index,
+                            "exhibitionWindow",
+                            event.target.value,
+                          )
+                        }
+                      >
+                        <option value="">Selecciona territorio</option>
+                        {EXHIBITION_WINDOW_OPTIONS.map((option) => {
+                          const isUsed =
+                            usedTerritories.includes(option.value) &&
+                            option.value !== entry.exhibitionWindow
+                          return (
+                            <option
+                              key={option.value}
+                              value={option.value}
+                              disabled={isUsed}
+                            >
+                              {option.label}
+                            </option>
+                          )
+                        })}
+                      </Select>
 
-                  <Input
-                    label="Fecha de fin de licencia"
-                    name="contentBank.licensingEndDate"
-                    type="date"
-                    value={formik.values.contentBank.licensingEndDate}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                  />
-                </div>
+                      <Input
+                        label="Fecha de inicio de licencia"
+                        name={`content-start-${index}`}
+                        type="date"
+                        value={entry.licensingStartDate}
+                        onChange={(event) =>
+                          updateContentBankRow(
+                            index,
+                            "licensingStartDate",
+                            event.target.value,
+                          )
+                        }
+                      />
 
-                <div className={styles.field}>
-                  <div className={styles.label}>Subtítulos</div>
-                  <div className={styles.optionGrid}>
-                    {sortedLanguages.map((lang) => {
-                      const checked =
-                        formik.values.contentBank.subtitles.includes(lang.code)
-                      return (
-                        <Checkbox
-                          key={`subtitle-${lang.code}`}
-                          label={lang.name}
-                          variant="pill"
-                          checked={checked}
-                          onChange={() =>
-                            toggleContentBankArray("subtitles", lang.code)
-                          }
-                        />
-                      )
-                    })}
-                  </div>
-                  <p className={styles.helper}>
-                    Puedes seleccionar varios idiomas.
-                  </p>
-                </div>
+                      <Input
+                        label="Fecha de fin de licencia"
+                        name={`content-end-${index}`}
+                        type="date"
+                        value={entry.licensingEndDate}
+                        onChange={(event) =>
+                          updateContentBankRow(
+                            index,
+                            "licensingEndDate",
+                            event.target.value,
+                          )
+                        }
+                      />
 
-                <div className={styles.field}>
-                  <div className={styles.label}>Territorio</div>
-                  <div className={styles.optionGrid}>
-                    {EXHIBITION_WINDOW_OPTIONS.map((option) => {
-                      const checked =
-                        formik.values.contentBank.exhibitionWindow.includes(
-                          option.value,
-                        )
-                      return (
-                        <Checkbox
-                          key={`territory-${option.value}`}
-                          label={option.label}
-                          variant="pill"
-                          checked={checked}
-                          onChange={() =>
-                            toggleContentBankArray(
-                              "exhibitionWindow",
-                              option.value,
-                            )
-                          }
-                        />
-                      )
-                    })}
-                  </div>
-                </div>
+                      {(entry.exhibitionWindow === "Internacional" ||
+                        entry.exhibitionWindow === "VOD") && (
+                        <div className={styles.field}>
+                          <div className={styles.label}>Geobloqueo</div>
+                          <p className={styles.helper}>
+                            Selecciona países donde no estará disponible.
+                          </p>
+                          <div className={styles.dropdown}>
+                            <button
+                              type="button"
+                              className={styles.dropdownTrigger}
+                              onClick={() =>
+                                setOpenGeoblockIndex((prev) =>
+                                  prev === index ? null : index,
+                                )
+                              }
+                            >
+                              {entry.geolocationRestrictionCountryIds.length
+                                ? `${entry.geolocationRestrictionCountryIds.length} países seleccionados`
+                                : "Selecciona países"}
+                            </button>
+                            {openGeoblockIndex === index && (
+                              <div className={styles.dropdownMenu}>
+                                {sortedCountries.map((country) => {
+                                  const checked =
+                                    entry.geolocationRestrictionCountryIds.includes(
+                                      country.id,
+                                    )
+                                  return (
+                                    <label
+                                      key={`geoblock-${index}-${country.id}`}
+                                      className={styles.dropdownItem}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => {
+                                          const next = [
+                                            ...formik.values.contentBank,
+                                          ]
+                                          const current =
+                                            next[index]
+                                              .geolocationRestrictionCountryIds
+                                          next[index] = {
+                                            ...next[index],
+                                            geolocationRestrictionCountryIds: checked
+                                              ? current.filter(
+                                                  (id) => id !== country.id,
+                                                )
+                                              : [...current, country.id],
+                                          }
+                                          formik.setFieldValue("contentBank", next)
+                                        }}
+                                      />
+                                      <span>{country.name}</span>
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
-                <div className={styles.field}>
-                  <div className={styles.label}>Geobloqueo</div>
-                  <p className={styles.helper}>
-                    Selecciona países donde no estará disponible.
-                  </p>
-                  <div className={styles.optionGrid}>
-                    {sortedCountries.map((country) => {
-                      const checked =
-                        formik.values.contentBank.geolocationRestrictionCountryIds.includes(
-                          country.id,
-                        )
-                      return (
-                        <Checkbox
-                          key={`geoblock-${country.id}`}
-                          label={country.name}
-                          variant="pill"
-                          checked={checked}
-                          onChange={() =>
-                            toggleContentBankArray(
-                              "geolocationRestrictionCountryIds",
-                              country.id,
-                            )
-                          }
-                        />
-                      )
-                    })}
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {activeTab === 5 && (
-              <section className={styles.section}>
-                <div className={styles.sectionHeader}>
-                  <h2 className={styles.sectionTitle}>Ubicación y rodaje</h2>
-                  <p className={styles.sectionDescription}>
-                    Provincias y ciudades donde se filmó o tiene alcance la
-                    película.
-                  </p>
-                </div>
-
-                <div className={styles.field}>
-                  <div className={styles.label}>Provincias</div>
-                  <div className={styles.optionGrid}>
-                    {ecuadorProvinces.map((province) => {
-                      const checked = formik.values.provinces.includes(
-                        province.name,
-                      )
-                      return (
-                        <Checkbox
-                          key={province.code}
-                          label={province.name}
-                          variant="pill"
-                          checked={checked}
-                          onChange={() =>
-                            handleProvincesChange(province.name)
-                          }
-                        />
-                      )
-                    })}
-                  </div>
-                  <p className={styles.helper}>
-                    Puedes seleccionar múltiples provincias.
-                  </p>
-                </div>
-
-                {availableCities.length > 0 && (
-                  <div className={styles.field}>
-                    <div className={styles.label}>Ciudades</div>
-                    <div className={styles.optionGrid}>
-                      {availableCities.map((city) => {
-                        const checked = formik.values.cities.includes(city)
-                        return (
-                          <Checkbox
-                            key={city}
-                            label={city}
-                            variant="pill"
-                            checked={checked}
-                            onChange={() =>
-                              handleCheckboxToggle("cities", city)
-                            }
-                          />
-                        )
-                      })}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => removeContentBankRow(index)}
+                        disabled={formik.values.contentBank.length === 1}
+                      >
+                        Quitar
+                      </Button>
                     </div>
-                    <p className={styles.helper}>
-                      Filtra ciudades según las provincias elegidas.
-                    </p>
-                  </div>
-                )}
+                  )})}
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={addContentBankRow}
+                  disabled={
+                    new Set(
+                      formik.values.contentBank
+                        .map((entry) => entry.exhibitionWindow)
+                        .filter((value) => value),
+                    ).size >= EXHIBITION_WINDOW_OPTIONS.length
+                  }
+                >
+                  Agregar territorio
+                </Button>
               </section>
             )}
 
             {activeTab === 6 && (
               <section className={styles.section}>
                 <div className={styles.sectionHeader}>
-                  <h2 className={styles.sectionTitle}>Idiomas</h2>
+                  <h2 className={styles.sectionTitle}>Subtítulos</h2>
                   <p className={styles.sectionDescription}>
-                    Marca los idiomas tal y como se rodó la película.
+                    Selecciona los idiomas disponibles como subtítulos.
                   </p>
                 </div>
 
                 <div className={styles.field}>
-                  <div className={styles.label}>Idiomas originales *</div>
+                  <div className={styles.label}>Subtítulos *</div>
                   <div className={styles.optionGrid}>
                     {sortedLanguages.map((lang) => {
                       const checked = formik.values.languages.includes(
-                        lang.code,
+                        lang.id,
                       )
                       return (
                         <Checkbox
-                          key={lang.code}
+                          key={lang.id}
                           label={lang.name}
                           variant="pill"
                           checked={checked}
                           onChange={() =>
-                            handleCheckboxToggle("languages", lang.code)
+                            handleCheckboxToggle("languages", lang.id)
                           }
                         />
                       )
@@ -2585,7 +2717,7 @@ export default function MoviesAdminPage() {
                     <p className={styles.error}>{getFieldError("languages")}</p>
                   )}
                   <p className={styles.helper}>
-                    Marca los idiomas tal y como se rodó la película.
+                    Selecciona los subtítulos disponibles.
                   </p>
                 </div>
               </section>

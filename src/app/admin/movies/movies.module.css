@@ -166,6 +166,54 @@
   background-color: var(--color-surface-hover);
 }
 
+.dropdown {
+  position: relative;
+}
+
+.dropdownTrigger {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdownTrigger:hover {
+  border-color: var(--color-border-dark);
+  background-color: var(--color-surface-hover);
+}
+
+.dropdownMenu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background-color: var(--color-surface-hover);
+}
+
 .durationInput {
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
