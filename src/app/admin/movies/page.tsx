@@ -410,6 +410,7 @@ const CLASSIFICATION_OPTIONS: { label: string; value: MovieClassification }[] =
     { value: "mayores_12", label: "Público mayor de 12" },
     { value: "mayores_15", label: "Público mayor de 15" },
     { value: "solo_mayores_18", label: "Solo mayores de 18" },
+    { value: "no_especificada", label: "No especificada" },
   ]
 
 const PROJECT_STATUS_OPTIONS: { label: string; value: ProjectStatus }[] = [
@@ -473,7 +474,7 @@ const validationSchema = Yup.object().shape({
   countryId: Yup.number().required("Selecciona un país de origen"),
   
   releaseYear: Yup.number()
-    .required("El año de estreno es obligatorio")
+    .typeError("El año debe ser un número")
     .min(1888, "Ingresa un año válido (mínimo 1888)")
     .max(
       new Date().getFullYear() + 5,
@@ -491,7 +492,7 @@ const validationSchema = Yup.object().shape({
   producers: Yup.array(),
   mainActors: Yup.array(),
   crew: Yup.array(),
-  producerCompanyId: Yup.number().required("Selecciona un productor"),
+  producerCompanyId: Yup.number(),
   coProducerCompanyIds: Yup.array(),
   internationalCoProductions: Yup.array(),
   totalBudget: Yup.number(),
@@ -574,7 +575,7 @@ const initialValues: FormValues = {
   stillAssetIds: [],
   filmingCitiesEc: [],
   filmingCountries: [],
-  classification: "todo_publico",
+  classification: "no_especificada",
   projectStatus: "desarrollo",
 }
 
@@ -2059,7 +2060,7 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
 
                   <div className={styles.field}>
                     <Input
-                      label="Empresa productora *"
+                      label="Empresa productora"
                       name="companySearch"
                       value={producerCompanySearch}
                       onChange={(event) =>

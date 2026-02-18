@@ -14,6 +14,7 @@ export type MovieClassification =
   | "mayores_12"
   | "mayores_15"
   | "solo_mayores_18"
+  | "no_especificada"
 
 export type ProjectStatus =
   | "desarrollo"
