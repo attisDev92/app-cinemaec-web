@@ -53,7 +53,8 @@ interface FormValues {
   type: MovieType
   genre: MovieGenre
   subGenres: number[]
-  languages: number[]
+  languages: string[]
+  subtitles: number[]
   countryId: number | ""
   releaseYear: number | ""
   synopsis: string
@@ -207,7 +208,8 @@ const validationSchema = Yup.object().shape({
   subGenres: Yup.array()
     .min(1, "Selecciona al menos un subgénero")
     .required("Selecciona al menos un subgénero"),
-  languages: Yup.array()
+  languages: Yup.array(),
+  subtitles: Yup.array()
     .min(1, "Selecciona al menos un subtítulo")
     .required("Selecciona al menos un subtítulo"),
   countryId: Yup.number().required("Selecciona un país de origen"),
@@ -264,6 +266,7 @@ const initialValues: FormValues = {
   genre: "Ficción",
   subGenres: [],
   languages: [],
+  subtitles: [],
   countryId: "",
   releaseYear: "",
   synopsis: "",
@@ -299,14 +302,7 @@ const initialValues: FormValues = {
   },
   festivalNominations: [],
   platforms: [],
-  contacts: [
-    {
-      name: "",
-      role: "",
-      phone: "",
-      email: "",
-    },
-  ],
+  contacts: [],
   contentBank: [
     {
       exhibitionWindow: "",
@@ -346,18 +342,42 @@ export default function MoviesAdminPage() {
   const [coProducerCompanySearch, setCoProducerCompanySearch] = useState("")
   const [directorSearch, setDirectorSearch] = useState("")
   const [producerSearch, setProducerSearch] = useState("")
-  const [crewSearches, setCrewSearches] = useState<string[]>([])
   const [actorSearch, setActorSearch] = useState("")
   const [languageSearch, setLanguageSearch] = useState("")
-  const [fundingSearches, setFundingSearches] = useState<string[]>([])
+  const [subtitleSearch, setSubtitleSearch] = useState("")
+  const [internationalCompanyName, setInternationalCompanyName] = useState("")
+  const [internationalCountryId, setInternationalCountryId] = useState<number | "">("")
+  const [crewProfessionalSearch, setCrewProfessionalSearch] = useState("")
+  const [crewProfessionalId, setCrewProfessionalId] = useState<number | "">("")
+  const [crewRoleId, setCrewRoleId] = useState<number | "">("")
+  const [subGenreSearch, setSubGenreSearch] = useState("")
+  const [fundingSearch, setFundingSearch] = useState("")
+  const [fundingFundId, setFundingFundId] = useState<number | "">("")
+  const [fundingYear, setFundingYear] = useState<number | "">("")
+  const [fundingAmount, setFundingAmount] = useState<number | "">("")
+  const [fundingStage, setFundingStage] = useState<ProjectStatus | "">("")
   const [nationalReleaseSpaceSearch, setNationalReleaseSpaceSearch] =
     useState("")
-  const [festivalFundSearches, setFestivalFundSearches] = useState<string[]>([])
+  const [festivalFundSearch, setFestivalFundSearch] = useState("")
+  const [festivalFundId, setFestivalFundId] = useState<number | "">("")
+  const [festivalYear, setFestivalYear] = useState<number | "">("")
+  const [festivalCategory, setFestivalCategory] = useState("")
+  const [festivalResult, setFestivalResult] =
+    useState<FestivalNominationResult | "">("")
+  const [platformId, setPlatformId] = useState<number | "">("")
+  const [platformLink, setPlatformLink] = useState("")
+  const [contactName, setContactName] = useState("")
+  const [contactRole, setContactRole] = useState<ContactPosition | "">("")
+  const [contactPhone, setContactPhone] = useState("")
+  const [contactEmail, setContactEmail] = useState("")
+  const [contentTerritory, setContentTerritory] =
+    useState<ExhibitionWindow | "">("")
+  const [contentStartDate, setContentStartDate] = useState("")
+  const [contentEndDate, setContentEndDate] = useState("")
+  const [contentGeoblockIds, setContentGeoblockIds] = useState<number[]>([])
+  const [contentGeoblockOpen, setContentGeoblockOpen] = useState(false)
   const [filmingCitySearch, setFilmingCitySearch] = useState("")
   const [filmingCountrySearch, setFilmingCountrySearch] = useState("")
-  const [openGeoblockIndex, setOpenGeoblockIndex] = useState<number | null>(
-    null,
-  )
 
   const tabs = [
     { id: "basic", label: "Información básica" },
@@ -398,7 +418,8 @@ export default function MoviesAdminPage() {
           type: values.type,
           genre: values.genre,
           subGenreIds: values.subGenres,
-          subtitleLanguageIds: values.languages,
+          languages: values.languages,
+          subtitleLanguageIds: values.subtitles,
           countryId: Number(values.countryId),
           releaseYear: Number(values.releaseYear),
           synopsis: values.synopsis.trim(),
@@ -515,22 +536,17 @@ export default function MoviesAdminPage() {
                 email: entry.email.trim() || undefined,
               })) || undefined,
           contentBank:
-            values.contentBank
-              .filter(
-                (entry) =>
-                  entry.exhibitionWindow &&
-                  entry.licensingStartDate &&
-                  entry.licensingEndDate,
-              )
-              .map((entry) => ({
-                exhibitionWindow: entry.exhibitionWindow as ExhibitionWindow,
-                licensingStartDate: entry.licensingStartDate,
-                licensingEndDate: entry.licensingEndDate,
-                geolocationRestrictionCountryIds:
-                  entry.geolocationRestrictionCountryIds.length > 0
-                    ? entry.geolocationRestrictionCountryIds
-                    : undefined,
-              })) || undefined,
+            values.contentBank.length > 0
+              ? values.contentBank.map((entry) => ({
+                  exhibitionWindow: entry.exhibitionWindow as ExhibitionWindow,
+                  licensingStartDate: entry.licensingStartDate,
+                  licensingEndDate: entry.licensingEndDate,
+                  geolocationRestrictionCountryIds:
+                    entry.geolocationRestrictionCountryIds.length > 0
+                      ? entry.geolocationRestrictionCountryIds
+                      : undefined,
+                }))
+              : undefined,
           posterAssetId: values.posterAssetId ?? undefined,
           dossierAssetId: values.dossierAssetId ?? undefined,
           dossierEnAssetId: values.dossierEnAssetId ?? undefined,
@@ -558,10 +574,16 @@ export default function MoviesAdminPage() {
     },
   })
 
-  const sortedCountries = useMemo(
-    () => countries.sort((a, b) => a.name.localeCompare(b.name)),
-    [countries],
-  )
+  const sortedCountries = useMemo(() => {
+    const normalizedEcuador = "ecuador"
+    return [...countries].sort((a, b) => {
+      const aName = a.name?.toLowerCase() ?? ""
+      const bName = b.name?.toLowerCase() ?? ""
+      if (aName === normalizedEcuador && bName !== normalizedEcuador) return -1
+      if (bName === normalizedEcuador && aName !== normalizedEcuador) return 1
+      return a.name.localeCompare(b.name)
+    })
+  }, [countries])
 
   const sortedLanguages = useMemo(
     () => languages.sort((a, b) => a.name.localeCompare(b.name)),
@@ -582,12 +604,19 @@ export default function MoviesAdminPage() {
     })
   }, [languageSearch, sortedLanguages])
 
+  const filteredSubtitleLanguages = useMemo(() => {
+    const query = subtitleSearch.trim().toLowerCase()
+    if (!query) return sortedLanguages
+    return sortedLanguages.filter((lang) => {
+      const label = `${lang.name} ${lang.code}`.toLowerCase()
+      return label.includes(query)
+    })
+  }, [subtitleSearch, sortedLanguages])
+
   const sortedProfessionals = useMemo(
     () =>
       [...professionals].sort((a, b) =>
-        `${a.lastName} ${a.firstName}`.localeCompare(
-          `${b.lastName} ${b.firstName}`,
-        ),
+        `${a.name ?? ""}`.localeCompare(`${b.name ?? ""}`),
       ),
     [professionals],
   )
@@ -596,7 +625,7 @@ export default function MoviesAdminPage() {
     const query = directorSearch.trim().toLowerCase()
     if (!query) return sortedProfessionals
     return sortedProfessionals.filter((professional) => {
-      const label = `${professional.firstName} ${professional.lastName}`.toLowerCase()
+      const label = `${professional.name ?? ""}`.toLowerCase()
       return label.includes(query)
     })
   }, [directorSearch, sortedProfessionals])
@@ -605,7 +634,7 @@ export default function MoviesAdminPage() {
     const query = producerSearch.trim().toLowerCase()
     if (!query) return sortedProfessionals
     return sortedProfessionals.filter((professional) => {
-      const label = `${professional.firstName} ${professional.lastName}`.toLowerCase()
+      const label = `${professional.name ?? ""}`.toLowerCase()
       return label.includes(query)
     })
   }, [producerSearch, sortedProfessionals])
@@ -614,7 +643,7 @@ export default function MoviesAdminPage() {
     const query = actorSearch.trim().toLowerCase()
     if (!query) return sortedProfessionals
     return sortedProfessionals.filter((professional) =>
-      `${professional.firstName} ${professional.lastName}`.toLowerCase().includes(query),
+      `${professional.name ?? ""}`.toLowerCase().includes(query),
     )
   }, [actorSearch, sortedProfessionals])
 
@@ -623,12 +652,18 @@ export default function MoviesAdminPage() {
     [roles],
   )
 
+  const filteredCrewRoles = useMemo(() => {
+    const blocked = ["actor", "actriz", "director", "productor"]
+    return sortedRoles.filter((role) => {
+      const name = role.name.toLowerCase()
+      return !blocked.some((term) => name.includes(term))
+    })
+  }, [sortedRoles])
+
   const sortedCompanies = useMemo(
     () =>
       [...companies].sort((a, b) =>
-        `${a.commercialName ?? a.legalName ?? a.ruc}`.localeCompare(
-          `${b.commercialName ?? b.legalName ?? b.ruc}`,
-        ),
+        `${a.name ?? a.ruc ?? ""}`.localeCompare(`${b.name ?? b.ruc ?? ""}`),
       ),
     [companies],
   )
@@ -652,9 +687,7 @@ export default function MoviesAdminPage() {
     const query = producerCompanySearch.trim().toLowerCase()
     if (!query) return sortedCompanies
     return sortedCompanies.filter((company) => {
-      const label = `${company.commercialName ?? ""} ${
-        company.legalName ?? ""
-      } ${company.ruc}`.toLowerCase()
+      const label = `${company.name ?? ""} ${company.ruc ?? ""}`.toLowerCase()
       return label.includes(query)
     })
   }, [producerCompanySearch, sortedCompanies])
@@ -663,12 +696,40 @@ export default function MoviesAdminPage() {
     const query = coProducerCompanySearch.trim().toLowerCase()
     if (!query) return sortedCompanies
     return sortedCompanies.filter((company) => {
-      const label = `${company.commercialName ?? ""} ${
-        company.legalName ?? ""
-      } ${company.ruc}`.toLowerCase()
+      const label = `${company.name ?? ""} ${company.ruc ?? ""}`.toLowerCase()
       return label.includes(query)
     })
   }, [coProducerCompanySearch, sortedCompanies])
+
+  const selectedCoProducerCompanies = useMemo(() => {
+    return formik.values.coProducerCompanyIds
+      .map((companyId) => companies.find((company) => company.id === companyId))
+      .filter((company): company is typeof company & {} => company !== undefined)
+  }, [formik.values.coProducerCompanyIds, companies])
+
+  const selectedProducerCompany = useMemo(
+    () => companies.find((company) => company.id === formik.values.producerCompanyId),
+    [formik.values.producerCompanyId, companies],
+  )
+
+  const sortedSubGenres = useMemo(
+    () => [...subGenres].sort((a, b) => a.name.localeCompare(b.name)),
+    [subGenres],
+  )
+
+  const filteredSubGenres = useMemo(() => {
+    const query = subGenreSearch.trim().toLowerCase()
+    if (!query) return sortedSubGenres
+    return sortedSubGenres.filter((subGenre) => {
+      return subGenre.name.toLowerCase().includes(query)
+    })
+  }, [subGenreSearch, sortedSubGenres])
+
+  const selectedSubGenres = useMemo(() => {
+    return formik.values.subGenres
+      .map((subGenreId) => subGenres.find((g) => g.id === subGenreId))
+      .filter((subGenre): subGenre is typeof subGenre & {} => subGenre !== undefined)
+  }, [formik.values.subGenres, subGenres])
 
   const getFundingOptions = (searchValue: string) => {
     const query = searchValue.trim().toLowerCase()
@@ -713,6 +774,7 @@ export default function MoviesAdminPage() {
     arrayName:
       | "subGenres"
       | "languages"
+      | "subtitles"
       | "directors"
       | "producers"
       | "coProducerCompanyIds"
@@ -730,28 +792,20 @@ export default function MoviesAdminPage() {
     formik.setFieldValue(arrayName, newArray)
   }
 
-  const addCrewRow = () => {
+  const addCrewEntry = () => {
+    if (!crewProfessionalId || !crewRoleId) return
     formik.setFieldValue("crew", [
       ...formik.values.crew,
-      { roleId: "", professionalId: "" },
+      { roleId: crewRoleId, professionalId: crewProfessionalId },
     ])
-    setCrewSearches((prev) => [...prev, ""])
-  }
-
-  const updateCrewRow = (
-    index: number,
-    field: "roleId" | "professionalId",
-    value: number | "",
-  ) => {
-    const next = [...formik.values.crew]
-    next[index] = { ...next[index], [field]: value }
-    formik.setFieldValue("crew", next)
+    setCrewProfessionalId("")
+    setCrewRoleId("")
+    setCrewProfessionalSearch("")
   }
 
   const removeCrewRow = (index: number) => {
     const next = formik.values.crew.filter((_, i) => i !== index)
     formik.setFieldValue("crew", next)
-    setCrewSearches((prev) => prev.filter((_, i) => i !== index))
   }
 
   const addActor = (id: number) => {
@@ -766,28 +820,29 @@ export default function MoviesAdminPage() {
     )
   }
 
-  const addFundingRow = () => {
+  const addFundingEntry = () => {
+    if (!fundingFundId || !fundingYear || !fundingAmount || !fundingStage) {
+      return
+    }
     formik.setFieldValue("funding", [
       ...formik.values.funding,
-      { fundId: "", year: "", amountGranted: "", fundingStage: "" },
+      {
+        fundId: fundingFundId,
+        year: fundingYear,
+        amountGranted: fundingAmount,
+        fundingStage,
+      },
     ])
-    setFundingSearches((prev) => [...prev, ""])
-  }
-
-  const updateFundingRow = (
-    index: number,
-    field: "fundId" | "year" | "amountGranted" | "fundingStage",
-    value: number | ProjectStatus | "",
-  ) => {
-    const next = [...formik.values.funding]
-    next[index] = { ...next[index], [field]: value }
-    formik.setFieldValue("funding", next)
+    setFundingFundId("")
+    setFundingYear("")
+    setFundingAmount("")
+    setFundingStage("")
+    setFundingSearch("")
   }
 
   const removeFundingRow = (index: number) => {
     const next = formik.values.funding.filter((_, i) => i !== index)
     formik.setFieldValue("funding", next)
-    setFundingSearches((prev) => prev.filter((_, i) => i !== index))
   }
 
   const updateNationalRelease = (
@@ -810,52 +865,58 @@ export default function MoviesAdminPage() {
     })
   }
 
-  const addFestivalNominationRow = () => {
+  const addFestivalNominationEntry = () => {
+    if (!festivalFundId || !festivalYear || !festivalCategory || !festivalResult) {
+      return
+    }
     formik.setFieldValue("festivalNominations", [
       ...formik.values.festivalNominations,
-      { fundId: "", year: "", category: "", result: "" },
+      {
+        fundId: festivalFundId,
+        year: festivalYear,
+        category: festivalCategory.trim(),
+        result: festivalResult,
+      },
     ])
-    setFestivalFundSearches((prev) => [...prev, ""])
-  }
-
-  const updateFestivalNominationRow = (
-    index: number,
-    field: "fundId" | "year" | "category" | "result",
-    value: number | string | FestivalNominationResult | "",
-  ) => {
-    const next = [...formik.values.festivalNominations]
-    next[index] = { ...next[index], [field]: value }
-    formik.setFieldValue("festivalNominations", next)
+    setFestivalFundId("")
+    setFestivalYear("")
+    setFestivalCategory("")
+    setFestivalResult("")
+    setFestivalFundSearch("")
   }
 
   const removeFestivalNominationRow = (index: number) => {
     const next = formik.values.festivalNominations.filter((_, i) => i !== index)
     formik.setFieldValue("festivalNominations", next)
-    setFestivalFundSearches((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const addPlatformRow = () => {
+  const addPlatformEntry = () => {
+    if (!platformId || !platformLink.trim()) return
     formik.setFieldValue("platforms", [
       ...formik.values.platforms,
-      { platformId: "", link: "" },
+      { platformId, link: platformLink.trim() },
     ])
+    setPlatformId("")
+    setPlatformLink("")
   }
 
-  const addContactRow = () => {
+  const addContactEntry = () => {
+    if (!contactName.trim() || !contactRole || !contactPhone.trim() || !contactEmail.trim()) {
+      return
+    }
     formik.setFieldValue("contacts", [
       ...formik.values.contacts,
-      { name: "", role: "", phone: "", email: "" },
+      {
+        name: contactName.trim(),
+        role: contactRole,
+        phone: contactPhone.trim(),
+        email: contactEmail.trim(),
+      },
     ])
-  }
-
-  const updateContactRow = (
-    index: number,
-    field: "name" | "role" | "phone" | "email",
-    value: string,
-  ) => {
-    const next = [...formik.values.contacts]
-    next[index] = { ...next[index], [field]: value }
-    formik.setFieldValue("contacts", next)
+    setContactName("")
+    setContactRole("")
+    setContactPhone("")
+    setContactEmail("")
   }
 
   const removeContactRow = (index: number) => {
@@ -863,36 +924,20 @@ export default function MoviesAdminPage() {
     formik.setFieldValue("contacts", next)
   }
 
-  const updatePlatformRow = (
-    index: number,
-    field: "platformId" | "link",
-    value: number | string | "",
-  ) => {
-    const next = [...formik.values.platforms]
-    next[index] = { ...next[index], [field]: value }
-    formik.setFieldValue("platforms", next)
-  }
-
   const removePlatformRow = (index: number) => {
     const next = formik.values.platforms.filter((_, i) => i !== index)
     formik.setFieldValue("platforms", next)
   }
 
-  const addInternationalCoproductionRow = () => {
+  const addInternationalCoproductionEntry = () => {
+    const companyName = internationalCompanyName.trim()
+    if (!companyName || !internationalCountryId) return
     formik.setFieldValue("internationalCoProductions", [
       ...formik.values.internationalCoProductions,
-      { companyName: "", countryId: "" },
+      { companyName, countryId: internationalCountryId },
     ])
-  }
-
-  const updateInternationalCoproductionRow = (
-    index: number,
-    field: "companyName" | "countryId",
-    value: string | number | "",
-  ) => {
-    const next = [...formik.values.internationalCoProductions]
-    next[index] = { ...next[index], [field]: value }
-    formik.setFieldValue("internationalCoProductions", next)
+    setInternationalCompanyName("")
+    setInternationalCountryId("")
   }
 
   const removeInternationalCoproductionRow = (index: number) => {
@@ -934,26 +979,22 @@ export default function MoviesAdminPage() {
     formik.setFieldValue("pedagogicalGuideAssetId", null)
   }
 
-  const addContentBankRow = () => {
+  const addContentBankEntry = () => {
+    if (!contentTerritory || !contentStartDate || !contentEndDate) return
     formik.setFieldValue("contentBank", [
       ...formik.values.contentBank,
       {
-        exhibitionWindow: "",
-        licensingStartDate: "",
-        licensingEndDate: "",
-        geolocationRestrictionCountryIds: [],
+        exhibitionWindow: contentTerritory,
+        licensingStartDate: contentStartDate,
+        licensingEndDate: contentEndDate,
+        geolocationRestrictionCountryIds: contentGeoblockIds,
       },
     ])
-  }
-
-  const updateContentBankRow = (
-    index: number,
-    field: "exhibitionWindow" | "licensingStartDate" | "licensingEndDate",
-    value: string,
-  ) => {
-    const next = [...formik.values.contentBank]
-    next[index] = { ...next[index], [field]: value }
-    formik.setFieldValue("contentBank", next)
+    setContentTerritory("")
+    setContentStartDate("")
+    setContentEndDate("")
+    setContentGeoblockIds([])
+    setContentGeoblockOpen(false)
   }
 
   const removeContentBankRow = (index: number) => {
@@ -967,10 +1008,13 @@ export default function MoviesAdminPage() {
       : undefined
   }
 
-  const getProfessionalLabel = (professional: {
-    firstName: string
-    lastName: string
-  }) => `${professional.firstName} ${professional.lastName}`
+  const getProfessionalLabel = (professional: { name?: string | null }) =>
+    professional.name ?? ""
+
+  const getCompanyLabel = (company: {
+    name?: string | null
+    ruc?: string | null
+  }) => company.name ?? company.ruc ?? ""
 
   const getCrewProfessionals = (searchValue: string) => {
     const query = searchValue.trim().toLowerCase()
@@ -1246,273 +1290,357 @@ export default function MoviesAdminPage() {
                 <div className={styles.field}>
                   <div className={styles.label}>Festivales y nominaciones</div>
                   <div className={styles.crewList}>
-                    {formik.values.festivalNominations.map((entry, index) => (
-                      <div
-                        key={`festival-nomination-${index}`}
-                        className={styles.crewRow}
-                      >
-                        <div className={styles.field}>
-                          <Input
-                            label="Buscar espacio"
-                            name={`festival-fund-search-${index}`}
-                            value={festivalFundSearches[index] ?? ""}
-                            onChange={(event) =>
-                              setFestivalFundSearches((prev) => {
-                                const next = [...prev]
-                                next[index] = event.target.value
-                                return next
-                              })
-                            }
-                            placeholder="Buscar por nombre"
-                          />
+                    <div className={styles.crewRow}>
+                      <div className={styles.field}>
+                        <Input
+                          label="Buscar espacio"
+                          name="festival-fund-search"
+                          value={festivalFundSearch}
+                          onChange={(event) =>
+                            setFestivalFundSearch(event.target.value)
+                          }
+                          placeholder="Buscar por nombre"
+                        />
+
+                        {festivalFundId && (
                           <div className={styles.optionGrid}>
-                            {getFundingOptions(
-                              festivalFundSearches[index] ?? "",
-                            ).map((fund) => (
-                              <Checkbox
-                                key={`festival-fund-${index}-${fund.id}`}
-                                label={
-                                  fund.country?.name
-                                    ? `${fund.name} (${fund.country.name})`
-                                    : fund.name
-                                }
-                                variant="pill"
-                                checked={entry.fundId === fund.id}
-                                onChange={() =>
-                                  updateFestivalNominationRow(
-                                    index,
-                                    "fundId",
-                                    fund.id,
-                                  )
-                                }
-                              />
-                            ))}
+                            {(() => {
+                              const selected = funds.find(
+                                (fund) => fund.id === festivalFundId,
+                              )
+                              if (!selected) return null
+                              return (
+                                <Checkbox
+                                  key={`festival-selected-${selected.id}`}
+                                  label={
+                                    selected.country?.name
+                                      ? `${selected.name} (${selected.country.name})`
+                                      : selected.name
+                                  }
+                                  variant="pill"
+                                  checked
+                                  onChange={() => setFestivalFundId("")}
+                                />
+                              )
+                            })()}
                           </div>
-                        </div>
+                        )}
 
-                        <Input
-                          label="Año"
-                          name={`festival-year-${index}`}
-                          type="number"
-                          min={1900}
-                          value={entry.year}
-                          onChange={(event) =>
-                            updateFestivalNominationRow(
-                              index,
-                              "year",
-                              event.target.value
-                                ? Number(event.target.value)
-                                : "",
-                            )
-                          }
-                          placeholder="Ej: 2022"
-                        />
-
-                        <Input
-                          label="Categoría"
-                          name={`festival-category-${index}`}
-                          value={entry.category}
-                          onChange={(event) =>
-                            updateFestivalNominationRow(
-                              index,
-                              "category",
-                              event.target.value,
-                            )
-                          }
-                          placeholder="Ej: Mejor película"
-                        />
-
-                        <Select
-                          label="Resultado"
-                          name={`festival-result-${index}`}
-                          value={entry.result}
-                          onChange={(event) =>
-                            updateFestivalNominationRow(
-                              index,
-                              "result",
-                              event.target.value as FestivalNominationResult,
-                            )
-                          }
-                        >
-                          <option value="">Selecciona un resultado</option>
-                          {FESTIVAL_RESULT_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </Select>
-
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => removeFestivalNominationRow(index)}
-                        >
-                          Quitar
-                        </Button>
+                        {festivalFundSearch.trim() && (
+                          <div className={styles.suggestionList}>
+                            {getFundingOptions(festivalFundSearch).length === 0 && (
+                              <p className={styles.suggestionEmpty}>
+                                No se encontraron espacios con ese criterio.
+                              </p>
+                            )}
+                            {getFundingOptions(festivalFundSearch)
+                              .slice(0, 8)
+                              .map((fund) => {
+                                const checked = festivalFundId === fund.id
+                                return (
+                                  <button
+                                    key={`festival-fund-${fund.id}`}
+                                    type="button"
+                                    className={styles.suggestionItem}
+                                    onClick={() => {
+                                      setFestivalFundId(fund.id)
+                                      setFestivalFundSearch("")
+                                    }}
+                                  >
+                                    <span className={styles.suggestionName}>
+                                      {fund.country?.name
+                                        ? `${fund.name} (${fund.country.name})`
+                                        : fund.name}
+                                    </span>
+                                    <span className={styles.suggestionMeta}>
+                                      {checked ? "Seleccionado" : ""}
+                                    </span>
+                                  </button>
+                                )
+                              })}
+                          </div>
+                        )}
                       </div>
-                    ))}
+
+                      <Input
+                        label="Año"
+                        name="festival-year"
+                        type="number"
+                        min={1900}
+                        value={festivalYear}
+                        onChange={(event) =>
+                          setFestivalYear(
+                            event.target.value
+                              ? Number(event.target.value)
+                              : "",
+                          )
+                        }
+                        placeholder="Ej: 2022"
+                      />
+
+                      <Input
+                        label="Categoría"
+                        name="festival-category"
+                        value={festivalCategory}
+                        onChange={(event) =>
+                          setFestivalCategory(event.target.value)
+                        }
+                        placeholder="Ej: Mejor película"
+                      />
+
+                      <Select
+                        label="Resultado"
+                        name="festival-result"
+                        value={festivalResult}
+                        onChange={(event) =>
+                          setFestivalResult(
+                            event.target.value as FestivalNominationResult,
+                          )
+                        }
+                      >
+                        <option value="">Selecciona un resultado</option>
+                        {FESTIVAL_RESULT_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={addFestivalNominationEntry}
+                        disabled={
+                          !festivalFundId ||
+                          !festivalYear ||
+                          !festivalCategory ||
+                          !festivalResult
+                        }
+                      >
+                        Agregar
+                      </Button>
+                    </div>
+
+                    {formik.values.festivalNominations.length > 0 && (
+                      <div className={styles.internationalList}>
+                        {formik.values.festivalNominations.map((entry, index) => {
+                          const fund = funds.find((f) => f.id === entry.fundId)
+                          const resultLabel = FESTIVAL_RESULT_OPTIONS.find(
+                            (option) => option.value === entry.result,
+                          )?.label
+                          return (
+                            <div
+                              key={`festival-nomination-${index}`}
+                              className={styles.internationalItem}
+                            >
+                              <div className={styles.internationalInfo}>
+                                <p className={styles.internationalTitle}>
+                                  {fund?.name ?? ""}
+                                </p>
+                                <p className={styles.internationalMeta}>
+                                  {fund?.country?.name ?? ""}
+                                </p>
+                                <p className={styles.internationalMeta}>
+                                  {entry.year ? `Año ${entry.year}` : ""}
+                                  {entry.category ? ` • ${entry.category}` : ""}
+                                  {resultLabel ? ` • ${resultLabel}` : ""}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className={styles.internationalRemove}
+                                aria-label="Quitar"
+                                onClick={() => removeFestivalNominationRow(index)}
+                              >
+                                X
+                              </Button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addFestivalNominationRow}
-                  >
-                    Agregar festival o nominación
-                  </Button>
                 </div>
 
                 <div className={styles.field}>
                   <div className={styles.label}>Plataformas</div>
                   <div className={styles.crewList}>
-                    {formik.values.platforms.map((entry, index) => (
-                      <div
-                        key={`platform-${index}`}
-                        className={styles.crewRow}
+                    <div className={styles.crewRow}>
+                      <Select
+                        label="Plataforma"
+                        name="platform-id"
+                        value={platformId}
+                        onChange={(event) =>
+                          setPlatformId(
+                            event.target.value
+                              ? Number(event.target.value)
+                              : "",
+                          )
+                        }
                       >
-                        <Select
-                          label="Plataforma"
-                          name={`platform-id-${index}`}
-                          value={entry.platformId}
-                          onChange={(event) =>
-                            updatePlatformRow(
-                              index,
-                              "platformId",
-                              event.target.value
-                                ? Number(event.target.value)
-                                : "",
-                            )
-                          }
-                        >
-                          <option value="">Selecciona una plataforma</option>
-                          {sortedPlatforms.map((platform) => (
-                            <option key={platform.id} value={platform.id}>
-                              {platform.name}
-                            </option>
-                          ))}
-                        </Select>
+                        <option value="">Selecciona una plataforma</option>
+                        {sortedPlatforms.map((platform) => (
+                          <option key={platform.id} value={platform.id}>
+                            {platform.name}
+                          </option>
+                        ))}
+                      </Select>
 
-                        <Input
-                          label="Link"
-                          name={`platform-link-${index}`}
-                          value={entry.link}
-                          onChange={(event) =>
-                            updatePlatformRow(
-                              index,
-                              "link",
-                              event.target.value,
-                            )
-                          }
-                          placeholder="https://"
-                        />
+                      <Input
+                        label="Link"
+                        name="platform-link"
+                        value={platformLink}
+                        onChange={(event) =>
+                          setPlatformLink(event.target.value)
+                        }
+                        placeholder="https://"
+                      />
 
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => removePlatformRow(index)}
-                        >
-                          Quitar
-                        </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={addPlatformEntry}
+                        disabled={!platformId || !platformLink.trim()}
+                      >
+                        Agregar
+                      </Button>
+                    </div>
+
+                    {formik.values.platforms.length > 0 && (
+                      <div className={styles.internationalList}>
+                        {formik.values.platforms.map((entry, index) => {
+                          const platform = sortedPlatforms.find(
+                            (p) => p.id === entry.platformId,
+                          )
+                          return (
+                            <div
+                              key={`platform-${index}`}
+                              className={styles.internationalItem}
+                            >
+                              <div className={styles.internationalInfo}>
+                                <p className={styles.internationalTitle}>
+                                  {platform?.name ?? ""}
+                                </p>
+                                <p className={styles.internationalMeta}>
+                                  {entry.link}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className={styles.internationalRemove}
+                                aria-label="Quitar"
+                                onClick={() => removePlatformRow(index)}
+                              >
+                                X
+                              </Button>
+                            </div>
+                          )
+                        })}
                       </div>
-                    ))}
+                    )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addPlatformRow}
-                  >
-                    Agregar plataforma
-                  </Button>
                 </div>
 
                 <div className={styles.field}>
                   <div className={styles.label}>Contacto</div>
                   <div className={styles.crewList}>
-                    {formik.values.contacts.map((entry, index) => (
-                      <div
-                        key={`contact-${index}`}
-                        className={styles.crewRow}
+                    <div className={styles.crewRow}>
+                      <Input
+                        label="Nombre y apellido"
+                        name="contact-name"
+                        value={contactName}
+                        onChange={(event) => setContactName(event.target.value)}
+                        placeholder="Nombre del contacto"
+                      />
+
+                      <Select
+                        label="Cargo"
+                        name="contact-role"
+                        value={contactRole}
+                        onChange={(event) =>
+                          setContactRole(event.target.value as ContactPosition)
+                        }
                       >
-                        <Input
-                          label="Nombre y apellido"
-                          name={`contact-name-${index}`}
-                          value={entry.name}
-                          onChange={(event) =>
-                            updateContactRow(
-                              index,
-                              "name",
-                              event.target.value,
-                            )
-                          }
-                          placeholder="Nombre del contacto"
-                        />
+                        <option value="">Selecciona un cargo</option>
+                        {CONTACT_POSITION_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
 
-                        <Select
-                          label="Cargo"
-                          name={`contact-role-${index}`}
-                          value={entry.role}
-                          onChange={(event) =>
-                            updateContactRow(
-                              index,
-                              "role",
-                              event.target.value,
-                            )
-                          }
-                        >
-                          <option value="">Selecciona un cargo</option>
-                          {CONTACT_POSITION_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </Select>
+                      <Input
+                        label="Teléfono"
+                        name="contact-phone"
+                        value={contactPhone}
+                        onChange={(event) => setContactPhone(event.target.value)}
+                        placeholder="Ej: +593 99 123 4567"
+                      />
 
-                        <Input
-                          label="Teléfono"
-                          name={`contact-phone-${index}`}
-                          value={entry.phone}
-                          onChange={(event) =>
-                            updateContactRow(
-                              index,
-                              "phone",
-                              event.target.value,
-                            )
-                          }
-                          placeholder="Ej: +593 99 123 4567"
-                        />
+                      <Input
+                        label="Email"
+                        name="contact-email"
+                        type="email"
+                        value={contactEmail}
+                        onChange={(event) => setContactEmail(event.target.value)}
+                        placeholder="contacto@ejemplo.com"
+                      />
 
-                        <Input
-                          label="Email"
-                          name={`contact-email-${index}`}
-                          type="email"
-                          value={entry.email}
-                          onChange={(event) =>
-                            updateContactRow(
-                              index,
-                              "email",
-                              event.target.value,
-                            )
-                          }
-                          placeholder="contacto@ejemplo.com"
-                        />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={addContactEntry}
+                        disabled={
+                          !contactName.trim() ||
+                          !contactRole ||
+                          !contactPhone.trim() ||
+                          !contactEmail.trim()
+                        }
+                      >
+                        Agregar
+                      </Button>
+                    </div>
 
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => removeContactRow(index)}
-                          disabled={formik.values.contacts.length === 1}
-                        >
-                          Quitar
-                        </Button>
+                    {formik.values.contacts.length > 0 && (
+                      <div className={styles.internationalList}>
+                        {formik.values.contacts.map((entry, index) => {
+                          const roleLabel = CONTACT_POSITION_OPTIONS.find(
+                            (option) => option.value === entry.role,
+                          )?.label
+                          return (
+                            <div
+                              key={`contact-${index}`}
+                              className={styles.internationalItem}
+                            >
+                              <div className={styles.internationalInfo}>
+                                <p className={styles.internationalTitle}>
+                                  {entry.name}
+                                </p>
+                                <p className={styles.internationalMeta}>
+                                  {roleLabel ?? ""}
+                                </p>
+                                <p className={styles.internationalMeta}>
+                                  {entry.phone}
+                                  {entry.email ? ` • ${entry.email}` : ""}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className={styles.internationalRemove}
+                                aria-label="Quitar"
+                                onClick={() => removeContactRow(index)}
+                              >
+                                X
+                              </Button>
+                            </div>
+                          )
+                        })}
                       </div>
-                    ))}
+                    )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addContactRow}
-                  >
-                    Agregar contacto
-                  </Button>
                 </div>
               </section>
             )}
@@ -1627,32 +1755,54 @@ export default function MoviesAdminPage() {
                       error={getFieldError("producerCompanyId")}
                     />
 
-                    <div className={styles.optionGrid}>
-                      {producerCompaniesFiltered.map((company) => (
+                    {selectedProducerCompany && (
+                      <div className={styles.optionGrid}>
                         <Checkbox
-                          key={`producer-${company.id}`}
-                          label={
-                            company.commercialName ??
-                            company.legalName ??
-                            company.ruc
-                          }
+                          key={`producer-selected-${selectedProducerCompany.id}`}
+                          label={getCompanyLabel(selectedProducerCompany)}
                           variant="pill"
-                          checked={
-                            formik.values.producerCompanyId === company.id
-                          }
-                          onChange={() =>
-                            formik.setFieldValue(
-                              "producerCompanyId",
-                              company.id,
-                            )
-                          }
+                          checked
+                          onChange={() => {
+                            formik.setFieldValue("producerCompanyId", null)
+                            setProducerCompanySearch("")
+                          }}
                         />
-                      ))}
-                    </div>
-                    {producerCompaniesFiltered.length === 0 && (
-                      <p className={styles.helper}>
-                        No se encontraron empresas con ese criterio.
-                      </p>
+                      </div>
+                    )}
+
+                    {producerCompanySearch.trim() && (
+                      <div className={styles.suggestionList}>
+                        {producerCompaniesFiltered.length === 0 && (
+                          <p className={styles.suggestionEmpty}>
+                            No se encontraron empresas.
+                          </p>
+                        )}
+                        {producerCompaniesFiltered
+                          .slice(0, 8)
+                          .map((company) => (
+                            <button
+                              key={`producer-${company.id}`}
+                              type="button"
+                              className={styles.suggestionItem}
+                              onClick={() => {
+                                formik.setFieldValue(
+                                  "producerCompanyId",
+                                  company.id,
+                                )
+                                setProducerCompanySearch("")
+                              }}
+                            >
+                              <span className={styles.suggestionName}>
+                                {getCompanyLabel(company)}
+                              </span>
+                              {company.ruc && (
+                                <span className={styles.suggestionMeta}>
+                                  {company.ruc}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                      </div>
                     )}
                     {getFieldError("producerCompanyId") && (
                       <p className={styles.error}>
@@ -1673,20 +1823,14 @@ export default function MoviesAdminPage() {
                     }
                     placeholder="Buscar por nombre o RUC"
                   />
-                  <div className={styles.optionGrid}>
-                    {coProducerCompaniesFiltered.map((company) => {
-                      const checked =
-                        formik.values.coProducerCompanyIds.includes(company.id)
-                      return (
+                  {selectedCoProducerCompanies.length > 0 && (
+                    <div className={styles.optionGrid}>
+                      {selectedCoProducerCompanies.map((company) => (
                         <Checkbox
-                          key={`coproducer-${company.id}`}
-                          label={
-                            company.commercialName ??
-                            company.legalName ??
-                            company.ruc
-                          }
+                          key={`coproducer-selected-${company.id}`}
+                          label={getCompanyLabel(company)}
                           variant="pill"
-                          checked={checked}
+                          checked
                           onChange={() =>
                             handleCheckboxToggle(
                               "coProducerCompanyIds",
@@ -1694,9 +1838,48 @@ export default function MoviesAdminPage() {
                             )
                           }
                         />
-                      )
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {coProducerCompanySearch.trim() && (
+                    <div className={styles.suggestionList}>
+                      {coProducerCompaniesFiltered.length === 0 && (
+                        <p className={styles.suggestionEmpty}>
+                          No se encontraron empresas con ese criterio.
+                        </p>
+                      )}
+                      {coProducerCompaniesFiltered
+                        .slice(0, 8)
+                        .map((company) => {
+                          const checked =
+                            formik.values.coProducerCompanyIds.includes(
+                              company.id,
+                            )
+                          return (
+                            <button
+                              key={`coproducer-${company.id}`}
+                              type="button"
+                              className={styles.suggestionItem}
+                              onClick={() => {
+                                handleCheckboxToggle(
+                                  "coProducerCompanyIds",
+                                  company.id,
+                                )
+                                setCoProducerCompanySearch("")
+                              }}
+                            >
+                              <span className={styles.suggestionName}>
+                                {getCompanyLabel(company)}
+                              </span>
+                              <span className={styles.suggestionMeta}>
+                                {checked ? "Seleccionado" : company.ruc ?? ""}
+                              </span>
+                            </button>
+                          )
+                        })}
+                    </div>
+                  )}
                   <p className={styles.helper}>
                     Selecciona una o varias empresas nacionales.
                   </p>
@@ -1705,100 +1888,164 @@ export default function MoviesAdminPage() {
                 <div className={styles.field}>
                   <div className={styles.label}>Coproducción internacional</div>
                   <div className={styles.crewList}>
-                    {formik.values.internationalCoProductions.map(
-                      (entry, index) => (
-                        <div
-                          key={`international-coproduction-${index}`}
-                          className={styles.crewRow}
-                        >
-                          <Input
-                            label="Nombre de la empresa"
-                            name={`international-company-${index}`}
-                            value={entry.companyName}
-                            onChange={(event) =>
-                              updateInternationalCoproductionRow(
-                                index,
-                                "companyName",
-                                event.target.value,
-                              )
-                            }
-                            placeholder="Nombre del coproductor internacional"
-                          />
+                    <div className={styles.crewRow}>
+                      <Input
+                        label="Nombre de la empresa"
+                        name="international-company"
+                        value={internationalCompanyName}
+                        onChange={(event) =>
+                          setInternationalCompanyName(event.target.value)
+                        }
+                        placeholder="Nombre del coproductor internacional"
+                      />
 
-                          <Select
-                            label="País"
-                            name={`international-country-${index}`}
-                            value={entry.countryId}
-                            onChange={(event) =>
-                              updateInternationalCoproductionRow(
-                                index,
-                                "countryId",
-                                event.target.value
-                                  ? Number(event.target.value)
-                                  : "",
-                              )
-                            }
-                          >
-                            <option value="">Selecciona un país</option>
-                            {sortedCountries.map((country) => (
-                              <option key={country.id} value={country.id}>
-                                {country.name}
-                              </option>
-                            ))}
-                          </Select>
+                      <Select
+                        label="País"
+                        name="international-country"
+                        value={internationalCountryId}
+                        onChange={(event) =>
+                          setInternationalCountryId(
+                            event.target.value
+                              ? Number(event.target.value)
+                              : "",
+                          )
+                        }
+                      >
+                        <option value="">Selecciona un país</option>
+                        {sortedCountries.map((country) => (
+                          <option key={country.id} value={country.id}>
+                            {country.name}
+                          </option>
+                        ))}
+                      </Select>
 
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() =>
-                              removeInternationalCoproductionRow(index)
-                            }
-                          >
-                            Quitar
-                          </Button>
-                        </div>
-                      ),
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={addInternationalCoproductionEntry}
+                        disabled={
+                          !internationalCompanyName.trim() ||
+                          !internationalCountryId
+                        }
+                      >
+                        Agregar
+                      </Button>
+                    </div>
+
+                    {formik.values.internationalCoProductions.length > 0 && (
+                      <div className={styles.internationalList}>
+                        {formik.values.internationalCoProductions.map(
+                          (entry, index) => {
+                            const country = sortedCountries.find(
+                              (c) => c.id === entry.countryId,
+                            )
+                            return (
+                              <div
+                                key={`international-coproduction-${index}`}
+                                className={styles.internationalItem}
+                              >
+                                <div className={styles.internationalInfo}>
+                                  <p className={styles.internationalTitle}>
+                                    {entry.companyName}
+                                  </p>
+                                  <p className={styles.internationalMeta}>
+                                    {country?.name ?? ""}
+                                  </p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  className={styles.internationalRemove}
+                                  aria-label="Quitar"
+                                  onClick={() =>
+                                    removeInternationalCoproductionRow(index)
+                                  }
+                                >
+                                  X
+                                </Button>
+                              </div>
+                            )
+                          },
+                        )}
+                      </div>
                     )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addInternationalCoproductionRow}
-                  >
-                    Agregar coproducción internacional
-                  </Button>
                 </div>
 
                 <div className={styles.field}>
-                  <div className={styles.label}>Subgéneros</div>
-                  <div className={styles.optionGrid}>
-                    {subGenres.map((subGenre) => {
-                      const checked = formik.values.subGenres.includes(
-                        subGenre.id,
-                      )
-                      return (
+                  <div className={styles.label}>Subgéneros *</div>
+                  <Input
+                    label="Buscar subgénero"
+                    name="subGenreSearch"
+                    value={subGenreSearch}
+                    onChange={(event) =>
+                      setSubGenreSearch(event.target.value)
+                    }
+                    placeholder="Buscar por nombre"
+                  />
+                  {selectedSubGenres.length > 0 && (
+                    <div className={styles.optionGrid}>
+                      {selectedSubGenres.map((subGenre) => (
                         <Checkbox
-                          key={subGenre.id}
+                          key={`subgenre-selected-${subGenre.id}`}
                           label={subGenre.name}
                           variant="pill"
-                          checked={checked}
+                          checked
                           onChange={() =>
                             handleCheckboxToggle("subGenres", subGenre.id)
                           }
                         />
-                      )
-                    })}
-                  </div>
-                {getFieldError("subGenres") && (
-                  <p className={styles.error}>{getFieldError("subGenres")}</p>
-                )}
+                      ))}
+                    </div>
+                  )}
+                  {subGenreSearch.trim() && (
+                    <div className={styles.suggestionList}>
+                      {filteredSubGenres.length === 0 && (
+                        <p className={styles.suggestionEmpty}>
+                          No se encontraron subgéneros con ese criterio.
+                        </p>
+                      )}
+                      {filteredSubGenres
+                        .slice(0, 8)
+                        .map((subGenre) => {
+                          const checked =
+                            formik.values.subGenres.includes(
+                              subGenre.id,
+                            )
+                          return (
+                            <button
+                              key={`subgenre-${subGenre.id}`}
+                              type="button"
+                              className={styles.suggestionItem}
+                              onClick={() => {
+                                handleCheckboxToggle(
+                                  "subGenres",
+                                  subGenre.id,
+                                )
+                                setSubGenreSearch("")
+                              }}
+                            >
+                              <span className={styles.suggestionName}>
+                                {subGenre.name}
+                              </span>
+                              <span className={styles.suggestionMeta}>
+                                {checked ? "Seleccionado" : ""}
+                              </span>
+                            </button>
+                          )
+                        })}
+                    </div>
+                  )}
+                  {getFieldError("subGenres") && (
+                    <p className={styles.error}>{getFieldError("subGenres")}</p>
+                  )}
                   <p className={styles.helper}>
                     Selecciona al menos un subgénero.
                   </p>
                 </div>
 
                 <div className={styles.field}>
-                  <div className={styles.label}>Idiomas de la película *</div>
+                  <div className={styles.label}>Idiomas disponibles *</div>
                   <Input
                     label="Buscar idioma"
                     name="languageSearch"
@@ -1806,31 +2053,70 @@ export default function MoviesAdminPage() {
                     onChange={(event) =>
                       setLanguageSearch(event.target.value)
                     }
-                    placeholder="Buscar por nombre o código"
+                    placeholder="Buscar por nombre"
                   />
-                  <div className={styles.optionGrid}>
-                    {filteredLanguages.map((lang) => {
-                      const checked = formik.values.languages.includes(
-                        lang.code,
-                      )
-                      return (
-                        <Checkbox
-                          key={lang.code}
-                          label={lang.name}
-                          variant="pill"
-                          checked={checked}
-                          onChange={() =>
-                            handleCheckboxToggle("languages", lang.code)
-                          }
-                        />
-                      )
-                    })}
-                  </div>
+                  {formik.values.languages.length > 0 && (
+                    <div className={styles.optionGrid}>
+                      {formik.values.languages.map((langCode) => {
+                        const language = languages.find(
+                          (l) => l.code === langCode,
+                        )
+                        if (!language) return null
+                        return (
+                          <Checkbox
+                            key={`language-selected-${language.id}`}
+                            label={language.name}
+                            variant="pill"
+                            checked
+                            onChange={() => {
+                              handleCheckboxToggle("languages", language.code)
+                              setLanguageSearch("")
+                            }}
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {languageSearch.trim() && (
+                    <div className={styles.suggestionList}>
+                      {filteredLanguages.length === 0 && (
+                        <p className={styles.suggestionEmpty}>
+                          No se encontraron idiomas con ese criterio.
+                        </p>
+                      )}
+                      {filteredLanguages
+                        .slice(0, 8)
+                        .map((lang) => {
+                          const checked = formik.values.languages.includes(
+                            lang.code,
+                          )
+                          return (
+                            <button
+                              key={`language-${lang.id}`}
+                              type="button"
+                              className={styles.suggestionItem}
+                              onClick={() => {
+                                handleCheckboxToggle("languages", lang.code)
+                                setLanguageSearch("")
+                              }}
+                            >
+                              <span className={styles.suggestionName}>
+                                {lang.name}
+                              </span>
+                              <span className={styles.suggestionMeta}>
+                                {checked ? "Seleccionado" : ""}
+                              </span>
+                            </button>
+                          )
+                        })}
+                    </div>
+                  )}
                   {getFieldError("languages") && (
                     <p className={styles.error}>{getFieldError("languages")}</p>
                   )}
                   <p className={styles.helper}>
-                    Puedes seleccionar varios idiomas.
+                    Puedes seleccionar varios idiomas disponibles como subtítulos.
                   </p>
                 </div>
 
@@ -1985,27 +2271,66 @@ export default function MoviesAdminPage() {
                     onChange={(event) => setDirectorSearch(event.target.value)}
                     placeholder="Buscar por nombre"
                   />
-                  <div className={styles.optionGrid}>
-                    {filteredDirectors.map((professional) => {
-                      const checked = formik.values.directors.includes(
-                        professional.id,
-                      )
-                      return (
-                        <Checkbox
-                          key={`director-${professional.id}`}
-                          label={getProfessionalLabel(professional)}
-                          variant="pill"
-                          checked={checked}
-                          onChange={() =>
-                            handleCheckboxToggle(
-                              "directors",
-                              professional.id,
-                            )
-                          }
-                        />
-                      )
-                    })}
-                  </div>
+                  {formik.values.directors.length > 0 && (
+                    <div className={styles.optionGrid}>
+                      {formik.values.directors.map((directorId) => {
+                        const director = sortedProfessionals.find(
+                          (p) => p.id === directorId,
+                        )
+                        if (!director) return null
+                        return (
+                          <Checkbox
+                            key={`director-selected-${directorId}`}
+                            label={getProfessionalLabel(director)}
+                            variant="pill"
+                            checked
+                            onChange={() =>
+                              handleCheckboxToggle(
+                                "directors",
+                                directorId,
+                              )
+                            }
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {directorSearch.trim() && (
+                    <div className={styles.suggestionList}>
+                      {filteredDirectors.length === 0 && (
+                        <p className={styles.suggestionEmpty}>
+                          No se encontraron profesionales con ese criterio.
+                        </p>
+                      )}
+                      {filteredDirectors.slice(0, 8).map((professional) => {
+                        const checked = formik.values.directors.includes(
+                          professional.id,
+                        )
+                        return (
+                          <button
+                            key={`director-${professional.id}`}
+                            type="button"
+                            className={styles.suggestionItem}
+                            onClick={() => {
+                              handleCheckboxToggle(
+                                "directors",
+                                professional.id,
+                              )
+                              setDirectorSearch("")
+                            }}
+                          >
+                            <span className={styles.suggestionName}>
+                              {getProfessionalLabel(professional)}
+                            </span>
+                            <span className={styles.suggestionMeta}>
+                              {checked ? "Seleccionado" : ""}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                   {getFieldError("directors") && (
                     <p className={styles.error}>{getFieldError("directors")}</p>
                   )}
@@ -2020,27 +2345,66 @@ export default function MoviesAdminPage() {
                     onChange={(event) => setProducerSearch(event.target.value)}
                     placeholder="Buscar por nombre"
                   />
-                  <div className={styles.optionGrid}>
-                    {filteredProducers.map((professional) => {
-                      const checked = formik.values.producers.includes(
-                        professional.id,
-                      )
-                      return (
-                        <Checkbox
-                          key={`producer-${professional.id}`}
-                          label={getProfessionalLabel(professional)}
-                          variant="pill"
-                          checked={checked}
-                          onChange={() =>
-                            handleCheckboxToggle(
-                              "producers",
-                              professional.id,
-                            )
-                          }
-                        />
-                      )
-                    })}
-                  </div>
+                  {formik.values.producers.length > 0 && (
+                    <div className={styles.optionGrid}>
+                      {formik.values.producers.map((producerId) => {
+                        const producer = sortedProfessionals.find(
+                          (p) => p.id === producerId,
+                        )
+                        if (!producer) return null
+                        return (
+                          <Checkbox
+                            key={`producer-selected-${producerId}`}
+                            label={getProfessionalLabel(producer)}
+                            variant="pill"
+                            checked
+                            onChange={() =>
+                              handleCheckboxToggle(
+                                "producers",
+                                producerId,
+                              )
+                            }
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {producerSearch.trim() && (
+                    <div className={styles.suggestionList}>
+                      {filteredProducers.length === 0 && (
+                        <p className={styles.suggestionEmpty}>
+                          No se encontraron profesionales con ese criterio.
+                        </p>
+                      )}
+                      {filteredProducers.slice(0, 8).map((professional) => {
+                        const checked = formik.values.producers.includes(
+                          professional.id,
+                        )
+                        return (
+                          <button
+                            key={`producer-${professional.id}`}
+                            type="button"
+                            className={styles.suggestionItem}
+                            onClick={() => {
+                              handleCheckboxToggle(
+                                "producers",
+                                professional.id,
+                              )
+                              setProducerSearch("")
+                            }}
+                          >
+                            <span className={styles.suggestionName}>
+                              {getProfessionalLabel(professional)}
+                            </span>
+                            <span className={styles.suggestionMeta}>
+                              {checked ? "Seleccionado" : ""}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                   {getFieldError("producers") && (
                     <p className={styles.error}>{getFieldError("producers")}</p>
                   )}
@@ -2049,80 +2413,142 @@ export default function MoviesAdminPage() {
                 <div className={styles.field}>
                   <div className={styles.label}>Crew</div>
                   <div className={styles.crewList}>
-                    {formik.values.crew.map((item, index) => (
-                      <div key={`crew-${index}`} className={styles.crewRow}>
-                        <Select
-                          label="Rol"
-                          name={`crew-role-${index}`}
-                          value={item.roleId}
+                    <div className={styles.crewRow}>
+                      <div>
+                        <Input
+                          label="Buscar profesional"
+                          name="crew-professional"
+                          value={crewProfessionalSearch}
                           onChange={(event) =>
-                            updateCrewRow(
-                              index,
-                              "roleId",
-                              event.target.value
-                                ? Number(event.target.value)
-                                : "",
-                            )
+                            setCrewProfessionalSearch(event.target.value)
                           }
-                        >
-                          <option value="">Selecciona un rol</option>
-                          {sortedRoles.map((role) => (
-                            <option key={role.id} value={role.id}>
-                              {role.name}
-                            </option>
-                          ))}
-                        </Select>
-
-                        <div>
-                          <Input
-                            label="Buscar profesional"
-                            name={`crew-search-${index}`}
-                            value={crewSearches[index] ?? ""}
-                            onChange={(event) =>
-                              setCrewSearches((prev) => {
-                                const next = [...prev]
-                                next[index] = event.target.value
-                                return next
-                              })
-                            }
-                            placeholder="Buscar por nombre"
-                          />
+                          placeholder="Buscar por nombre"
+                        />
+                        {crewProfessionalId && (
                           <div className={styles.optionGrid}>
-                            {getCrewProfessionals(
-                              crewSearches[index] ?? "",
-                            ).map((professional) => (
-                              <Checkbox
-                                key={`crew-prof-${index}-${professional.id}`}
-                                label={getProfessionalLabel(professional)}
-                                variant="pill"
-                                checked={
-                                  item.professionalId === professional.id
-                                }
-                                onChange={() =>
-                                  updateCrewRow(
-                                    index,
-                                    "professionalId",
-                                    professional.id,
-                                  )
-                                }
-                              />
-                            ))}
+                            {(() => {
+                              const selected = sortedProfessionals.find(
+                                (p) => p.id === crewProfessionalId,
+                              )
+                              if (!selected) return null
+                              return (
+                                <Checkbox
+                                  key={`crew-selected-${selected.id}`}
+                                  label={getProfessionalLabel(selected)}
+                                  variant="pill"
+                                  checked
+                                  onChange={() => setCrewProfessionalId("")}
+                                />
+                              )
+                            })()}
                           </div>
-                        </div>
+                        )}
 
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => removeCrewRow(index)}
-                        >
-                          Quitar
-                        </Button>
+                        {crewProfessionalSearch.trim() && (
+                          <div className={styles.suggestionList}>
+                            {getCrewProfessionals(crewProfessionalSearch)
+                              .length === 0 && (
+                              <p className={styles.suggestionEmpty}>
+                                No se encontraron profesionales con ese criterio.
+                              </p>
+                            )}
+                            {getCrewProfessionals(crewProfessionalSearch)
+                              .slice(0, 8)
+                              .map((professional) => {
+                                const checked =
+                                  crewProfessionalId === professional.id
+                                return (
+                                  <button
+                                    key={`crew-prof-${professional.id}`}
+                                    type="button"
+                                    className={styles.suggestionItem}
+                                    onClick={() => {
+                                      setCrewProfessionalId(professional.id)
+                                      setCrewProfessionalSearch("")
+                                    }}
+                                  >
+                                    <span className={styles.suggestionName}>
+                                      {getProfessionalLabel(professional)}
+                                    </span>
+                                    <span className={styles.suggestionMeta}>
+                                      {checked ? "Seleccionado" : ""}
+                                    </span>
+                                  </button>
+                                )
+                              })}
+                          </div>
+                        )}
                       </div>
-                    ))}
+
+                      <Select
+                        label="Rol"
+                        name="crew-role"
+                        value={crewRoleId}
+                        onChange={(event) =>
+                          setCrewRoleId(
+                            event.target.value
+                              ? Number(event.target.value)
+                              : "",
+                          )
+                        }
+                      >
+                        <option value="">Selecciona un rol</option>
+                        {filteredCrewRoles.map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {role.name}
+                          </option>
+                        ))}
+                      </Select>
+
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={addCrewEntry}
+                        disabled={!crewProfessionalId || !crewRoleId}
+                      >
+                        Agregar
+                      </Button>
+                    </div>
+
+                    {formik.values.crew.length > 0 && (
+                      <div className={styles.internationalList}>
+                        {formik.values.crew.map((item, index) => {
+                          const professional = sortedProfessionals.find(
+                            (p) => p.id === item.professionalId,
+                          )
+                          const role = sortedRoles.find(
+                            (r) => r.id === item.roleId,
+                          )
+                          return (
+                            <div
+                              key={`crew-${index}`}
+                              className={styles.internationalItem}
+                            >
+                              <div className={styles.internationalInfo}>
+                                <p className={styles.internationalTitle}>
+                                  {professional
+                                    ? getProfessionalLabel(professional)
+                                    : ""}
+                                </p>
+                                <p className={styles.internationalMeta}>
+                                  {role?.name ?? ""}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className={styles.internationalRemove}
+                                aria-label="Quitar"
+                                onClick={() => removeCrewRow(index)}
+                              >
+                                X
+                              </Button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
-                  <Button type="button" variant="secondary" onClick={addCrewRow}>
-                    Agregar rol
-                  </Button>
                 </div>
 
                 <div className={styles.field}>
@@ -2134,19 +2560,6 @@ export default function MoviesAdminPage() {
                     onChange={(event) => setActorSearch(event.target.value)}
                     placeholder="Buscar por nombre"
                   />
-                  <div className={styles.optionGrid}>
-                    {filteredActors.map((professional) => (
-                      <Checkbox
-                        key={`actor-${professional.id}`}
-                        label={getProfessionalLabel(professional)}
-                        variant="pill"
-                        checked={formik.values.mainActors.includes(
-                          professional.id,
-                        )}
-                        onChange={() => addActor(professional.id)}
-                      />
-                    ))}
-                  </div>
                   {formik.values.mainActors.length > 0 && (
                     <div className={styles.optionGrid}>
                       {formik.values.mainActors.map((actorId) => {
@@ -2155,14 +2568,46 @@ export default function MoviesAdminPage() {
                         )
                         if (!actor) return null
                         return (
-                          <Button
+                          <Checkbox
                             key={`actor-selected-${actorId}`}
+                            label={getProfessionalLabel(actor)}
+                            variant="pill"
+                            checked
+                            onChange={() => removeActor(actorId)}
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {actorSearch.trim() && (
+                    <div className={styles.suggestionList}>
+                      {filteredActors.length === 0 && (
+                        <p className={styles.suggestionEmpty}>
+                          No se encontraron profesionales con ese criterio.
+                        </p>
+                      )}
+                      {filteredActors.slice(0, 8).map((professional) => {
+                        const checked = formik.values.mainActors.includes(
+                          professional.id,
+                        )
+                        return (
+                          <button
+                            key={`actor-${professional.id}`}
                             type="button"
-                            variant="secondary"
-                            onClick={() => removeActor(actorId)}
+                            className={styles.suggestionItem}
+                            onClick={() => {
+                              addActor(professional.id)
+                              setActorSearch("")
+                            }}
                           >
-                            Quitar: {getProfessionalLabel(actor)}
-                          </Button>
+                            <span className={styles.suggestionName}>
+                              {getProfessionalLabel(professional)}
+                            </span>
+                            <span className={styles.suggestionMeta}>
+                              {checked ? "Seleccionado" : ""}
+                            </span>
+                          </button>
                         )
                       })}
                     </div>
@@ -2244,116 +2689,187 @@ export default function MoviesAdminPage() {
                     Agrega las fuentes de financiamiento del proyecto.
                   </p>
                   <div className={styles.crewList}>
-                    {formik.values.funding.map((entry, index) => (
-                      <div key={`funding-${index}`} className={styles.crewRow}>
-                        <div className={styles.field}>
-                          <Input
-                            label="Buscar entidad"
-                            name={`funding-search-${index}`}
-                            value={fundingSearches[index] ?? ""}
-                            onChange={(event) =>
-                              setFundingSearches((prev) => {
-                                const next = [...prev]
-                                next[index] = event.target.value
-                                return next
-                              })
-                            }
-                            placeholder="Buscar por nombre"
-                          />
+                    <div className={styles.crewRow}>
+                      <div className={styles.field}>
+                        <Input
+                          label="Buscar entidad"
+                          name="funding-search"
+                          value={fundingSearch}
+                          onChange={(event) =>
+                            setFundingSearch(event.target.value)
+                          }
+                          placeholder="Buscar por nombre"
+                        />
+
+                        {fundingFundId && (
                           <div className={styles.optionGrid}>
-                            {getFundingOptions(
-                              fundingSearches[index] ?? "",
-                            ).map((fund) => (
-                              <Checkbox
-                                key={`funding-fund-${index}-${fund.id}`}
-                                label={
-                                  fund.country?.name
-                                    ? `${fund.name} (${fund.country.name})`
-                                    : fund.name
-                                }
-                                variant="pill"
-                                checked={entry.fundId === fund.id}
-                                onChange={() =>
-                                  updateFundingRow(index, "fundId", fund.id)
-                                }
-                              />
-                            ))}
+                            {(() => {
+                              const selected = funds.find(
+                                (fund) => fund.id === fundingFundId,
+                              )
+                              if (!selected) return null
+                              return (
+                                <Checkbox
+                                  key={`funding-selected-${selected.id}`}
+                                  label={
+                                    selected.country?.name
+                                      ? `${selected.name} (${selected.country.name})`
+                                      : selected.name
+                                  }
+                                  variant="pill"
+                                  checked
+                                  onChange={() => setFundingFundId("")}
+                                />
+                              )
+                            })()}
                           </div>
-                        </div>
+                        )}
 
-                        <Input
-                          label="Año"
-                          name={`funding-year-${index}`}
-                          type="number"
-                          min={1900}
-                          value={entry.year}
-                          onChange={(event) =>
-                            updateFundingRow(
-                              index,
-                              "year",
-                              event.target.value
-                                ? Number(event.target.value)
-                                : "",
-                            )
-                          }
-                          placeholder="Ej: 2024"
-                        />
-
-                        <Input
-                          label="Monto otorgado"
-                          name={`funding-amount-${index}`}
-                          type="number"
-                          min={0}
-                          value={entry.amountGranted}
-                          onChange={(event) =>
-                            updateFundingRow(
-                              index,
-                              "amountGranted",
-                              event.target.value
-                                ? Number(event.target.value)
-                                : "",
-                            )
-                          }
-                          placeholder="Ej: 50000"
-                        />
-
-                        <Select
-                          label="Etapa"
-                          name={`funding-stage-${index}`}
-                          value={entry.fundingStage}
-                          onChange={(event) =>
-                            updateFundingRow(
-                              index,
-                              "fundingStage",
-                              event.target.value as ProjectStatus,
-                            )
-                          }
-                        >
-                          <option value="">Selecciona etapa</option>
-                          {FUNDING_STAGE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </Select>
-
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => removeFundingRow(index)}
-                        >
-                          Quitar
-                        </Button>
+                        {fundingSearch.trim() && (
+                          <div className={styles.suggestionList}>
+                            {getFundingOptions(fundingSearch).length === 0 && (
+                              <p className={styles.suggestionEmpty}>
+                                No se encontraron entidades con ese criterio.
+                              </p>
+                            )}
+                            {getFundingOptions(fundingSearch)
+                              .slice(0, 8)
+                              .map((fund) => {
+                                const checked = fundingFundId === fund.id
+                                return (
+                                  <button
+                                    key={`funding-fund-${fund.id}`}
+                                    type="button"
+                                    className={styles.suggestionItem}
+                                    onClick={() => {
+                                      setFundingFundId(fund.id)
+                                      setFundingSearch("")
+                                    }}
+                                  >
+                                    <span className={styles.suggestionName}>
+                                      {fund.country?.name
+                                        ? `${fund.name} (${fund.country.name})`
+                                        : fund.name}
+                                    </span>
+                                    <span className={styles.suggestionMeta}>
+                                      {checked ? "Seleccionado" : ""}
+                                    </span>
+                                  </button>
+                                )
+                              })}
+                          </div>
+                        )}
                       </div>
-                    ))}
+
+                      <Input
+                        label="Año"
+                        name="funding-year"
+                        type="number"
+                        min={1900}
+                        value={fundingYear}
+                        onChange={(event) =>
+                          setFundingYear(
+                            event.target.value
+                              ? Number(event.target.value)
+                              : "",
+                          )
+                        }
+                        placeholder="Ej: 2024"
+                      />
+
+                      <Input
+                        label="Monto otorgado"
+                        name="funding-amount"
+                        type="number"
+                        min={0}
+                        value={fundingAmount}
+                        onChange={(event) =>
+                          setFundingAmount(
+                            event.target.value
+                              ? Number(event.target.value)
+                              : "",
+                          )
+                        }
+                        placeholder="Ej: 50000"
+                      />
+
+                      <Select
+                        label="Etapa"
+                        name="funding-stage"
+                        value={fundingStage}
+                        onChange={(event) =>
+                          setFundingStage(event.target.value as ProjectStatus)
+                        }
+                      >
+                        <option value="">Selecciona etapa</option>
+                        {FUNDING_STAGE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={addFundingEntry}
+                        disabled={
+                          !fundingFundId ||
+                          !fundingYear ||
+                          !fundingAmount ||
+                          !fundingStage
+                        }
+                      >
+                        Agregar
+                      </Button>
+                    </div>
+
+                    {formik.values.funding.length > 0 && (
+                      <div className={styles.internationalList}>
+                        {formik.values.funding.map((entry, index) => {
+                          const fund = funds.find(
+                            (f) => f.id === entry.fundId,
+                          )
+                          const stageLabel = FUNDING_STAGE_OPTIONS.find(
+                            (option) => option.value === entry.fundingStage,
+                          )?.label
+                          return (
+                            <div
+                              key={`funding-${index}`}
+                              className={styles.internationalItem}
+                            >
+                              <div className={styles.internationalInfo}>
+                                <p className={styles.internationalTitle}>
+                                  {fund?.name ?? ""}
+                                </p>
+                                <p className={styles.internationalMeta}>
+                                  {fund?.country?.name
+                                    ? `${fund.country.name}`
+                                    : ""}
+                                </p>
+                                <p className={styles.internationalMeta}>
+                                  {entry.year ? `Año ${entry.year}` : ""}
+                                  {entry.amountGranted
+                                    ? ` • $${entry.amountGranted}`
+                                    : ""}
+                                  {stageLabel ? ` • ${stageLabel}` : ""}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className={styles.internationalRemove}
+                                aria-label="Quitar"
+                                onClick={() => removeFundingRow(index)}
+                              >
+                                X
+                              </Button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addFundingRow}
-                  >
-                    Agregar fuente
-                  </Button>
                 </div>
 
                 <div className={styles.field}>
@@ -2369,29 +2885,52 @@ export default function MoviesAdminPage() {
                     }
                     placeholder="Buscar por ciudad"
                   />
-                  {filmingCitySearch.trim() ? (
+                  {formik.values.filmingCitiesEc.length > 0 && (
                     <div className={styles.optionGrid}>
-                      {filteredFilmingCitiesEc.map((city) => {
-                        const checked = formik.values.filmingCitiesEc.includes(
-                          city,
-                        )
+                      {formik.values.filmingCitiesEc.map((city) => (
+                        <Checkbox
+                          key={`filming-city-selected-${city}`}
+                          label={city}
+                          variant="pill"
+                          checked
+                          onChange={() =>
+                            handleCheckboxToggle("filmingCitiesEc", city)
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {filmingCitySearch.trim() && (
+                    <div className={styles.suggestionList}>
+                      {filteredFilmingCitiesEc.length === 0 && (
+                        <p className={styles.suggestionEmpty}>
+                          No se encontraron ciudades con ese criterio.
+                        </p>
+                      )}
+                      {filteredFilmingCitiesEc.slice(0, 8).map((city) => {
+                        const checked =
+                          formik.values.filmingCitiesEc.includes(city)
                         return (
-                          <Checkbox
+                          <button
                             key={`filming-city-${city}`}
-                            label={city}
-                            variant="pill"
-                            checked={checked}
-                            onChange={() =>
+                            type="button"
+                            className={styles.suggestionItem}
+                            onClick={() => {
                               handleCheckboxToggle("filmingCitiesEc", city)
-                            }
-                          />
+                              setFilmingCitySearch("")
+                            }}
+                          >
+                            <span className={styles.suggestionName}>
+                              {city}
+                            </span>
+                            <span className={styles.suggestionMeta}>
+                              {checked ? "Seleccionado" : ""}
+                            </span>
+                          </button>
                         )
                       })}
                     </div>
-                  ) : (
-                    <p className={styles.helper}>
-                      Escribe para buscar y seleccionar ciudades.
-                    </p>
                   )}
                 </div>
 
@@ -2408,19 +2947,19 @@ export default function MoviesAdminPage() {
                     }
                     placeholder="Buscar por país"
                   />
-                  {filmingCountrySearch.trim() ? (
+                  {formik.values.filmingCountries.length > 0 && (
                     <div className={styles.optionGrid}>
-                      {filteredFilmingCountries.map((country) => {
-                        const checked =
-                          formik.values.filmingCountries.includes(
-                            country.code,
-                          )
+                      {formik.values.filmingCountries.map((countryCode) => {
+                        const country = sortedCountries.find(
+                          (item) => item.code === countryCode,
+                        )
+                        if (!country) return null
                         return (
                           <Checkbox
-                            key={`filming-country-${country.code}`}
+                            key={`filming-country-selected-${country.code}`}
                             label={country.name}
                             variant="pill"
-                            checked={checked}
+                            checked
                             onChange={() =>
                               handleCheckboxToggle(
                                 "filmingCountries",
@@ -2431,10 +2970,43 @@ export default function MoviesAdminPage() {
                         )
                       })}
                     </div>
-                  ) : (
-                    <p className={styles.helper}>
-                      Escribe para buscar y seleccionar países.
-                    </p>
+                  )}
+
+                  {filmingCountrySearch.trim() && (
+                    <div className={styles.suggestionList}>
+                      {filteredFilmingCountries.length === 0 && (
+                        <p className={styles.suggestionEmpty}>
+                          No se encontraron países con ese criterio.
+                        </p>
+                      )}
+                      {filteredFilmingCountries.slice(0, 8).map((country) => {
+                        const checked =
+                          formik.values.filmingCountries.includes(
+                            country.code,
+                          )
+                        return (
+                          <button
+                            key={`filming-country-${country.code}`}
+                            type="button"
+                            className={styles.suggestionItem}
+                            onClick={() => {
+                              handleCheckboxToggle(
+                                "filmingCountries",
+                                country.code,
+                              )
+                              setFilmingCountrySearch("")
+                            }}
+                          >
+                            <span className={styles.suggestionName}>
+                              {country.name}
+                            </span>
+                            <span className={styles.suggestionMeta}>
+                              {checked ? "Seleccionado" : ""}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
                   )}
                 </div>
               </section>
@@ -2526,161 +3098,183 @@ export default function MoviesAdminPage() {
                 </div>
 
                 <div className={styles.crewList}>
-                  {formik.values.contentBank.map((entry, index) => {
-                    const usedTerritories = formik.values.contentBank
-                      .map((item) => item.exhibitionWindow)
-                      .filter((value) => value)
-                    return (
-                    <div
-                      key={`content-bank-${index}`}
-                      className={styles.crewRow}
-                    >
-                      <Select
-                        label="Territorio"
-                        name={`content-territory-${index}`}
-                        value={entry.exhibitionWindow}
-                        onChange={(event) =>
-                          updateContentBankRow(
-                            index,
-                            "exhibitionWindow",
-                            event.target.value,
-                          )
-                        }
-                      >
-                        <option value="">Selecciona territorio</option>
-                        {EXHIBITION_WINDOW_OPTIONS.map((option) => {
-                          const isUsed =
-                            usedTerritories.includes(option.value) &&
-                            option.value !== entry.exhibitionWindow
-                          return (
-                            <option
-                              key={option.value}
-                              value={option.value}
-                              disabled={isUsed}
-                            >
-                              {option.label}
-                            </option>
-                          )
-                        })}
-                      </Select>
-
-                      <Input
-                        label="Fecha de inicio de licencia"
-                        name={`content-start-${index}`}
-                        type="date"
-                        value={entry.licensingStartDate}
-                        onChange={(event) =>
-                          updateContentBankRow(
-                            index,
-                            "licensingStartDate",
-                            event.target.value,
-                          )
-                        }
-                      />
-
-                      <Input
-                        label="Fecha de fin de licencia"
-                        name={`content-end-${index}`}
-                        type="date"
-                        value={entry.licensingEndDate}
-                        onChange={(event) =>
-                          updateContentBankRow(
-                            index,
-                            "licensingEndDate",
-                            event.target.value,
-                          )
-                        }
-                      />
-
-                      {(entry.exhibitionWindow === "Internacional" ||
-                        entry.exhibitionWindow === "VOD") && (
-                        <div className={styles.field}>
-                          <div className={styles.label}>Geobloqueo</div>
-                          <p className={styles.helper}>
-                            Selecciona países donde no estará disponible.
-                          </p>
-                          <div className={styles.dropdown}>
-                            <button
-                              type="button"
-                              className={styles.dropdownTrigger}
-                              onClick={() =>
-                                setOpenGeoblockIndex((prev) =>
-                                  prev === index ? null : index,
-                                )
-                              }
-                            >
-                              {entry.geolocationRestrictionCountryIds.length
-                                ? `${entry.geolocationRestrictionCountryIds.length} países seleccionados`
-                                : "Selecciona países"}
-                            </button>
-                            {openGeoblockIndex === index && (
-                              <div className={styles.dropdownMenu}>
-                                {sortedCountries.map((country) => {
-                                  const checked =
-                                    entry.geolocationRestrictionCountryIds.includes(
-                                      country.id,
-                                    )
-                                  return (
-                                    <label
-                                      key={`geoblock-${index}-${country.id}`}
-                                      className={styles.dropdownItem}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={checked}
-                                        onChange={() => {
-                                          const next = [
-                                            ...formik.values.contentBank,
-                                          ]
-                                          const current =
-                                            next[index]
-                                              .geolocationRestrictionCountryIds
-                                          next[index] = {
-                                            ...next[index],
-                                            geolocationRestrictionCountryIds: checked
-                                              ? current.filter(
-                                                  (id) => id !== country.id,
-                                                )
-                                              : [...current, country.id],
-                                          }
-                                          formik.setFieldValue("contentBank", next)
-                                        }}
-                                      />
-                                      <span>{country.name}</span>
-                                    </label>
-                                  )
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => removeContentBankRow(index)}
-                        disabled={formik.values.contentBank.length === 1}
-                      >
-                        Quitar
-                      </Button>
-                    </div>
-                  )})}
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={addContentBankRow}
-                  disabled={
-                    new Set(
+                  {(() => {
+                    const usedTerritories = new Set(
                       formik.values.contentBank
-                        .map((entry) => entry.exhibitionWindow)
+                        .map((item) => item.exhibitionWindow)
                         .filter((value) => value),
-                    ).size >= EXHIBITION_WINDOW_OPTIONS.length
-                  }
-                >
-                  Agregar territorio
-                </Button>
+                    )
+                    return (
+                      <>
+                        <div className={styles.crewRow}>
+                          <Select
+                            label="Territorio"
+                            name="content-territory"
+                            value={contentTerritory}
+                            onChange={(event) =>
+                              setContentTerritory(
+                                event.target.value as ExhibitionWindow,
+                              )
+                            }
+                          >
+                            <option value="">Selecciona territorio</option>
+                            {EXHIBITION_WINDOW_OPTIONS.map((option) => (
+                              <option
+                                key={option.value}
+                                value={option.value}
+                                disabled={usedTerritories.has(option.value)}
+                              >
+                                {option.label}
+                              </option>
+                            ))}
+                          </Select>
+
+                          <Input
+                            label="Fecha de inicio de licencia"
+                            name="content-start"
+                            type="date"
+                            value={contentStartDate}
+                            onChange={(event) =>
+                              setContentStartDate(event.target.value)
+                            }
+                          />
+
+                          <Input
+                            label="Fecha de fin de licencia"
+                            name="content-end"
+                            type="date"
+                            value={contentEndDate}
+                            onChange={(event) =>
+                              setContentEndDate(event.target.value)
+                            }
+                          />
+
+                          {(contentTerritory === "Internacional" ||
+                            contentTerritory === "VOD") && (
+                            <div className={styles.field}>
+                              <div className={styles.label}>Geobloqueo</div>
+                              <p className={styles.helper}>
+                                Selecciona países donde no estará disponible.
+                              </p>
+                              <div className={styles.dropdown}>
+                                <button
+                                  type="button"
+                                  className={styles.dropdownTrigger}
+                                  onClick={() =>
+                                    setContentGeoblockOpen((prev) => !prev)
+                                  }
+                                >
+                                  {contentGeoblockIds.length
+                                    ? `${contentGeoblockIds.length} países seleccionados`
+                                    : "Selecciona países"}
+                                </button>
+                                {contentGeoblockOpen && (
+                                  <div className={styles.dropdownMenu}>
+                                    {sortedCountries.map((country) => {
+                                      const checked = contentGeoblockIds.includes(
+                                        country.id,
+                                      )
+                                      return (
+                                        <label
+                                          key={`geoblock-input-${country.id}`}
+                                          className={styles.dropdownItem}
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={() => {
+                                              setContentGeoblockIds((prev) =>
+                                                checked
+                                                  ? prev.filter(
+                                                      (id) => id !== country.id,
+                                                    )
+                                                  : [...prev, country.id],
+                                              )
+                                            }}
+                                          />
+                                          <span>{country.name}</span>
+                                        </label>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={addContentBankEntry}
+                            disabled={
+                              !contentTerritory ||
+                              !contentStartDate ||
+                              !contentEndDate
+                            }
+                          >
+                            Agregar
+                          </Button>
+                        </div>
+
+                        {formik.values.contentBank.some(
+                          (entry) =>
+                            entry.exhibitionWindow &&
+                            entry.licensingStartDate &&
+                            entry.licensingEndDate,
+                        ) && (
+                          <div className={styles.internationalList}>
+                            {formik.values.contentBank
+                              .filter(
+                                (entry) =>
+                                  entry.exhibitionWindow &&
+                                  entry.licensingStartDate &&
+                                  entry.licensingEndDate,
+                              )
+                              .map((entry, index) => {
+                              const territoryLabel = EXHIBITION_WINDOW_OPTIONS.find(
+                                (option) => option.value === entry.exhibitionWindow,
+                              )?.label
+                              return (
+                                <div
+                                  key={`content-bank-${index}`}
+                                  className={styles.internationalItem}
+                                >
+                                  <div className={styles.internationalInfo}>
+                                    <p className={styles.internationalTitle}>
+                                      {territoryLabel ?? ""}
+                                    </p>
+                                    <p className={styles.internationalMeta}>
+                                      {entry.licensingStartDate
+                                        ? `Desde ${entry.licensingStartDate}`
+                                        : ""}
+                                      {entry.licensingEndDate
+                                        ? ` • Hasta ${entry.licensingEndDate}`
+                                        : ""}
+                                    </p>
+                                    <p className={styles.internationalMeta}>
+                                      {entry.geolocationRestrictionCountryIds.length
+                                        ? `${entry.geolocationRestrictionCountryIds.length} países bloqueados`
+                                        : ""}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className={styles.internationalRemove}
+                                    aria-label="Quitar"
+                                    onClick={() => removeContentBankRow(index)}
+                                  >
+                                    X
+                                  </Button>
+                                </div>
+                                )
+                              })}
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
               </section>
             )}
 
@@ -2694,30 +3288,76 @@ export default function MoviesAdminPage() {
                 </div>
 
                 <div className={styles.field}>
-                  <div className={styles.label}>Subtítulos *</div>
-                  <div className={styles.optionGrid}>
-                    {sortedLanguages.map((lang) => {
-                      const checked = formik.values.languages.includes(
-                        lang.id,
-                      )
-                      return (
-                        <Checkbox
-                          key={lang.id}
-                          label={lang.name}
-                          variant="pill"
-                          checked={checked}
-                          onChange={() =>
-                            handleCheckboxToggle("languages", lang.id)
-                          }
-                        />
-                      )
-                    })}
-                  </div>
-                  {getFieldError("languages") && (
-                    <p className={styles.error}>{getFieldError("languages")}</p>
+                  <div className={styles.label}>Subtítulos disponibles *</div>
+                  <Input
+                    label="Buscar subtítulo"
+                    name="subtitleSearch"
+                    value={subtitleSearch}
+                    onChange={(event) =>
+                      setSubtitleSearch(event.target.value)
+                    }
+                    placeholder="Buscar por nombre"
+                  />
+                  {formik.values.subtitles.length > 0 && (
+                    <div className={styles.optionGrid}>
+                      {formik.values.subtitles.map((langId) => {
+                        const language = languages.find((l) => l.id === langId)
+                        if (!language) return null
+                        return (
+                          <Checkbox
+                            key={`language-selected-${language.id}`}
+                            label={language.name}
+                            variant="pill"
+                            checked
+                            onChange={() => {
+                              handleCheckboxToggle("subtitles", language.id)
+                              setSubtitleSearch("")
+                            }}
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {subtitleSearch.trim() && (
+                    <div className={styles.suggestionList}>
+                      {filteredSubtitleLanguages.length === 0 && (
+                        <p className={styles.suggestionEmpty}>
+                          No se encontraron idiomas con ese criterio.
+                        </p>
+                      )}
+                      {filteredSubtitleLanguages
+                        .slice(0, 8)
+                        .map((lang) => {
+                          const checked = formik.values.subtitles.includes(
+                            lang.id,
+                          )
+                          return (
+                            <button
+                              key={`language-${lang.id}`}
+                              type="button"
+                              className={styles.suggestionItem}
+                              onClick={() => {
+                                handleCheckboxToggle("subtitles", lang.id)
+                                setSubtitleSearch("")
+                              }}
+                            >
+                              <span className={styles.suggestionName}>
+                                {lang.name}
+                              </span>
+                              <span className={styles.suggestionMeta}>
+                                {checked ? "Seleccionado" : ""}
+                              </span>
+                            </button>
+                          )
+                        })}
+                    </div>
+                  )}
+                  {getFieldError("subtitles") && (
+                    <p className={styles.error}>{getFieldError("subtitles")}</p>
                   )}
                   <p className={styles.helper}>
-                    Selecciona los subtítulos disponibles.
+                    Selecciona los idiomas disponibles como subtítulos.
                   </p>
                 </div>
               </section>

@@ -30,9 +30,8 @@ export interface Company {
 
 export interface CompanyListItem {
   id: number
-  legalName: string | null
-  commercialName: string | null
-  ruc: string
+  name: string
+  ruc: string | null
 }
 
 export interface CreateCompanyData {

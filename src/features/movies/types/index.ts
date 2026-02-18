@@ -54,6 +54,7 @@ export interface CreateMoviePayload {
   type: MovieType
   genre: MovieGenre
   subGenreIds?: number[]
+  languages?: string[]
   subtitleLanguageIds?: number[]
   countryId: number
   releaseYear: number

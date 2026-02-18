@@ -214,6 +214,54 @@
   background-color: var(--color-surface-hover);
 }
 
+.suggestionList {
+  margin-top: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+  max-height: 260px;
+  overflow-y: auto;
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-surface);
+  padding: var(--spacing-xs);
+}
+
+.suggestionItem {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  color: var(--color-text-primary);
+}
+
+.suggestionItem:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.suggestionName {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.suggestionMeta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.suggestionEmpty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
 .durationInput {
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
@@ -255,6 +303,55 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--spacing-sm);
   align-items: end;
+}
+
+.internationalList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.internationalItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-surface);
+}
+
+.internationalInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+}
+
+.internationalTitle {
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.internationalMeta {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.internationalRemove {
+  padding: var(--spacing-2xs) var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: var(--border-width-thin) solid var(--color-border);
+}
+
+.internationalRemove:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-dark);
+  background-color: var(--color-surface-hover);
 }
 
 .optionItem {
