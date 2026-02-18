@@ -131,6 +131,266 @@ interface FormValues {
   projectStatus: ProjectStatus
 }
 
+export default function MoviesAdminPage() {
+  return <MovieForm />
+}
+
+type MovieDetail = {
+  id: number
+  title?: string
+  titleEn?: string | null
+  durationMinutes?: number
+  type?: MovieType
+  genre?: MovieGenre
+  subgenres?: Array<{ id: number }>
+  languages?: Array<{ id: number; code: string; name?: string }>
+  subtitles?: Array<{ languageId?: number; language?: { id: number } }>
+  country?: { id: number }
+  releaseYear?: number | null
+  synopsis?: string
+  synopsisEn?: string | null
+  logLine?: string | null
+  logline?: string | null
+  logLineEn?: string | null
+  loglineEn?: string | null
+  projectNeed?: string | null
+  projectNeedEn?: string | null
+  professionals?: Array<{ professionalId: number; cinematicRoleId: number }>
+  companies?: Array<{ companyId: number; participation: string }>
+  internationalCoproductions?: Array<{ companyName: string; countryId: number }>
+  totalBudget?: number | string | null
+  economicRecovery?: number | string | null
+  spectatorsCount?: number | null
+  crewTotal?: number | null
+  actorsTotal?: number | null
+  funding?: Array<{
+    fundId: number
+    year: number
+    amountGranted?: number | null
+    fundingStage: ProjectStatus
+  }>
+  nationalReleases?: Array<{
+    exhibitionSpaceId: number
+    cityId: number
+    year: number
+    type: MovieReleaseType
+  }>
+  internationalReleases?: Array<{
+    spaceName?: string | null
+    countryId: number
+    year: number
+    type: MovieReleaseType
+  }>
+  festivalNominations?: Array<{
+    fundId: number
+    year: number
+    category: string
+    result: FestivalNominationResult
+  }>
+  platforms?: Array<{ platformId: number; link?: string | null }>
+  contacts?: Array<{
+    name?: string | null
+    role: ContactPosition
+    phone?: string | null
+    email?: string | null
+  }>
+  contentBank?: Array<{
+    exhibitionWindow: ExhibitionWindow
+    licensingStartDate: string | Date
+    licensingEndDate: string | Date
+    geolocationRestrictionCountryIds?: number[] | null
+  }>
+  posterAsset?: { id: number; url?: string } | null
+  dossierAsset?: { id: number; url?: string } | null
+  dossierAssetEn?: { id: number; url?: string } | null
+  pedagogicalSheetAsset?: { id: number; url?: string } | null
+  trailerLink?: string | null
+  makingOfLink?: string | null
+  frameAssets?: Array<{ id: number; url?: string }>
+  cities?: Array<{ name: string }>
+  filmingCountries?: Array<{ country?: { code?: string }; countryId?: number }>
+  classification?: MovieClassification
+  projectStatus?: ProjectStatus
+}
+
+type MovieFormProps = {
+  initialMovie?: MovieDetail | null
+  movieId?: number
+}
+
+const DIRECTOR_ROLE_ID = 1
+const PRODUCER_ROLE_ID = 2
+const ACTOR_ROLE_ID = 20
+const COMPANY_PARTICIPATION_PRODUCER = "Producción"
+const COMPANY_PARTICIPATION_CO_PRODUCER = "Coproducción"
+
+const toNumberValue = (value?: number | string | null) => {
+  if (value === null || value === undefined || value === "") return ""
+  const parsed = Number(value)
+  return Number.isNaN(parsed) ? "" : parsed
+}
+
+const toDateInput = (value?: string | Date | null) => {
+  if (!value) return ""
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+  return date.toISOString().split("T")[0]
+}
+
+const mapMovieToFormValues = (movie: MovieDetail): FormValues => {
+  const directors =
+    movie.professionals
+      ?.filter((entry) => entry.cinematicRoleId === DIRECTOR_ROLE_ID)
+      .map((entry) => entry.professionalId) ?? []
+  const producers =
+    movie.professionals
+      ?.filter((entry) => entry.cinematicRoleId === PRODUCER_ROLE_ID)
+      .map((entry) => entry.professionalId) ?? []
+  const mainActors =
+    movie.professionals
+      ?.filter((entry) => entry.cinematicRoleId === ACTOR_ROLE_ID)
+      .map((entry) => entry.professionalId) ?? []
+  const crew =
+    movie.professionals
+      ?.filter(
+        (entry) =>
+          ![DIRECTOR_ROLE_ID, PRODUCER_ROLE_ID, ACTOR_ROLE_ID].includes(
+            entry.cinematicRoleId,
+          ),
+      )
+      .map((entry) => ({
+        roleId: entry.cinematicRoleId,
+        professionalId: entry.professionalId,
+      })) ?? []
+
+  const producerCompanyId =
+    movie.companies?.find(
+      (company) => company.participation === COMPANY_PARTICIPATION_PRODUCER,
+    )?.companyId ?? ""
+  const coProducerCompanyIds =
+    movie.companies
+      ?.filter(
+        (company) =>
+          company.participation === COMPANY_PARTICIPATION_CO_PRODUCER,
+      )
+      .map((company) => company.companyId) ?? []
+
+  const subtitles =
+    movie.subtitles
+      ?.map((subtitle) => subtitle.languageId ?? subtitle.language?.id)
+      .filter((id): id is number => Boolean(id)) ?? []
+
+  const nationalRelease = movie.nationalReleases?.[0]
+  const internationalRelease = movie.internationalReleases?.[0]
+
+  return {
+    ...initialValues,
+    title: movie.title ?? "",
+    titleEn: movie.titleEn ?? "",
+    durationMinutes: toNumberValue(movie.durationMinutes),
+    type: movie.type ?? initialValues.type,
+    genre: movie.genre ?? initialValues.genre,
+    subGenres: movie.subgenres?.map((subgenre) => subgenre.id) ?? [],
+    languages: movie.languages?.map((language) => language.code) ?? [],
+    subtitles,
+    countryId: movie.country?.id ?? "",
+    releaseYear: toNumberValue(movie.releaseYear),
+    synopsis: movie.synopsis ?? "",
+    synopsisEn: movie.synopsisEn ?? "",
+    logLine:
+      (movie.logLine ?? movie.logline ?? "") as string,
+    logLineEn:
+      (movie.logLineEn ?? movie.loglineEn ?? "") as string,
+    projectNeed: movie.projectNeed ?? "",
+    projectNeedEn: movie.projectNeedEn ?? "",
+    directors,
+    producers,
+    mainActors,
+    crew,
+    producerCompanyId,
+    coProducerCompanyIds,
+    internationalCoProductions:
+      movie.internationalCoproductions?.map((entry) => ({
+        companyName: entry.companyName,
+        countryId: entry.countryId,
+      })) ?? [],
+    totalBudget: toNumberValue(movie.totalBudget),
+    economicRecovery: toNumberValue(movie.economicRecovery),
+    totalAudience: toNumberValue(movie.spectatorsCount),
+    crewTotal: toNumberValue(movie.crewTotal),
+    actorsTotal: toNumberValue(movie.actorsTotal),
+    funding:
+      movie.funding?.map((entry) => ({
+        fundId: entry.fundId,
+        year: entry.year,
+        amountGranted:
+          entry.amountGranted === null || entry.amountGranted === undefined
+            ? ""
+            : Number(entry.amountGranted),
+        fundingStage: entry.fundingStage,
+      })) ?? [],
+    nationalRelease: nationalRelease
+      ? {
+          exhibitionSpaceId: nationalRelease.exhibitionSpaceId,
+          cityId: nationalRelease.cityId,
+          year: nationalRelease.year,
+          type: nationalRelease.type,
+        }
+      : initialValues.nationalRelease,
+    internationalRelease: internationalRelease
+      ? {
+          spaceName: internationalRelease.spaceName ?? "",
+          countryId: internationalRelease.countryId,
+          year: internationalRelease.year,
+          type: internationalRelease.type,
+        }
+      : initialValues.internationalRelease,
+    festivalNominations:
+      movie.festivalNominations?.map((entry) => ({
+        fundId: entry.fundId,
+        year: entry.year,
+        category: entry.category,
+        result: entry.result,
+      })) ?? [],
+    platforms:
+      movie.platforms?.map((entry) => ({
+        platformId: entry.platformId,
+        link: entry.link ?? "",
+      })) ?? [],
+    contacts:
+      movie.contacts?.map((entry) => ({
+        name: entry.name ?? "",
+        role: entry.role,
+        phone: entry.phone ?? "",
+        email: entry.email ?? "",
+      })) ?? [],
+    contentBank:
+      movie.contentBank?.length
+        ? movie.contentBank.map((entry) => ({
+            exhibitionWindow: entry.exhibitionWindow,
+            licensingStartDate: toDateInput(entry.licensingStartDate),
+            licensingEndDate: toDateInput(entry.licensingEndDate),
+            geolocationRestrictionCountryIds:
+              entry.geolocationRestrictionCountryIds ?? [],
+          }))
+        : initialValues.contentBank,
+    posterAssetId: movie.posterAsset?.id ?? null,
+    trailerLink: movie.trailerLink ?? "",
+    makingOffLink: movie.makingOfLink ?? "",
+    dossierAssetId: movie.dossierAsset?.id ?? null,
+    dossierEnAssetId: movie.dossierAssetEn?.id ?? null,
+    pedagogicalGuideAssetId: movie.pedagogicalSheetAsset?.id ?? null,
+    stillAssetIds: movie.frameAssets?.map((asset) => asset.id) ?? [],
+    filmingCitiesEc: movie.cities?.map((city) => city.name) ?? [],
+    filmingCountries:
+      movie.filmingCountries
+        ?.map((entry) => entry.country?.code)
+        .filter((code): code is string => Boolean(code)) ?? [],
+    classification: movie.classification ?? initialValues.classification,
+    projectStatus: movie.projectStatus ?? initialValues.projectStatus,
+  }
+}
+
 const GENRE_OPTIONS = [
   { value: "Ficción", label: "Ficción" },
   { value: "Documental", label: "Documental" },
@@ -209,9 +469,7 @@ const validationSchema = Yup.object().shape({
     .min(1, "Selecciona al menos un subgénero")
     .required("Selecciona al menos un subgénero"),
   languages: Yup.array(),
-  subtitles: Yup.array()
-    .min(1, "Selecciona al menos un subtítulo")
-    .required("Selecciona al menos un subtítulo"),
+  subtitles: Yup.array(),
   countryId: Yup.number().required("Selecciona un país de origen"),
   
   releaseYear: Yup.number()
@@ -229,12 +487,8 @@ const validationSchema = Yup.object().shape({
   logLineEn: Yup.string(),
   projectNeed: Yup.string(),
   projectNeedEn: Yup.string(),
-  directors: Yup.array()
-    .min(1, "Selecciona al menos un director")
-    .required("Selecciona al menos un director"),
-  producers: Yup.array()
-    .min(1, "Selecciona al menos un productor")
-    .required("Selecciona al menos un productor"),
+  directors: Yup.array(),
+  producers: Yup.array(),
   mainActors: Yup.array(),
   crew: Yup.array(),
   producerCompanyId: Yup.number().required("Selecciona un productor"),
@@ -324,7 +578,7 @@ const initialValues: FormValues = {
   projectStatus: "desarrollo",
 }
 
-export default function MoviesAdminPage() {
+export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
   const { user, isAuthenticated, isLoading } = useAuth()
   const { countries, isLoading: countriesLoading } = useCountries()
   const { cities } = useCities()
@@ -338,6 +592,7 @@ export default function MoviesAdminPage() {
   const { platforms } = usePlatforms()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(0)
+  const [savedMovieId, setSavedMovieId] = useState(movieId ?? initialMovie?.id ?? null)
   const [producerCompanySearch, setProducerCompanySearch] = useState("")
   const [coProducerCompanySearch, setCoProducerCompanySearch] = useState("")
   const [directorSearch, setDirectorSearch] = useState("")
@@ -378,6 +633,19 @@ export default function MoviesAdminPage() {
   const [contentGeoblockOpen, setContentGeoblockOpen] = useState(false)
   const [filmingCitySearch, setFilmingCitySearch] = useState("")
   const [filmingCountrySearch, setFilmingCountrySearch] = useState("")
+  const initializeDocumentUrls = () => ({
+    poster: initialMovie?.posterAsset?.url || null,
+    dossier: initialMovie?.dossierAsset?.url || null,
+    dossierEn: initialMovie?.dossierAssetEn?.url || null,
+    guide: initialMovie?.pedagogicalSheetAsset?.url || null,
+    stills: (initialMovie?.frameAssets || []).map((asset) => ({
+      id: asset.id,
+      url: asset.url || "",
+      localId: `existing-${asset.id}`,
+    })),
+  })
+
+  const [documentUrls, setDocumentUrls] = useState(initializeDocumentUrls())
 
   const tabs = [
     { id: "basic", label: "Información básica" },
@@ -397,8 +665,14 @@ export default function MoviesAdminPage() {
     }
   }, [isAuthenticated, isLoading, user, router])
 
+  const formInitialValues = useMemo(
+    () => (initialMovie ? mapMovieToFormValues(initialMovie) : initialValues),
+    [initialMovie],
+  )
+
   const formik = useFormik<FormValues>({
-    initialValues,
+    initialValues: formInitialValues,
+    enableReinitialize: true,
     validationSchema,
     validateOnChange: true,
     validateOnBlur: true,
@@ -409,6 +683,23 @@ export default function MoviesAdminPage() {
           .map((item) => ({
             cinematicRoleId: Number(item.roleId),
             professionalId: Number(item.professionalId),
+          }))
+
+        const contentBankEntries = values.contentBank
+          .filter(
+            (entry) =>
+              entry.exhibitionWindow &&
+              entry.licensingStartDate &&
+              entry.licensingEndDate,
+          )
+          .map((entry) => ({
+            exhibitionWindow: entry.exhibitionWindow as ExhibitionWindow,
+            licensingStartDate: entry.licensingStartDate,
+            licensingEndDate: entry.licensingEndDate,
+            geolocationRestrictionCountryIds:
+              entry.geolocationRestrictionCountryIds.length > 0
+                ? entry.geolocationRestrictionCountryIds
+                : undefined,
           }))
 
         const payload: CreateMoviePayload = {
@@ -536,17 +827,7 @@ export default function MoviesAdminPage() {
                 email: entry.email.trim() || undefined,
               })) || undefined,
           contentBank:
-            values.contentBank.length > 0
-              ? values.contentBank.map((entry) => ({
-                  exhibitionWindow: entry.exhibitionWindow as ExhibitionWindow,
-                  licensingStartDate: entry.licensingStartDate,
-                  licensingEndDate: entry.licensingEndDate,
-                  geolocationRestrictionCountryIds:
-                    entry.geolocationRestrictionCountryIds.length > 0
-                      ? entry.geolocationRestrictionCountryIds
-                      : undefined,
-                }))
-              : undefined,
+            contentBankEntries.length > 0 ? contentBankEntries : undefined,
           posterAssetId: values.posterAssetId ?? undefined,
           dossierAssetId: values.dossierAssetId ?? undefined,
           dossierEnAssetId: values.dossierEnAssetId ?? undefined,
@@ -563,8 +844,13 @@ export default function MoviesAdminPage() {
           projectStatus: values.projectStatus,
         }
 
-        await movieService.create(payload)
-        formik.resetForm()
+        const result = savedMovieId
+          ? await movieService.update(savedMovieId, payload)
+          : await movieService.create(payload)
+        if (!savedMovieId) {
+          setSavedMovieId(result.id)
+        }
+        formik.setStatus({ success: "Película guardada correctamente." })
       } catch (error) {
         const message =
           (error as { message?: string })?.message ||
@@ -1015,6 +1301,34 @@ export default function MoviesAdminPage() {
     name?: string | null
     ruc?: string | null
   }) => company.name ?? company.ruc ?? ""
+
+  const markAllTouched = (value: unknown): unknown => {
+    if (Array.isArray(value)) {
+      return value.map((item) => markAllTouched(item))
+    }
+    if (value && typeof value === "object") {
+      return Object.keys(value as Record<string, unknown>).reduce(
+        (acc, key) => {
+          acc[key] = markAllTouched(
+            (value as Record<string, unknown>)[key],
+          )
+          return acc
+        },
+        {} as Record<string, unknown>,
+      )
+    }
+    return true
+  }
+
+  const handleSaveClick = async () => {
+    const errors = await formik.validateForm()
+    if (Object.keys(errors).length > 0) {
+      formik.setTouched(markAllTouched(formik.values) as typeof formik.touched, true)
+      formik.setStatus({ error: "Completa los campos obligatorios." })
+      return
+    }
+    formik.handleSubmit()
+  }
 
   const getCrewProfessionals = (searchValue: string) => {
     const query = searchValue.trim().toLowerCase()
@@ -2190,6 +2504,7 @@ export default function MoviesAdminPage() {
                     <ImageUpload
                       documentType={AssetTypeEnum.IMAGE}
                       ownerType={AssetOwnerEnum.MOVIE_POSTER}
+                      currentImageUrl={documentUrls.poster || undefined}
                       onUploadComplete={(id: number) => handlePosterUpload(id)}
                       onRemove={handlePosterRemove}
                       label="Subir afiche"
@@ -2219,6 +2534,7 @@ export default function MoviesAdminPage() {
                       label="Dossier"
                       documentType={AssetTypeEnum.DOCUMENT}
                       ownerType={AssetOwnerEnum.MOVIE_DOSSIER}
+                      currentDocumentUrl={documentUrls.dossier || undefined}
                       onUploadComplete={(id: number) => handleDossierUpload(id)}
                       onRemove={handleDossierRemove}
                     />
@@ -2229,6 +2545,7 @@ export default function MoviesAdminPage() {
                       label="Guía pedagógica"
                       documentType={AssetTypeEnum.DOCUMENT}
                       ownerType={AssetOwnerEnum.MOVIE_PEDAGOGICAL_GUIDE}
+                      currentDocumentUrl={documentUrls.guide || undefined}
                       onUploadComplete={(id: number) => handleGuideUpload(id)}
                       onRemove={handleGuideRemove}
                     />
@@ -2240,6 +2557,7 @@ export default function MoviesAdminPage() {
                   <MultiImageUpload
                     documentType={AssetTypeEnum.IMAGE}
                     ownerType={AssetOwnerEnum.MOVIE_STILLS}
+                    currentImages={documentUrls.stills}
                     maxImages={5}
                     label="Stills"
                     onImagesChange={(ids: number[]) =>
@@ -3078,6 +3396,7 @@ export default function MoviesAdminPage() {
                     label="Dossier en inglés"
                     documentType={AssetTypeEnum.DOCUMENT}
                     ownerType={AssetOwnerEnum.MOVIE_DOSSIER_EN}
+                    currentDocumentUrl={documentUrls.dossierEn || undefined}
                     onUploadComplete={(id: number) => handleDossierEnUpload(id)}
                     onRemove={handleDossierEnRemove}
                   />
@@ -3371,7 +3690,7 @@ export default function MoviesAdminPage() {
                 <div className={styles.badge}>{formik.status.success}</div>
               )}
               <p className={styles.helper}>
-                Antes de avanzar y completar la información, guarda los cambios.
+                Guarda los cambios para mantener la información actualizada.
               </p>
               <div className={styles.actionButtons}>
                 <Button
@@ -3383,9 +3702,10 @@ export default function MoviesAdminPage() {
                   Cancelar
                 </Button>
                 <Button
-                  type="submit"
+                  type="button"
                   isLoading={formik.isSubmitting}
-                  disabled={formik.isSubmitting || !formik.isValid}
+                  disabled={formik.isSubmitting}
+                  onClick={handleSaveClick}
                 >
                   Guardar
                 </Button>

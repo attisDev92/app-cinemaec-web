@@ -24,4 +24,8 @@ export const movieService = {
   async delete(id: number): Promise<void> {
     return apiClient.delete(`/movies/${id}`)
   },
+
+  async toggleActive(id: number): Promise<Movie> {
+    return apiClient.put<Movie>(`/movies/${id}/toggle-active`, {})
+  },
 }

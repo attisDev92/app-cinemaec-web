@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
-import { Movie, MovieStatus } from "../types"
+import { movieService } from "../services/movie.service"
+import { Movie } from "../types"
 import styles from "./MovieManagementTable.module.css"
 
 interface MovieManagementTableProps {
@@ -20,22 +21,6 @@ const PROJECT_STATUS_LABELS: Record<string, string> = {
   finalizado: "Finalizado",
 }
 
-const MOVIE_STATUS_LABELS: Record<MovieStatus, string> = {
-  draft: "Borrador",
-  in_review: "En Revisión",
-  approved: "Aprobado",
-  rejected: "Rechazado",
-  archived: "Archivado",
-}
-
-const MOVIE_STATUS_COLORS: Record<MovieStatus, string> = {
-  draft: "draft",
-  in_review: "in-review",
-  approved: "approved",
-  rejected: "rejected",
-  archived: "archived",
-}
-
 const MOVIE_TYPE_LABELS: Record<string, string> = {
   Cortometraje: "Cortometraje",
   Mediometraje: "Mediometraje",
@@ -49,6 +34,7 @@ export function MovieManagementTable({
   onDelete,
 }: MovieManagementTableProps) {
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set())
+  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set())
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Estás seguro de que deseas eliminar esta película?")) {
@@ -63,6 +49,22 @@ export function MovieManagementTable({
       console.error("Error al eliminar película:", error)
     } finally {
       setDeletingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }
+  }
+
+  const handleToggleActive = async (id: number) => {
+    setTogglingIds((prev) => new Set(prev).add(id))
+    try {
+      await movieService.toggleActive(id)
+      await onRefresh()
+    } catch (error) {
+      console.error("Error al cambiar estado de película:", error)
+    } finally {
+      setTogglingIds((prev) => {
         const next = new Set(prev)
         next.delete(id)
         return next
@@ -88,7 +90,6 @@ export function MovieManagementTable({
             <th>Duración</th>
             <th>Estado de Proyecto</th>
             <th>Año de Lanzamiento</th>
-            <th>Estado de Revisión</th>
             <th>Activo</th>
             <th>Acciones</th>
           </tr>
@@ -97,7 +98,7 @@ export function MovieManagementTable({
           {movies.map((movie) => (
             <tr
               key={movie.id}
-              className={!movie.isActive ? styles.inactive : ""}
+              className={!movie.isActive ? styles.inactiveRow : ""}
             >
               <td className={styles.title}>{movie.title}</td>
               <td>{MOVIE_TYPE_LABELS[movie.type] || movie.type}</td>
@@ -108,18 +109,19 @@ export function MovieManagementTable({
               </td>
               <td>{movie.releaseYear}</td>
               <td>
-                <span
-                  className={`${styles.status} ${styles[MOVIE_STATUS_COLORS[movie.status]]}`}
+                <button
+                  onClick={() => handleToggleActive(movie.id)}
+                  disabled={togglingIds.has(movie.id)}
+                  className={`${styles.toggleBtn} ${
+                    movie.isActive ? styles.active : styles.inactive
+                  }`}
                 >
-                  {MOVIE_STATUS_LABELS[movie.status]}
-                </span>
-              </td>
-              <td>
-                <span
-                  className={movie.isActive ? styles.active : styles.inactive}
-                >
-                  {movie.isActive ? "Sí" : "No"}
-                </span>
+                  {togglingIds.has(movie.id)
+                    ? "..."
+                    : movie.isActive
+                      ? "Activo"
+                      : "Desactivado"}
+                </button>
               </td>
               <td className={styles.actions}>
                 <Link
