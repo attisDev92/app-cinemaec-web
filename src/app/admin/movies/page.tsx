@@ -31,6 +31,7 @@ import {
 } from "@/features/movies/types"
 import { ecuadorProvinces } from "@/shared/data/ecuador-locations"
 import { Navbar } from "@/shared/components/Navbar"
+import { AddCompanyModal } from "@/shared/components/AddCompanyModal"
 import {
   Button,
   Card,
@@ -634,6 +635,8 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
   const [contentGeoblockOpen, setContentGeoblockOpen] = useState(false)
   const [filmingCitySearch, setFilmingCitySearch] = useState("")
   const [filmingCountrySearch, setFilmingCountrySearch] = useState("")
+  const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false)
+  const [isCreatingCompany, setIsCreatingCompany] = useState(false)
   const initializeDocumentUrls = () => ({
     poster: initialMovie?.posterAsset?.url || null,
     dossier: initialMovie?.dossierAsset?.url || null,
@@ -1293,6 +1296,15 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
     return formik.touched[fieldName] && formik.errors[fieldName]
       ? String(formik.errors[fieldName])
       : undefined
+  }
+
+  const handleCompanyCreated = (companyId: number, companyName: string) => {
+    formik.setFieldValue("producerCompanyId", companyId)
+    setProducerCompanySearch("")
+    setIsAddCompanyModalOpen(false)
+    setIsCreatingCompany(false)
+    // Reload the page to get the updated companies list
+    setTimeout(() => window.location.reload(), 500)
   }
 
   const getProfessionalLabel = (professional: { name?: string | null }) =>
@@ -2059,16 +2071,29 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                   </Select>
 
                   <div className={styles.field}>
-                    <Input
-                      label="Empresa productora"
-                      name="companySearch"
-                      value={producerCompanySearch}
-                      onChange={(event) =>
-                        setProducerCompanySearch(event.target.value)
-                      }
-                      placeholder="Buscar empresa por nombre o RUC"
-                      error={getFieldError("producerCompanyId")}
-                    />
+                    <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                      <div style={{ flex: 1 }}>
+                        <Input
+                          label="Empresa productora"
+                          name="companySearch"
+                          value={producerCompanySearch}
+                          onChange={(event) =>
+                            setProducerCompanySearch(event.target.value)
+                          }
+                          placeholder="Buscar empresa por nombre o RUC"
+                          error={getFieldError("producerCompanyId")}
+                        />
+                      </div>
+                      {!selectedProducerCompany && (
+                        <Button
+                          type="button"
+                          onClick={() => setIsAddCompanyModalOpen(true)}
+                          style={{ marginTop: "32px" }}
+                        >
+                          + Agregar
+                        </Button>
+                      )}
+                    </div>
 
                     {selectedProducerCompany && (
                       <div className={styles.optionGrid}>
@@ -3726,6 +3751,13 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
             </div>
           </form>
         </Card>
+
+        <AddCompanyModal
+          isOpen={isAddCompanyModalOpen}
+          onClose={() => setIsAddCompanyModalOpen(false)}
+          onCompanyCreated={handleCompanyCreated}
+          isLoading={isCreatingCompany}
+        />
       </main>
     </div>
   )
