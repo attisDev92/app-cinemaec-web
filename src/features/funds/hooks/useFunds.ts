@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { fundsService } from "@/features/funds"
 import type { FundListItem } from "@/features/funds"
 
@@ -27,5 +27,9 @@ export function useFunds() {
     fetchFunds()
   }, [])
 
-  return { funds, isLoading, error }
+  const addFund = useCallback((newFund: FundListItem) => {
+    setFunds((prev) => [...prev, newFund])
+  }, [])
+
+  return { funds, isLoading, error, addFund }
 }

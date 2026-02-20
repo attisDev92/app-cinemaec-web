@@ -32,6 +32,10 @@ import {
 import { ecuadorProvinces } from "@/shared/data/ecuador-locations"
 import { Navbar } from "@/shared/components/Navbar"
 import { AddCompanyModal } from "@/shared/components/AddCompanyModal"
+import { AddFundModal } from "@/shared/components/AddFundModal"
+import { AddProfessionalModal } from "@/shared/components/AddProfessionalModal"
+import { AddExhibitionSpaceModal } from "@/shared/components/AddExhibitionSpaceModal"
+import { AddPlatformModal } from "@/shared/components/AddPlatformModal"
 import {
   Button,
   Card,
@@ -587,11 +591,11 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
   const { languages } = useLanguages()
   const { subGenres } = useSubGenres()
   const { roles } = useCinematicRoles()
-  const { professionals } = useProfessionals()
-  const { companies } = useCompanies()
-  const { funds } = useFunds()
-  const { spaces } = useExhibitionSpaces()
-  const { platforms } = usePlatforms()
+  const { professionals, addProfessional } = useProfessionals()
+  const { companies, addCompany } = useCompanies()
+  const { funds, addFund } = useFunds()
+  const { spaces, addSpace } = useExhibitionSpaces()
+  const { platforms, addPlatform } = usePlatforms()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(0)
   const [savedMovieId, setSavedMovieId] = useState(movieId ?? initialMovie?.id ?? null)
@@ -613,8 +617,6 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
   const [fundingYear, setFundingYear] = useState<number | "">("")
   const [fundingAmount, setFundingAmount] = useState<number | "">("")
   const [fundingStage, setFundingStage] = useState<ProjectStatus | "">("")
-  const [nationalReleaseSpaceSearch, setNationalReleaseSpaceSearch] =
-    useState("")
   const [festivalFundSearch, setFestivalFundSearch] = useState("")
   const [festivalFundId, setFestivalFundId] = useState<number | "">("")
   const [festivalYear, setFestivalYear] = useState<number | "">("")
@@ -636,6 +638,14 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
   const [filmingCitySearch, setFilmingCitySearch] = useState("")
   const [filmingCountrySearch, setFilmingCountrySearch] = useState("")
   const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false)
+  const [isAddCoProducerCompanyModalOpen, setIsAddCoProducerCompanyModalOpen] = useState(false)
+  const [isAddFundModalOpen, setIsAddFundModalOpen] = useState(false)
+  const [isAddExhibitionSpaceModalOpen, setIsAddExhibitionSpaceModalOpen] = useState(false)
+  const [isAddPlatformModalOpen, setIsAddPlatformModalOpen] = useState(false)
+  const [isAddDirectorModalOpen, setIsAddDirectorModalOpen] = useState(false)
+  const [isAddProducerModalOpen, setIsAddProducerModalOpen] = useState(false)
+  const [isAddActorModalOpen, setIsAddActorModalOpen] = useState(false)
+  const [isAddCrewModalOpen, setIsAddCrewModalOpen] = useState(false)
   const [isCreatingCompany, setIsCreatingCompany] = useState(false)
   const initializeDocumentUrls = () => ({
     poster: initialMovie?.posterAsset?.url || null,
@@ -649,7 +659,7 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
     })),
   })
 
-  const [documentUrls, setDocumentUrls] = useState(initializeDocumentUrls())
+  const [documentUrls] = useState(initializeDocumentUrls())
 
   const tabs = [
     { id: "basic", label: "Información básica" },
@@ -1030,15 +1040,6 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
     })
   }
 
-  const getExhibitionSpaceOptions = (searchValue: string) => {
-    const query = searchValue.trim().toLowerCase()
-    if (!query) return sortedExhibitionSpaces
-    return sortedExhibitionSpaces.filter((space) => {
-      const label = `${space.name} ${space.country?.name ?? ""}`.toLowerCase()
-      return label.includes(query)
-    })
-  }
-
   const allEcuadorCities = useMemo(() => {
     const cities = ecuadorProvinces.flatMap((province) => province.cities)
     return Array.from(new Set(cities)).sort()
@@ -1298,13 +1299,79 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
       : undefined
   }
 
-  const handleCompanyCreated = (companyId: number, companyName: string) => {
-    formik.setFieldValue("producerCompanyId", companyId)
+  const handleCompanyCreated = (company: { id: number; name: string; ruc: string | null }) => {
+    addCompany(company)
+    formik.setFieldValue("producerCompanyId", company.id)
     setProducerCompanySearch("")
     setIsAddCompanyModalOpen(false)
     setIsCreatingCompany(false)
-    // Reload the page to get the updated companies list
-    setTimeout(() => window.location.reload(), 500)
+  }
+
+  const handleCoProducerCompanyCreated = (company: { id: number; name: string; ruc: string | null }) => {
+    addCompany(company)
+    const currentIds = formik.values.coProducerCompanyIds
+    if (!currentIds.includes(company.id)) {
+      formik.setFieldValue("coProducerCompanyIds", [...currentIds, company.id])
+    }
+    setCoProducerCompanySearch("")
+    setIsAddCoProducerCompanyModalOpen(false)
+    setIsCreatingCompany(false)
+  }
+
+  const handleFundCreated = (fund: { id: number; name: string; country?: { id?: number; name: string; code?: string } }) => {
+    addFund(fund)
+    setFundingFundId(fund.id)
+    setFundingSearch("")
+    setIsAddFundModalOpen(false)
+  }
+
+  const handleExhibitionSpaceCreated = (space: { id: number; name: string; country?: { id: number; name: string } }) => {
+    addSpace(space)
+    updateNationalRelease("exhibitionSpaceId", space.id)
+    setIsAddExhibitionSpaceModalOpen(false)
+  }
+
+  const handlePlatformCreated = (platform: { id: number; name: string; type?: string }) => {
+    addPlatform(platform)
+    setPlatformId(platform.id)
+    setIsAddPlatformModalOpen(false)
+  }
+
+  const handleDirectorCreated = (professional: { id: number; name: string }) => {
+    addProfessional(professional)
+    const currentIds = formik.values.directors
+    if (!currentIds.includes(professional.id)) {
+      formik.setFieldValue("directors", [...currentIds, professional.id])
+    }
+    setDirectorSearch("")
+    setIsAddDirectorModalOpen(false)
+  }
+
+  const handleProducerCreated = (professional: { id: number; name: string }) => {
+    addProfessional(professional)
+    const currentIds = formik.values.producers
+    if (!currentIds.includes(professional.id)) {
+      formik.setFieldValue("producers", [...currentIds, professional.id])
+    }
+    setProducerSearch("")
+    setIsAddProducerModalOpen(false)
+  }
+
+  const handleActorCreated = (professional: { id: number; name: string }) => {
+    addProfessional(professional)
+    const currentIds = formik.values.mainActors
+    if (!currentIds.includes(professional.id)) {
+      formik.setFieldValue("mainActors", [...currentIds, professional.id])
+    }
+    setActorSearch("")
+    setIsAddActorModalOpen(false)
+  }
+
+  const handleCrewCreated = (professional: { id: number; name: string }) => {
+    addProfessional(professional)
+    setCrewProfessionalId(professional.id)
+    setCrewProfessionalSearch("")
+    setIsAddCrewModalOpen(false)
   }
 
   const getProfessionalLabel = (professional: { name?: string | null }) =>
@@ -1441,40 +1508,35 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                   <div className={styles.crewList}>
                     <div className={styles.crewRow}>
                       <div className={styles.field}>
-                        <Input
-                          label="Buscar espacio"
-                          name="national-release-space-search"
-                          value={nationalReleaseSpaceSearch}
+                        <Select
+                          label="Espacio de exhibición"
+                          name="national-release-space"
+                          value={formik.values.nationalRelease.exhibitionSpaceId}
                           onChange={(event) =>
-                            setNationalReleaseSpaceSearch(event.target.value)
+                            updateNationalRelease(
+                              "exhibitionSpaceId",
+                              event.target.value
+                                ? Number(event.target.value)
+                                : "",
+                            )
                           }
-                          placeholder="Buscar por nombre"
-                        />
-                        <div className={styles.optionGrid}>
-                          {getExhibitionSpaceOptions(
-                            nationalReleaseSpaceSearch,
-                          ).map((space) => (
-                            <Checkbox
-                              key={`national-space-${space.id}`}
-                              label={
-                                space.country?.name
-                                  ? `${space.name} (${space.country.name})`
-                                  : space.name
-                              }
-                              variant="pill"
-                              checked={
-                                formik.values.nationalRelease
-                                  .exhibitionSpaceId === space.id
-                              }
-                              onChange={() =>
-                                updateNationalRelease(
-                                  "exhibitionSpaceId",
-                                  space.id,
-                                )
-                              }
-                            />
+                        >
+                          <option value="">Selecciona un espacio</option>
+                          {sortedExhibitionSpaces.map((space) => (
+                            <option key={space.id} value={space.id}>
+                              {space.country?.name
+                                ? `${space.name} (${space.country.name})`
+                                : space.name}
+                            </option>
                           ))}
-                        </div>
+                        </Select>
+                        <button
+                          type="button"
+                          className={styles.addNewLink}
+                          onClick={() => setIsAddExhibitionSpaceModalOpen(true)}
+                        >
+                          Agregar nuevo espacio
+                        </button>
                       </div>
 
                       <Select
@@ -1656,9 +1718,16 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                         {festivalFundSearch.trim() && (
                           <div className={styles.suggestionList}>
                             {getFundingOptions(festivalFundSearch).length === 0 && (
-                              <p className={styles.suggestionEmpty}>
-                                No se encontraron espacios con ese criterio.
-                              </p>
+                              <div className={styles.suggestionEmpty}>
+                                <p>No se encontraron espacios con ese criterio.</p>
+                                <button
+                                  type="button"
+                                  className={styles.addNewLink}
+                                  onClick={() => setIsAddFundModalOpen(true)}
+                                >
+                                  Agregar nuevo
+                                </button>
+                              </div>
                             )}
                             {getFundingOptions(festivalFundSearch)
                               .slice(0, 8)
@@ -1794,25 +1863,34 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                   <div className={styles.label}>Plataformas</div>
                   <div className={styles.crewList}>
                     <div className={styles.crewRow}>
-                      <Select
-                        label="Plataforma"
-                        name="platform-id"
-                        value={platformId}
-                        onChange={(event) =>
-                          setPlatformId(
-                            event.target.value
-                              ? Number(event.target.value)
-                              : "",
-                          )
-                        }
-                      >
-                        <option value="">Selecciona una plataforma</option>
-                        {sortedPlatforms.map((platform) => (
-                          <option key={platform.id} value={platform.id}>
-                            {platform.name}
-                          </option>
-                        ))}
-                      </Select>
+                      <div className={styles.field}>
+                        <Select
+                          label="Plataforma"
+                          name="platform-id"
+                          value={platformId}
+                          onChange={(event) =>
+                            setPlatformId(
+                              event.target.value
+                                ? Number(event.target.value)
+                                : "",
+                            )
+                          }
+                        >
+                          <option value="">Selecciona una plataforma</option>
+                          {sortedPlatforms.map((platform) => (
+                            <option key={platform.id} value={platform.id}>
+                              {platform.name}
+                            </option>
+                          ))}
+                        </Select>
+                        <button
+                          type="button"
+                          className={styles.addNewLink}
+                          onClick={() => setIsAddPlatformModalOpen(true)}
+                        >
+                          Agregar nueva plataforma
+                        </button>
+                      </div>
 
                       <Input
                         label="Link"
@@ -2035,7 +2113,7 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                   />
 
                   <Select
-                    label="País de realización *"
+                    label="País *"
                     name="countryId"
                     value={formik.values.countryId}
                     onChange={formik.handleChange}
@@ -2071,29 +2149,16 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                   </Select>
 
                   <div className={styles.field}>
-                    <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                      <div style={{ flex: 1 }}>
-                        <Input
-                          label="Empresa productora"
-                          name="companySearch"
-                          value={producerCompanySearch}
-                          onChange={(event) =>
-                            setProducerCompanySearch(event.target.value)
-                          }
-                          placeholder="Buscar empresa por nombre o RUC"
-                          error={getFieldError("producerCompanyId")}
-                        />
-                      </div>
-                      {!selectedProducerCompany && (
-                        <Button
-                          type="button"
-                          onClick={() => setIsAddCompanyModalOpen(true)}
-                          style={{ marginTop: "32px" }}
-                        >
-                          + Agregar
-                        </Button>
-                      )}
-                    </div>
+                    <Input
+                      label="Productora principal"
+                      name="companySearch"
+                      value={producerCompanySearch}
+                      onChange={(event) =>
+                        setProducerCompanySearch(event.target.value)
+                      }
+                      placeholder="Buscar empresa por nombre o RUC"
+                      error={getFieldError("producerCompanyId")}
+                    />
 
                     {selectedProducerCompany && (
                       <div className={styles.optionGrid}>
@@ -2113,9 +2178,16 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                     {producerCompanySearch.trim() && (
                       <div className={styles.suggestionList}>
                         {producerCompaniesFiltered.length === 0 && (
-                          <p className={styles.suggestionEmpty}>
-                            No se encontraron empresas.
-                          </p>
+                          <div className={styles.suggestionEmpty}>
+                            <p>No se encontraron empresas.</p>
+                            <button
+                              type="button"
+                              className={styles.addNewLink}
+                              onClick={() => setIsAddCompanyModalOpen(true)}
+                            >
+                              Agregar nuevo
+                            </button>
+                          </div>
                         )}
                         {producerCompaniesFiltered
                           .slice(0, 8)
@@ -2185,9 +2257,16 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                   {coProducerCompanySearch.trim() && (
                     <div className={styles.suggestionList}>
                       {coProducerCompaniesFiltered.length === 0 && (
-                        <p className={styles.suggestionEmpty}>
-                          No se encontraron empresas con ese criterio.
-                        </p>
+                        <div className={styles.suggestionEmpty}>
+                          <p>No se encontraron empresas con ese criterio.</p>
+                          <button
+                            type="button"
+                            className={styles.addNewLink}
+                            onClick={() => setIsAddCoProducerCompanyModalOpen(true)}
+                          >
+                            Agregar nuevo
+                          </button>
+                        </div>
                       )}
                       {coProducerCompaniesFiltered
                         .slice(0, 8)
@@ -2385,7 +2464,7 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                 </div>
 
                 <div className={styles.field}>
-                  <div className={styles.label}>Idiomas disponibles *</div>
+                  <div className={styles.label}>Idiomas *</div>
                   <Input
                     label="Buscar idioma"
                     name="languageSearch"
@@ -2643,9 +2722,16 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                   {directorSearch.trim() && (
                     <div className={styles.suggestionList}>
                       {filteredDirectors.length === 0 && (
-                        <p className={styles.suggestionEmpty}>
-                          No se encontraron profesionales con ese criterio.
-                        </p>
+                        <div className={styles.suggestionEmpty}>
+                          <p>No se encontraron profesionales con ese criterio.</p>
+                          <button
+                            type="button"
+                            className={styles.addNewLink}
+                            onClick={() => setIsAddDirectorModalOpen(true)}
+                          >
+                            Agregar nuevo
+                          </button>
+                        </div>
                       )}
                       {filteredDirectors.slice(0, 8).map((professional) => {
                         const checked = formik.values.directors.includes(
@@ -2717,9 +2803,16 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                   {producerSearch.trim() && (
                     <div className={styles.suggestionList}>
                       {filteredProducers.length === 0 && (
-                        <p className={styles.suggestionEmpty}>
-                          No se encontraron profesionales con ese criterio.
-                        </p>
+                        <div className={styles.suggestionEmpty}>
+                          <p>No se encontraron profesionales con ese criterio.</p>
+                          <button
+                            type="button"
+                            className={styles.addNewLink}
+                            onClick={() => setIsAddProducerModalOpen(true)}
+                          >
+                            Agregar nuevo
+                          </button>
+                        </div>
                       )}
                       {filteredProducers.slice(0, 8).map((professional) => {
                         const checked = formik.values.producers.includes(
@@ -2792,9 +2885,16 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                           <div className={styles.suggestionList}>
                             {getCrewProfessionals(crewProfessionalSearch)
                               .length === 0 && (
-                              <p className={styles.suggestionEmpty}>
-                                No se encontraron profesionales con ese criterio.
-                              </p>
+                              <div className={styles.suggestionEmpty}>
+                                <p>No se encontraron profesionales con ese criterio.</p>
+                                <button
+                                  type="button"
+                                  className={styles.addNewLink}
+                                  onClick={() => setIsAddCrewModalOpen(true)}
+                                >
+                                  Agregar nuevo
+                                </button>
+                              </div>
                             )}
                             {getCrewProfessionals(crewProfessionalSearch)
                               .slice(0, 8)
@@ -2927,9 +3027,16 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                   {actorSearch.trim() && (
                     <div className={styles.suggestionList}>
                       {filteredActors.length === 0 && (
-                        <p className={styles.suggestionEmpty}>
-                          No se encontraron profesionales con ese criterio.
-                        </p>
+                        <div className={styles.suggestionEmpty}>
+                          <p>No se encontraron profesionales con ese criterio.</p>
+                          <button
+                            type="button"
+                            className={styles.addNewLink}
+                            onClick={() => setIsAddActorModalOpen(true)}
+                          >
+                            Agregar nuevo
+                          </button>
+                        </div>
                       )}
                       {filteredActors.slice(0, 8).map((professional) => {
                         const checked = formik.values.mainActors.includes(
@@ -3072,9 +3179,16 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                         {fundingSearch.trim() && (
                           <div className={styles.suggestionList}>
                             {getFundingOptions(fundingSearch).length === 0 && (
-                              <p className={styles.suggestionEmpty}>
-                                No se encontraron entidades con ese criterio.
-                              </p>
+                              <div className={styles.suggestionEmpty}>
+                                <p>No se encontraron entidades con ese criterio.</p>
+                                <button
+                                  type="button"
+                                  className={styles.addNewLink}
+                                  onClick={() => setIsAddFundModalOpen(true)}
+                                >
+                                  Agregar nuevo
+                                </button>
+                              </div>
                             )}
                             {getFundingOptions(fundingSearch)
                               .slice(0, 8)
@@ -3756,6 +3870,61 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
           isOpen={isAddCompanyModalOpen}
           onClose={() => setIsAddCompanyModalOpen(false)}
           onCompanyCreated={handleCompanyCreated}
+          isLoading={isCreatingCompany}
+        />
+
+        <AddCompanyModal
+          isOpen={isAddCoProducerCompanyModalOpen}
+          onClose={() => setIsAddCoProducerCompanyModalOpen(false)}
+          onCompanyCreated={handleCoProducerCompanyCreated}
+          isLoading={isCreatingCompany}
+        />
+
+        <AddFundModal
+          isOpen={isAddFundModalOpen}
+          onClose={() => setIsAddFundModalOpen(false)}
+          onFundCreated={handleFundCreated}
+          countries={countries}
+        />
+
+        <AddExhibitionSpaceModal
+          isOpen={isAddExhibitionSpaceModalOpen}
+          onClose={() => setIsAddExhibitionSpaceModalOpen(false)}
+          onSpaceCreated={handleExhibitionSpaceCreated}
+          countries={countries}
+        />
+
+        <AddPlatformModal
+          isOpen={isAddPlatformModalOpen}
+          onClose={() => setIsAddPlatformModalOpen(false)}
+          onPlatformCreated={handlePlatformCreated}
+        />
+
+        <AddProfessionalModal
+          isOpen={isAddDirectorModalOpen}
+          onClose={() => setIsAddDirectorModalOpen(false)}
+          onProfessionalCreated={handleDirectorCreated}
+          isLoading={isCreatingCompany}
+        />
+
+        <AddProfessionalModal
+          isOpen={isAddProducerModalOpen}
+          onClose={() => setIsAddProducerModalOpen(false)}
+          onProfessionalCreated={handleProducerCreated}
+          isLoading={isCreatingCompany}
+        />
+
+        <AddProfessionalModal
+          isOpen={isAddActorModalOpen}
+          onClose={() => setIsAddActorModalOpen(false)}
+          onProfessionalCreated={handleActorCreated}
+          isLoading={isCreatingCompany}
+        />
+
+        <AddProfessionalModal
+          isOpen={isAddCrewModalOpen}
+          onClose={() => setIsAddCrewModalOpen(false)}
+          onProfessionalCreated={handleCrewCreated}
           isLoading={isCreatingCompany}
         />
       </main>

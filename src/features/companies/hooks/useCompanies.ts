@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { companiesService } from "@/features/companies"
 import type { CompanyListItem } from "@/features/companies"
 
@@ -27,5 +27,9 @@ export function useCompanies() {
     fetchCompanies()
   }, [])
 
-  return { companies, isLoading, error }
+  const addCompany = useCallback((newCompany: CompanyListItem) => {
+    setCompanies(prev => [...prev, newCompany])
+  }, [])
+
+  return { companies, isLoading, error, addCompany }
 }

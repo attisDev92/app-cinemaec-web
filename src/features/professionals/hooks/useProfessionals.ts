@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { professionalsService } from "@/features/professionals"
 import type { Professional } from "@/features/professionals"
 
@@ -27,5 +27,9 @@ export function useProfessionals() {
     fetchProfessionals()
   }, [])
 
-  return { professionals, isLoading, error }
+  const addProfessional = useCallback((newProfessional: Professional) => {
+    setProfessionals(prev => [...prev, newProfessional])
+  }, [])
+
+  return { professionals, isLoading, error, addProfessional }
 }

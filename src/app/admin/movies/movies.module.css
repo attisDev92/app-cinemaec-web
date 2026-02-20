@@ -256,10 +256,34 @@
 }
 
 .suggestionEmpty {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.suggestionEmpty > p {
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.addNewLink {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 0;
+  font-size: var(--font-size-xs);
+  text-decoration: none;
+  text-align: left;
+  font-family: inherit;
+  transition: color 0.2s;
+}
+
+.addNewLink:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
 }
 
 .durationInput {

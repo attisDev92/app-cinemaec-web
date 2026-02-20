@@ -1,31 +1,20 @@
 // Company Types
 export interface Company {
-  id: string
-  userId: string
+  id: number
   name: string
-  legalName: string
-  ruc: string // RUC o identificación fiscal
-  address: string
-  city: string
-  province: string
-  country: string
-  phone: string
-  email: string
-  website?: string
-  description?: string
-  legalRepresentative: string
-  legalRepresentativeId: string
-  businessType:
-    | "production"
-    | "distribution"
-    | "exhibition"
-    | "cultural"
-    | "educational"
-    | "other"
+  ruc: string | null
+  representative?: string | null
+  representativeDniNumber?: string | null
+  phone?: string | null
+  mobile?: string | null
+  website?: string | null
+  instagram?: string | null
+  linkedin?: string | null
+  ownerId?: number | null
   isActive: boolean
-  documents?: string[] // URLs de documentos legales
+  status: string
   createdAt: string
-  updatedAt: string
+  updatedAt: string | null
 }
 
 export interface CompanyListItem {
@@ -36,27 +25,16 @@ export interface CompanyListItem {
 
 export interface CreateCompanyData {
   name: string
-  legalName: string
-  ruc: string
-  address: string
-  city: string
-  province: string
-  country: string
-  phone: string
-  email: string
-  website?: string
-  description?: string
-  legalRepresentative: string
-  legalRepresentativeId: string
-  businessType:
-    | "production"
-    | "distribution"
-    | "exhibition"
-    | "cultural"
-    | "educational"
-    | "other"
+  ruc?: string | null
 }
 
 export interface UpdateCompanyData extends Partial<CreateCompanyData> {
+  representative?: string
+  representativeDniNumber?: string
+  phone?: string
+  mobile?: string
+  website?: string
+  instagram?: string
+  linkedin?: string
   isActive?: boolean
 }

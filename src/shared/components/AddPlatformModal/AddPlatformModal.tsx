@@ -1,39 +1,48 @@
+"use client"
+
 import { useState } from "react"
 import { useFormik } from "formik"
 import * as Yup from "yup"
-import { companiesService, type CompanyListItem } from "@/features/companies"
-import { Button, Input } from "@/shared/components/ui"
-import styles from "./AddCompanyModal.module.css"
+import { platformsService } from "@/features/platforms"
+import type {
+  CreatePlatformData,
+  PlatformListItem,
+  PlatformType,
+} from "@/features/platforms"
+import { Button, Input, Select } from "@/shared/components/ui"
+import styles from "./AddPlatformModal.module.css"
 
-interface AddCompanyModalProps {
+interface AddPlatformModalProps {
   isOpen: boolean
   onClose: () => void
-  onCompanyCreated: (company: CompanyListItem) => void
+  onPlatformCreated: (platform: PlatformListItem) => void
   isLoading?: boolean
 }
 
+const PLATFORM_TYPE_OPTIONS: { value: PlatformType; label: string }[] = [
+  { value: "Nacional" as PlatformType, label: "Nacional" },
+  { value: "Internacional" as PlatformType, label: "Internacional" },
+]
+
 const validationSchema = Yup.object().shape({
   name: Yup.string()
-    .required("El nombre comercial es obligatorio")
+    .required("El nombre es obligatorio")
     .min(3, "El nombre debe tener al menos 3 caracteres")
     .max(255, "El nombre no puede exceder 255 caracteres"),
-  ruc: Yup.string()
-    .optional()
-    .min(5, "El RUC debe tener al menos 5 caracteres")
-    .max(20, "El RUC no puede exceder 20 caracteres"),
+  type: Yup.string().required("El tipo es obligatorio"),
 })
 
-const initialValues = {
+const initialValues: CreatePlatformData = {
   name: "",
-  ruc: "",
+  type: "Nacional" as PlatformType,
 }
 
-export function AddCompanyModal({
+export function AddPlatformModal({
   isOpen,
   onClose,
-  onCompanyCreated,
+  onPlatformCreated,
   isLoading = false,
-}: AddCompanyModalProps) {
+}: AddPlatformModalProps) {
   const [error, setError] = useState<string | null>(null)
 
   const formik = useFormik({
@@ -42,12 +51,12 @@ export function AddCompanyModal({
     onSubmit: async (values) => {
       setError(null)
       try {
-        const newCompany = (await companiesService.create({
-          name: values.name,
-          ruc: values.ruc || null,
-        })) as CompanyListItem
+        const newPlatform = await platformsService.create({
+          name: values.name.trim(),
+          type: values.type,
+        })
 
-        onCompanyCreated(newCompany)
+        onPlatformCreated(newPlatform)
         formik.resetForm()
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error desconocido")
@@ -61,7 +70,7 @@ export function AddCompanyModal({
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
-          <h2 className={styles.title}>Crear Nueva Empresa</h2>
+          <h2 className={styles.title}>Crear Nueva Plataforma</h2>
           <button
             className={styles.closeButton}
             onClick={onClose}
@@ -75,50 +84,56 @@ export function AddCompanyModal({
         <form onSubmit={formik.handleSubmit} className={styles.form}>
           <div className={styles.content}>
             <Input
-              label="Nombre Comercial *"
+              label="Nombre *"
               name="name"
               value={formik.values.name}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              placeholder="Ej: Productora Ecuatoriana"
+              placeholder="Ej: Netflix"
               error={
                 formik.touched.name && formik.errors.name
-                  ? formik.errors.name
+                  ? String(formik.errors.name)
                   : undefined
               }
             />
 
-            <Input
-              label="RUC"
-              name="ruc"
-              value={formik.values.ruc}
+            <Select
+              label="Tipo *"
+              name="type"
+              value={formik.values.type}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              placeholder="Ej: 1790123456"
               error={
-                formik.touched.ruc && formik.errors.ruc
-                  ? formik.errors.ruc
+                formik.touched.type && formik.errors.type
+                  ? String(formik.errors.type)
                   : undefined
               }
-            />
+            >
+              {PLATFORM_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
 
-            {error && <div className={styles.error}>{error}</div>}
+            {error && <p className={styles.errorMessage}>{error}</p>}
           </div>
 
           <div className={styles.footer}>
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
-              className={styles.cancelButton}
-              disabled={isLoading}
+              disabled={formik.isSubmitting || isLoading}
             >
               Cancelar
-            </button>
+            </Button>
             <Button
               type="submit"
-              disabled={isLoading || !formik.isValid}
+              variant="primary"
+              disabled={formik.isSubmitting || isLoading || !formik.isValid}
             >
-              {isLoading ? "Creando..." : "Crear Empresa"}
+              {formik.isSubmitting || isLoading ? "Creando..." : "Crear"}
             </Button>
           </div>
         </form>

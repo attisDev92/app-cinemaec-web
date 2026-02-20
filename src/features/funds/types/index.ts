@@ -9,3 +9,18 @@ export interface FundListItem {
   name: string
   country?: FundCountry
 }
+
+export type FundType =
+  | "Fondo"
+  | "Festival"
+  | "Premio"
+  | "Espacios de participación"
+
+export type FinancialOrigin = "Público" | "Privado" | "Mixto" | "Desconocido"
+
+export interface CreateFundData {
+  name: string
+  countryId: number
+  type: FundType[]
+  financialOrigin: FinancialOrigin
+}

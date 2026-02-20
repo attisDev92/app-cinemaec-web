@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { exhibitionSpacesService } from "@/features/exhibition-spaces"
 import type { ExhibitionSpaceListItem } from "@/features/exhibition-spaces"
 
@@ -27,5 +27,9 @@ export function useExhibitionSpaces() {
     fetchSpaces()
   }, [])
 
-  return { spaces, isLoading, error }
+  const addSpace = useCallback((newSpace: ExhibitionSpaceListItem) => {
+    setSpaces((prev) => [...prev, newSpace])
+  }, [])
+
+  return { spaces, isLoading, error, addSpace }
 }

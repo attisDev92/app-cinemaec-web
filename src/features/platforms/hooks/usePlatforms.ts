@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { platformsService } from "@/features/platforms"
 import type { PlatformListItem } from "@/features/platforms"
 
@@ -27,5 +27,9 @@ export function usePlatforms() {
     fetchPlatforms()
   }, [])
 
-  return { platforms, isLoading, error }
+  const addPlatform = useCallback((newPlatform: PlatformListItem) => {
+    setPlatforms((prev) => [...prev, newPlatform])
+  }, [])
+
+  return { platforms, isLoading, error, addPlatform }
 }

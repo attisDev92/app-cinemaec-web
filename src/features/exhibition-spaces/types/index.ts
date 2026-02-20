@@ -7,3 +7,8 @@ export interface ExhibitionSpaceListItem {
     code?: string
   }
 }
+
+export interface CreateExhibitionSpaceData {
+  name: string
+  countryId: number
+}
