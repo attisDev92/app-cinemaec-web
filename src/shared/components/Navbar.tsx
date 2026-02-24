@@ -198,7 +198,9 @@ export function Navbar() {
                       <div
                         className={styles.dropdownItem + " " + styles.disabled}
                       >
-                        🏢 Directorio de Productoras
+                        {profile?.legalStatus === LegalStatus.LEGAL_ENTITY
+                          ? "🏢 Directorio de Empresas"
+                          : "👤 Perfil de Profesionales"}
                         <span className={styles.comingSoon}>Próximamente</span>
                       </div>
                     </div>

@@ -1,6 +1,11 @@
 import { environment } from "@/config/environment"
 
-const API_URL = environment.apiUrl
+const API_URL = environment.apiUrl.replace(/\/+$/, "")
+
+const buildUrl = (endpoint: string): string => {
+  const cleanEndpoint = endpoint.replace(/^\/+/, "")
+  return `${API_URL}/${cleanEndpoint}`
+}
 
 class ApiClient {
   async patch<T>(
@@ -37,7 +42,7 @@ class ApiClient {
     options: RequestInit = {},
     includeAuth = true,
   ): Promise<T> {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(buildUrl(endpoint), {
       ...options,
       headers: {
         ...this.getHeaders(includeAuth),
