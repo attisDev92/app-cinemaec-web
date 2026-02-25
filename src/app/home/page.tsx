@@ -261,7 +261,17 @@ function HomePanels({
                   ? "Registra y gestiona tu empresa productora en el directorio de empresas de la Ecuador Film Commission."
                   : "Registra tu perfil como profesional del audiovisual en el directorio de profesionales ecuatorianos."}
               </p>
-              <p className={styles.tag}>Próximamente</p>
+              {isLegalEntity ? (
+                <p className={styles.tag}>Próximamente</p>
+              ) : (
+                <Button
+                  onClick={() => router.push("/professional-profile")}
+                  variant="secondary"
+                  className={styles.cardButton}
+                >
+                  Gestionar Perfil Profesional →
+                </Button>
+              )}
             </Card>
 
             <Card title="Gestión de Locaciones">
