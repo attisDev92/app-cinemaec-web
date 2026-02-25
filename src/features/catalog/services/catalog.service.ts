@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api-client"
-import { Country, Language, SubGenre, CinematicRole, City } from "../types"
+import { Country, Language, SubGenre, CinematicRole, RoleCategory, City } from "../types"
 
 export const catalogService = {
   async getCountries(): Promise<Country[]> {
@@ -16,6 +16,10 @@ export const catalogService = {
 
   async getCinematicRoles(): Promise<CinematicRole[]> {
     return apiClient.get<CinematicRole[]>("/catalog/cinematic-roles")
+  },
+
+  async getRoleCategories(): Promise<RoleCategory[]> {
+    return apiClient.get<RoleCategory[]>("/catalog/role-categories")
   },
 
   async getCities(): Promise<City[]> {
