@@ -57,6 +57,18 @@ export const assetService = {
     return response.data
   },
 
+  async getAssetsByOwner(
+    ownerType: AssetOwnerEnum,
+    ownerId: number,
+  ): Promise<Asset[]> {
+    const query = new URLSearchParams({
+      ownerType,
+      ownerId: String(ownerId),
+    }).toString()
+
+    return apiClient.get<Asset[]>(`/assets?${query}`)
+  },
+
   /**
    * Construir una URL pública para un asset
    * Si la URL es relativa, la completa con el API_URL

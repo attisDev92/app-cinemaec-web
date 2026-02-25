@@ -274,14 +274,6 @@ function HomePanels({
               )}
             </Card>
 
-            <Card title="Gestión de Locaciones">
-              <p className={styles.cardContent}>
-                Registra y gestiona tus locaciones para producciones
-                audiovisuales en la web de la Ecuador Film Commission.
-              </p>
-              <p className={styles.tag}>Próximamente</p>
-            </Card>
-
             <Card title="Gestión de Películas">
               <p className={styles.cardContent}>
                 Registra, organiza y actualiza la información de tus
