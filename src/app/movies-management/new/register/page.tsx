@@ -1,13 +1,13 @@
 "use client"
 
-import { useMemo } from "react"
+import { Suspense, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Navbar } from "@/shared/components/Navbar"
 import { Button, Card } from "@/shared/components/ui"
 import { MovieForm } from "@/app/admin/movies/page"
 import styles from "./page.module.css"
 
-export default function MovieRegisterPage() {
+function MovieRegisterPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -65,5 +65,13 @@ export default function MovieRegisterPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function MovieRegisterPage() {
+  return (
+    <Suspense fallback={<MovieForm mode="user" />}>
+      <MovieRegisterPageContent />
+    </Suspense>
   )
 }
