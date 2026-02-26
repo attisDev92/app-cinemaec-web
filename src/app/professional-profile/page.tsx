@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import jsPDF from "jspdf"
 import { useAuth } from "@/features/auth/hooks"
 import { useProfile } from "@/features/profile/hooks/useProfile"
 import { LegalStatus } from "@/features/profile/types"
@@ -498,6 +499,167 @@ export default function ProfessionalProfilePage() {
     .map((roleId) => roles.find((role) => role.id === roleId)?.name)
     .filter(Boolean)
 
+  const handleDownloadProfilePdf = () => {
+    if (!claimData?.alreadyClaimedByYou || !claimData.professionalId) {
+      return
+    }
+
+    const getColorVar = (name: string, fallback: string): string => {
+      if (typeof window === "undefined") {
+        return fallback
+      }
+      const value = getComputedStyle(document.documentElement)
+        .getPropertyValue(name)
+        .trim()
+      return value || fallback
+    }
+
+    const hexToRgb = (hex: string): [number, number, number] => {
+      const normalized = hex.replace("#", "")
+      if (normalized.length !== 6) {
+        return [17, 24, 39]
+      }
+      return [
+        Number.parseInt(normalized.slice(0, 2), 16),
+        Number.parseInt(normalized.slice(2, 4), 16),
+        Number.parseInt(normalized.slice(4, 6), 16),
+      ]
+    }
+
+    const [primaryR, primaryG, primaryB] = hexToRgb(
+      getColorVar("--color-primary", "#eb0045"),
+    )
+    const [textR, textG, textB] = hexToRgb(
+      getColorVar("--color-text-primary", "#111827"),
+    )
+    const [mutedR, mutedG, mutedB] = hexToRgb(
+      getColorVar("--color-text-secondary", "#6b7280"),
+    )
+    const [surfaceR, surfaceG, surfaceB] = hexToRgb(
+      getColorVar("--color-background-secondary", "#f9fafb"),
+    )
+
+    const pdf = new jsPDF()
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const margin = 16
+    const maxWidth = pageWidth - margin * 2
+    let y = 14
+
+    const ensureSpace = (needed = 8) => {
+      if (y + needed > pageHeight - margin) {
+        pdf.addPage()
+        y = margin
+      }
+    }
+
+    const addTitle = (title: string) => {
+      ensureSpace(12)
+      pdf.setFillColor(surfaceR, surfaceG, surfaceB)
+      pdf.rect(margin, y - 5, maxWidth, 9, "F")
+      pdf.setTextColor(primaryR, primaryG, primaryB)
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(12)
+      pdf.text(title, margin + 2, y + 1)
+      y += 10
+    }
+
+    const addField = (label: string, value?: string | null) => {
+      ensureSpace(8)
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(10)
+      pdf.setTextColor(textR, textG, textB)
+      pdf.text(`${label}:`, margin, y)
+
+      const printable = value && value.trim() ? value : "-"
+      const wrapped = pdf.splitTextToSize(printable, maxWidth - 38)
+      pdf.setFont("helvetica", "normal")
+      pdf.setTextColor(mutedR, mutedG, mutedB)
+      pdf.text(wrapped, margin + 38, y)
+      y += Math.max(7, wrapped.length * 5)
+    }
+
+    const addList = (label: string, items: string[]) => {
+      ensureSpace(8)
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(10)
+      pdf.setTextColor(textR, textG, textB)
+      pdf.text(`${label}:`, margin, y)
+      y += 6
+
+      if (items.length === 0) {
+        pdf.setFont("helvetica", "normal")
+        pdf.setTextColor(mutedR, mutedG, mutedB)
+        pdf.text("-", margin + 4, y)
+        y += 6
+        return
+      }
+
+      items.forEach((item) => {
+        ensureSpace(6)
+        const wrapped = pdf.splitTextToSize(`• ${item}`, maxWidth - 4)
+        pdf.setFont("helvetica", "normal")
+        pdf.setTextColor(mutedR, mutedG, mutedB)
+        pdf.text(wrapped, margin + 4, y)
+        y += wrapped.length * 5
+      })
+    }
+
+    pdf.setFillColor(primaryR, primaryG, primaryB)
+    pdf.rect(0, 0, pageWidth, 22, "F")
+    pdf.setFont("helvetica", "bold")
+    pdf.setFontSize(14)
+    pdf.setTextColor(255, 255, 255)
+    pdf.text("Perfil Profesional", margin, 14)
+
+    y = 30
+    addField("Nombre", claimData.professionalName)
+    addField("Nickname", professionalData?.nickName || "")
+    addField("Cédula", claimData.dniNumber || "")
+    addField("Teléfono", professionalData?.phone || "")
+    addField("Celular", professionalData?.mobile || "")
+
+    addTitle("Enlaces")
+    addField("Sitio web", professionalData?.website || "")
+    addField("LinkedIn", professionalData?.linkedin || "")
+    addField("Reel", professionalData?.reelLink || "")
+    addField("Portafolio / RRSS", professionalData?.rrss || "")
+
+    addTitle("Biofilmografía")
+    addField("Español", professionalData?.bio || "")
+    addField("Inglés", professionalData?.bioEn || "")
+
+    addTitle("Roles")
+    addList("Principales", primaryRoles as string[])
+    addList("Secundarios", secondaryRoles as string[])
+
+    addTitle("Filmografía")
+    addList(
+      "Participaciones",
+      participationEntries.map((entry) => {
+        const movieTitle =
+          entry.movieTitle ||
+          movies.find((movie) => movie.id === entry.movieId)?.title ||
+          `#${entry.movieId}`
+        const roleName =
+          entry.cinematicRoleName ||
+          roles.find((role) => role.id === entry.cinematicRoleId)?.name ||
+          `#${entry.cinematicRoleId}`
+        return `${movieTitle} — ${roleName}`
+      }),
+    )
+
+    addTitle("Imágenes")
+    addField("Foto de perfil", displayProfilePhotoUrl ? "Cargada" : "No cargada")
+    addField("Imágenes de galería", String(displayPortfolioUrls.length))
+
+    const safeName = (claimData.professionalName || "perfil-profesional")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+    pdf.save(`${safeName || "perfil-profesional"}.pdf`)
+  }
+
   return (
     <div className={styles.container}>
       <Navbar />
@@ -812,6 +974,12 @@ export default function ProfessionalProfilePage() {
               </div>
 
               <div className={styles.profileActions}>
+                <Button
+                  onClick={handleDownloadProfilePdf}
+                  className={styles.downloadButton}
+                >
+                  Descargar PDF
+                </Button>
                 <Button 
                   onClick={() => router.push("/professional-profile/edit")}
                   className={styles.editButton}

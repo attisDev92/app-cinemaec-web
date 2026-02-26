@@ -416,6 +416,10 @@
   min-width: 200px;
 }
 
+.downloadButton {
+  min-width: 200px;
+}
+
 .infoText {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);

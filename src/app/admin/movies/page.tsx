@@ -221,6 +221,7 @@ type MovieDetail = {
 type MovieFormProps = {
   initialMovie?: MovieDetail | null
   movieId?: number
+  mode?: "admin" | "user"
 }
 
 const DIRECTOR_ROLE_ID = 1
@@ -584,7 +585,11 @@ const initialValues: FormValues = {
   projectStatus: "desarrollo",
 }
 
-export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
+export function MovieForm({
+  initialMovie,
+  movieId,
+  mode = "admin",
+}: MovieFormProps) {
   const { user, isAuthenticated, isLoading } = useAuth()
   const { countries, isLoading: countriesLoading } = useCountries()
   const { cities } = useCities()
@@ -668,16 +673,28 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
     { id: "economic", label: "Datos económicos" },
     { id: "distribution", label: "Circulación y Distribución" },
     { id: "promotion", label: "Promoción internacional" },
-    { id: "content-bank", label: "Banco de Contenidos ICCA" },
+    ...(mode === "admin"
+      ? [{ id: "content-bank", label: "Banco de Contenidos ICCA" }]
+      : []),
   ]
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/login")
-    } else if (!isLoading && user && user.role !== UserRole.ADMIN) {
-      router.push("/home")
+    } else if (!isLoading && user) {
+      if (mode === "admin" && user.role !== UserRole.ADMIN) {
+        router.push("/home")
+      }
+
+      if (
+        mode === "user" &&
+        user.role !== UserRole.USER &&
+        user.role !== UserRole.EDITOR
+      ) {
+        router.push("/admin")
+      }
     }
-  }, [isAuthenticated, isLoading, user, router])
+  }, [isAuthenticated, isLoading, user, router, mode])
 
   const formInitialValues = useMemo(
     () => (initialMovie ? mapMovieToFormValues(initialMovie) : initialValues),
@@ -841,7 +858,9 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                 email: entry.email.trim() || undefined,
               })) || undefined,
           contentBank:
-            contentBankEntries.length > 0 ? contentBankEntries : undefined,
+            mode === "admin" && contentBankEntries.length > 0
+              ? contentBankEntries
+              : undefined,
           posterAssetId: values.posterAssetId ?? undefined,
           dossierAssetId: values.dossierAssetId ?? undefined,
           dossierEnAssetId: values.dossierEnAssetId ?? undefined,
@@ -1440,7 +1459,7 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
     )
   }
 
-  if (user.role !== UserRole.ADMIN) {
+  if (mode === "admin" && user.role !== UserRole.ADMIN) {
     return (
       <div className={styles.page}>
         <Navbar />
@@ -1466,12 +1485,18 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
       <main className={styles.main}>
         <div className={styles.header}>
           <div>
-            <h1 className={styles.title}>Gestión de películas</h1>
+            <h1 className={styles.title}>
+              {mode === "admin" ? "Gestión de películas" : "Registro de película"}
+            </h1>
             <p className={styles.subtitle}>
-              Completa los datos base de la película (etapa 1)
+              {mode === "admin"
+                ? "Completa los datos base de la película (etapa 1)"
+                : "Completa los datos para registrar una nueva película."}
             </p>
           </div>
-          <span className={styles.badge}>Formulario inicial</span>
+          <span className={styles.badge}>
+            {mode === "admin" ? "Formulario inicial" : "Nuevo registro"}
+          </span>
         </div>
 
         <Card className={styles.card}>
@@ -3836,7 +3861,9 @@ export function MovieForm({ initialMovie, movieId }: MovieFormProps) {
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => router.push("/admin")}
+                  onClick={() =>
+                    router.push(mode === "admin" ? "/admin" : "/movies-management")
+                  }
                   disabled={formik.isSubmitting}
                 >
                   Cancelar

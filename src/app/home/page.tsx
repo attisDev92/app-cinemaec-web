@@ -279,7 +279,13 @@ function HomePanels({
                 Registra, organiza y actualiza la información de tus
                 producciones audiovisuales.
               </p>
-              <p className={styles.tag}>Próximamente</p>
+              <Button
+                onClick={() => router.push("/movies-management")}
+                variant="secondary"
+                className={styles.cardButton}
+              >
+                Gestionar Películas →
+              </Button>
             </Card>
           </div>
         )}
