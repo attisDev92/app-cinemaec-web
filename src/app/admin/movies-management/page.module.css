@@ -142,6 +142,144 @@
   background-color: #f8d7da;
 }
 
+.emptyClaims {
+  padding: 24px;
+  text-align: center;
+  color: #666;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 6px;
+}
+
+.claimsTableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.claimsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.claimsTable th,
+.claimsTable td {
+  border-bottom: 1px solid #ececec;
+  padding: 12px 10px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.claimsTable th {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #666;
+  background: #fafafa;
+}
+
+.movieTitle {
+  font-weight: 600;
+  color: #333;
+}
+
+.movieMeta {
+  color: #777;
+  font-size: 12px;
+}
+
+.claimantEmail {
+  font-weight: 500;
+  color: #222;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status_pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status_approved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status_rejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.documentLink {
+  color: #0277bd;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.documentLink:hover {
+  text-decoration: underline;
+}
+
+.observationInput {
+  width: 220px;
+  min-height: 68px;
+  resize: vertical;
+  border: 1px solid #d8d8d8;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 13px;
+  color: #333;
+  background: #fff;
+}
+
+.observationInput:disabled {
+  background: #f7f7f7;
+}
+
+.actionsCell {
+  display: flex;
+  gap: 8px;
+}
+
+.approveButton,
+.rejectButton {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.approveButton {
+  background: #d4edda;
+  color: #155724;
+}
+
+.rejectButton {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.approveButton:disabled,
+.rejectButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reviewedText {
+  color: #666;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .main {
     padding: 20px 15px;

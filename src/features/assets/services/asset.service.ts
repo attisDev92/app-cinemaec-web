@@ -2,7 +2,7 @@ import { apiClient } from "@/lib/api-client"
 import { environment } from "@/config/environment"
 import { AssetTypeEnum, AssetOwnerEnum, Asset } from "@/shared/types"
 
-const API_URL = environment.apiUrl
+const API_URL = environment.apiUrl.replace(/\/+$/, "")
 
 export interface UploadAssetResponse {
   id: number
@@ -55,6 +55,18 @@ export const assetService = {
   async getAsset(id: number): Promise<Asset> {
     const response = await apiClient.get<{ data: Asset }>(`/assets/${id}`)
     return response.data
+  },
+
+  async getAssetsByOwner(
+    ownerType: AssetOwnerEnum,
+    ownerId: number,
+  ): Promise<Asset[]> {
+    const query = new URLSearchParams({
+      ownerType,
+      ownerId: String(ownerId),
+    }).toString()
+
+    return apiClient.get<Asset[]>(`/assets?${query}`)
   },
 
   /**

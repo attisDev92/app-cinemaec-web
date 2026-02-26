@@ -12,6 +12,10 @@ import { Card } from "@/shared/components/ui"
 import { ProvinceSelector } from "@/shared/components/ProvinceSelector"
 import { CitySelector } from "@/shared/components/CitySelector"
 import { LegalStatus } from "@/features/profile/types"
+import {
+  professionalsService,
+  type ProfessionalClaimCheckResponse,
+} from "@/features/professionals"
 import { UserRole } from "@/shared/types/auth"
 import styles from "./page.module.css"
 
@@ -26,6 +30,12 @@ export default function ProfilePage() {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState("")
+  const [professionalClaim, setProfessionalClaim] =
+    useState<ProfessionalClaimCheckResponse | null>(null)
+  const [isCheckingProfessionalClaim, setIsCheckingProfessionalClaim] =
+    useState(false)
+  const [isClaimingProfessional, setIsClaimingProfessional] = useState(false)
+  const [professionalClaimMessage, setProfessionalClaimMessage] = useState("")
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -43,6 +53,49 @@ export default function ProfilePage() {
       loadProfile()
     }
   }, [isAuthenticated, authLoading, user, router, loadProfile])
+
+  useEffect(() => {
+    const checkProfessionalClaim = async () => {
+      if (!user || !profile) return
+      if (profile.legalStatus === LegalStatus.LEGAL_ENTITY) return
+
+      try {
+        setIsCheckingProfessionalClaim(true)
+        const response = await professionalsService.checkClaimByCedula()
+        setProfessionalClaim(response)
+      } catch {
+        setProfessionalClaim(null)
+      } finally {
+        setIsCheckingProfessionalClaim(false)
+      }
+    }
+
+    checkProfessionalClaim()
+  }, [user, profile])
+
+  const handleClaimProfessionalProfile = async () => {
+    try {
+      setIsClaimingProfessional(true)
+      const response = await professionalsService.claimRegisteredProfile()
+      setProfessionalClaimMessage(response.message)
+      setProfessionalClaim((prev) =>
+        prev
+          ? {
+              ...prev,
+              canClaim: false,
+              alreadyClaimedByYou: true,
+              claimedByAnotherUser: false,
+            }
+          : prev,
+      )
+    } catch (err) {
+      setProfessionalClaimMessage(
+        err instanceof Error ? err.message : "No se pudo reclamar el perfil",
+      )
+    } finally {
+      setIsClaimingProfessional(false)
+    }
+  }
 
   const handleSubmit = async (
     values: {
@@ -119,6 +172,31 @@ export default function ProfilePage() {
         </div>
 
         {error && !isEditing && <div className={styles.error}>{error}</div>}
+
+        {!isCheckingProfessionalClaim &&
+          (professionalClaim?.canClaim || professionalClaimMessage) && (
+          <Card className={styles.claimCard}>
+            <h3 className={styles.claimTitle}>Reclamar perfil registrado</h3>
+            <p className={styles.claimText}>
+              Tu perfil fue registrado en el antiguo portal del
+              Listado Ecuatoriano Audiovisual - LEA, si este es tu perfil
+              puedes reclamarlo, editarlo y completarlo.
+            </p>
+            {professionalClaim?.canClaim && (
+              <div className={styles.claimActions}>
+                <Button
+                  onClick={handleClaimProfessionalProfile}
+                  isLoading={isClaimingProfessional}
+                >
+                  Aceptar
+                </Button>
+              </div>
+            )}
+            {professionalClaimMessage && (
+              <div className={styles.success}>{professionalClaimMessage}</div>
+            )}
+          </Card>
+          )}
 
         <Card>
           {isEditing ? (

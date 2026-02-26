@@ -25,6 +25,7 @@ const MOVIE_TYPE_LABELS: Record<string, string> = {
   Cortometraje: "Cortometraje",
   Mediometraje: "Mediometraje",
   Largometraje: "Largometraje",
+  "Sin catalogar": "Sin catalogar",
 }
 
 export function MovieManagementTable({

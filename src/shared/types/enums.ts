@@ -11,6 +11,7 @@ export enum UserRole {
 export enum PermissionEnum {
   ADMIN_SPACES = "admin_spaces",
   ADMIN_MOVIES = "admin_movies",
+  ADMIN_PROFESSIONALS = "admin_professionals",
   APPROVE_MOVIES_REQUEST = "approve_movies_request",
   ADMIN_USERS = "admin_users",
   ASSIGN_ROLES = "assign_roles",
@@ -40,6 +41,8 @@ export enum AssetOwnerEnum {
   SPACE_DOCUMENT = "space_document",
   USER_BC_PHOTO = "user_bc_photo",
   USER_AGREEMENT = "user_agreement",
+  PROFESSIONAL_PROFILE_PHOTO = "professional_profile_photo",
+  PROFESSIONAL_PORTFOLIO_IMAGE = "professional_portfolio_image",
   COMPANY_LOGO = "company_logo",
   COMPANY_PHOTOS = "company_photos",
   LOCATION_PHOTOS = "location_photos",

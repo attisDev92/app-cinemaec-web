@@ -75,7 +75,10 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        <HomePanels router={router} />
+        <HomePanels
+          router={router}
+          isLegalEntity={profile?.legalStatus === LegalStatus.LEGAL_ENTITY}
+        />
       </div>
     </div>
   )
@@ -83,7 +86,13 @@ export default function DashboardPage() {
 
 type PanelKey = "vive" | "haz"
 
-function HomePanels({ router }: { router: ReturnType<typeof useRouter> }) {
+function HomePanels({
+  router,
+  isLegalEntity,
+}: {
+  router: ReturnType<typeof useRouter>
+  isLegalEntity: boolean
+}) {
   const [openPanel, setOpenPanel] = useState<PanelKey | null>(null)
 
   const togglePanel = (key: PanelKey) => {
@@ -240,36 +249,43 @@ function HomePanels({ router }: { router: ReturnType<typeof useRouter> }) {
 
         {openPanel === "haz" && (
           <div className={styles.optionsGrid}>
-            <Card title="Catálogo de Locaciones">
+            <Card
+              title={
+                isLegalEntity
+                  ? "Directorio de Empresas"
+                  : "Perfil de Profesionales"
+              }
+            >
               <p className={styles.cardContent}>
-                Registra y gestiona tus locaciones para producciones
-                audiovisuales en la web de la Ecuador Film Commission.
+                {isLegalEntity
+                  ? "Registra y gestiona tu empresa productora en el directorio de empresas de la Ecuador Film Commission."
+                  : "Registra tu perfil como profesional del audiovisual en el directorio de profesionales ecuatorianos."}
               </p>
-              <p className={styles.tag}>Próximamente</p>
+              {isLegalEntity ? (
+                <p className={styles.tag}>Próximamente</p>
+              ) : (
+                <Button
+                  onClick={() => router.push("/professional-profile")}
+                  variant="secondary"
+                  className={styles.cardButton}
+                >
+                  Gestionar Perfil Profesional →
+                </Button>
+              )}
             </Card>
 
-            <Card title="Directorio de Empresas Productoras">
+            <Card title="Gestión de Películas">
               <p className={styles.cardContent}>
-                Registra y gestiona tu empresa productora en el directorio de
-                empresas de la Ecuador Film Commission.
+                Registra, organiza y actualiza la información de tus
+                producciones audiovisuales.
               </p>
-              <p className={styles.tag}>Próximamente</p>
-            </Card>
-
-            <Card title="Perfil de Profesionales">
-              <p className={styles.cardContent}>
-                Registra tu perfil como profesional del audiovisual en el
-                directorio de profesionales ecuatorianos.
-              </p>
-              <p className={styles.tag}>Próximamente</p>
-            </Card>
-
-            <Card title="Catálogo de Películas Ecuatorianas">
-              <p className={styles.cardContent}>
-                Explora y consulta el catálogo de películas ecuatorianas
-                producidas y reconocidas internacionalmente.
-              </p>
-              <p className={styles.tag}>Próximamente</p>
+              <Button
+                onClick={() => router.push("/movies-management")}
+                variant="secondary"
+                className={styles.cardButton}
+              >
+                Gestionar Películas →
+              </Button>
             </Card>
           </div>
         )}
