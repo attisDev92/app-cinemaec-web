@@ -402,6 +402,7 @@ const GENRE_OPTIONS = [
   { value: "Documental", label: "Documental" },
   { value: "Docu-ficción", label: "Docu-ficción" },
   { value: "Falso Documental", label: "Falso Documental" },
+  { value: "Sin catalogar", label: "Sin catalogar" },
 ]
 
 const CLASSIFICATION_OPTIONS: { label: string; value: MovieClassification }[] =
@@ -523,8 +524,8 @@ const initialValues: FormValues = {
   title: "",
   titleEn: "",
   durationMinutes: "",
-  type: "Cortometraje",
-  genre: "Ficción",
+  type: "Sin catalogar",
+  genre: "Sin catalogar",
   subGenres: [],
   languages: [],
   subtitles: [],
@@ -2123,6 +2124,7 @@ export function MovieForm({
                     <option value="Cortometraje">Cortometraje</option>
                     <option value="Mediometraje">Mediometraje</option>
                     <option value="Largometraje">Largometraje</option>
+                    <option value="Sin catalogar">Sin catalogar</option>
                   </Select>
 
                   <Input

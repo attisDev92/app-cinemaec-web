@@ -1,10 +1,15 @@
-export type MovieType = "Cortometraje" | "Mediometraje" | "Largometraje"
+export type MovieType =
+  | "Cortometraje"
+  | "Mediometraje"
+  | "Largometraje"
+  | "Sin catalogar"
 
 export type MovieGenre =
   | "Ficción"
   | "Documental"
   | "Docu-ficción"
   | "Falso Documental"
+  | "Sin catalogar"
 
 export type MovieClassification =
   | "todo_publico"
