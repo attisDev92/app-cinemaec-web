@@ -653,6 +653,7 @@ export function MovieForm({
   const [isAddActorModalOpen, setIsAddActorModalOpen] = useState(false)
   const [isAddCrewModalOpen, setIsAddCrewModalOpen] = useState(false)
   const [isCreatingCompany, setIsCreatingCompany] = useState(false)
+  const canCreateCompany = user?.role === UserRole.ADMIN
   const initializeDocumentUrls = () => ({
     poster: initialMovie?.posterAsset?.url || null,
     dossier: initialMovie?.dossierAsset?.url || null,
@@ -2207,13 +2208,19 @@ export function MovieForm({
                         {producerCompaniesFiltered.length === 0 && (
                           <div className={styles.suggestionEmpty}>
                             <p>No se encontraron empresas.</p>
-                            <button
-                              type="button"
-                              className={styles.addNewLink}
-                              onClick={() => setIsAddCompanyModalOpen(true)}
-                            >
-                              Agregar nuevo
-                            </button>
+                            {canCreateCompany ? (
+                              <button
+                                type="button"
+                                className={styles.addNewLink}
+                                onClick={() => setIsAddCompanyModalOpen(true)}
+                              >
+                                Agregar nuevo
+                              </button>
+                            ) : (
+                              <p className={styles.helper}>
+                                Solo administradores pueden crear empresas.
+                              </p>
+                            )}
                           </div>
                         )}
                         {producerCompaniesFiltered
@@ -2286,13 +2293,21 @@ export function MovieForm({
                       {coProducerCompaniesFiltered.length === 0 && (
                         <div className={styles.suggestionEmpty}>
                           <p>No se encontraron empresas con ese criterio.</p>
-                          <button
-                            type="button"
-                            className={styles.addNewLink}
-                            onClick={() => setIsAddCoProducerCompanyModalOpen(true)}
-                          >
-                            Agregar nuevo
-                          </button>
+                          {canCreateCompany ? (
+                            <button
+                              type="button"
+                              className={styles.addNewLink}
+                              onClick={() =>
+                                setIsAddCoProducerCompanyModalOpen(true)
+                              }
+                            >
+                              Agregar nuevo
+                            </button>
+                          ) : (
+                            <p className={styles.helper}>
+                              Solo administradores pueden crear empresas.
+                            </p>
+                          )}
                         </div>
                       )}
                       {coProducerCompaniesFiltered
@@ -3895,19 +3910,23 @@ export function MovieForm({
           </form>
         </Card>
 
-        <AddCompanyModal
-          isOpen={isAddCompanyModalOpen}
-          onClose={() => setIsAddCompanyModalOpen(false)}
-          onCompanyCreated={handleCompanyCreated}
-          isLoading={isCreatingCompany}
-        />
+        {canCreateCompany && (
+          <AddCompanyModal
+            isOpen={isAddCompanyModalOpen}
+            onClose={() => setIsAddCompanyModalOpen(false)}
+            onCompanyCreated={handleCompanyCreated}
+            isLoading={isCreatingCompany}
+          />
+        )}
 
-        <AddCompanyModal
-          isOpen={isAddCoProducerCompanyModalOpen}
-          onClose={() => setIsAddCoProducerCompanyModalOpen(false)}
-          onCompanyCreated={handleCoProducerCompanyCreated}
-          isLoading={isCreatingCompany}
-        />
+        {canCreateCompany && (
+          <AddCompanyModal
+            isOpen={isAddCoProducerCompanyModalOpen}
+            onClose={() => setIsAddCoProducerCompanyModalOpen(false)}
+            onCompanyCreated={handleCoProducerCompanyCreated}
+            isLoading={isCreatingCompany}
+          />
+        )}
 
         <AddFundModal
           isOpen={isAddFundModalOpen}
