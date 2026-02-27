@@ -4,7 +4,7 @@ import { Suspense, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Navbar } from "@/shared/components/Navbar"
 import { Button, Card } from "@/shared/components/ui"
-import { MovieForm } from "@/app/admin/movies/page"
+import { MovieForm } from "@/app/admin/movies/MovieForm"
 import styles from "./page.module.css"
 
 function MovieRegisterPageContent() {

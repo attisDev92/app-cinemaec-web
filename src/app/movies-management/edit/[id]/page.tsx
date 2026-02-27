@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { movieService } from "@/features/movies"
-import { MovieForm } from "@/app/admin/movies/page"
+import { MovieForm } from "@/app/admin/movies/MovieForm"
 
 type MovieDetail = Parameters<typeof MovieForm>[0]["initialMovie"]
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import type { ComponentProps } from "react"
 import { useParams } from "next/navigation"
 import { movieService } from "@/features/movies"
-import { MovieForm } from "../page"
+import { MovieForm } from "../MovieForm"
 
 type MovieFormProps = ComponentProps<typeof MovieForm>
 

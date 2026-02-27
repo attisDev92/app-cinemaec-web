@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation"
 
 // Redirect /auth/reset-password to the existing /reset-password page while preserving query params
-export default function AuthResetPasswordRedirect({
+export default async function AuthResetPasswordRedirect({
   searchParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const resolvedSearchParams = await searchParams
   const params = new URLSearchParams()
 
-  Object.entries(searchParams).forEach(([key, value]) => {
+  Object.entries(resolvedSearchParams).forEach(([key, value]) => {
     if (Array.isArray(value)) {
       value.forEach((v) => params.append(key, v))
       return
