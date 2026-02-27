@@ -27,6 +27,16 @@ const publicRoutes = [
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  const withNoStoreHeaders = (response: NextResponse) => {
+    response.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, max-age=0, must-revalidate",
+    )
+    response.headers.set("CDN-Cache-Control", "no-store")
+    response.headers.set("Netlify-CDN-Cache-Control", "no-store")
+    return response
+  }
+
   // Obtener el token de las cookies o headers
   const token = request.cookies.get("token")?.value
 
@@ -44,13 +54,13 @@ export function middleware(request: NextRequest) {
   if (isProtectedRoute && !token) {
     const url = new URL("/login", request.url)
     url.searchParams.set("redirect", pathname)
-    return NextResponse.redirect(url)
+    return withNoStoreHeaders(NextResponse.redirect(url))
   }
 
   // Si es una ruta de admin y no hay token, redirigir al login
   if (isAdminRoute && !token) {
     const url = new URL("/login", request.url)
-    return NextResponse.redirect(url)
+    return withNoStoreHeaders(NextResponse.redirect(url))
   }
 
   // Si el usuario está autenticado y trata de acceder a login o register
@@ -58,10 +68,12 @@ export function middleware(request: NextRequest) {
   if (token && (pathname === "/login" || pathname === "/register")) {
     // Aquí idealmente deberíamos decodificar el token para ver el role
     // Por ahora redirigimos al dashboard y dejamos que el cliente maneje
-    return NextResponse.redirect(new URL("/home", request.url))
+    return withNoStoreHeaders(
+      NextResponse.redirect(new URL("/home", request.url)),
+    )
   }
 
-  return NextResponse.next()
+  return withNoStoreHeaders(NextResponse.next())
 }
 
 export const config = {
