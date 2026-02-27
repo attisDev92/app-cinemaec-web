@@ -1,4 +1,4 @@
-import LoginClientPage from "./LoginClient"
+import LoginClientPage from "./login-client"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
