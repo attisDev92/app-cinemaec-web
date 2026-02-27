@@ -222,9 +222,6 @@ function HomePanels({
                 <h2 className={`${styles.sectionTitle} ${styles.hazTitle}`}>
                   Haz Cine
                 </h2>
-                <span className={`${styles.badge} ${styles.hazBadge}`}>
-                  Próximamente
-                </span>
               </div>
               <p
                 className={`${styles.panelDescription} ${styles.hazDescription}`}

@@ -45,24 +45,6 @@
   color: var(--color-text-primary);
 }
 
-.badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-background-tertiary);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.hazBadge {
-  background-color: rgba(64, 64, 64, 0.1);
-  color: var(--color-secondary);
-  border-color: rgba(64, 64, 64, 0.25);
-}
-
 .panelCard {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
