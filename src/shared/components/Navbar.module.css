@@ -139,6 +139,15 @@
   margin: var(--spacing-xs) 0;
 }
 
+.dropdownSectionTitle {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .comingSoon {
   font-size: var(--font-size-xs);
   color: var(--color-warning);

@@ -137,7 +137,9 @@ export function Navbar() {
                   <button
                     className={`${styles.dropdownButton} ${
                       pathname === "/home" ||
-                      pathname === "/rea-spaces" ||
+                      pathname?.startsWith("/rea-spaces") ||
+                      pathname?.startsWith("/movies-management") ||
+                      pathname?.startsWith("/professional-profile") ||
                       pathname === "/profile"
                         ? styles.active
                         : ""
@@ -176,13 +178,27 @@ export function Navbar() {
                         🔔 Notificaciones
                       </Link>
                       <div className={styles.dropdownDivider}></div>
+                      <div className={styles.dropdownSectionTitle}>Vive Cine</div>
+                      <Link
+                        href="/rea-spaces/register"
+                        className={styles.dropdownItem}
+                        onClick={() => setIsServicesOpen(false)}
+                      >
+                        ✍️ Registrar Espacio Audiovisual
+                      </Link>
                       <Link
                         href="/rea-spaces"
                         className={styles.dropdownItem}
                         onClick={() => setIsServicesOpen(false)}
                       >
-                        🎬 Red de Espacios Audiovisuales
+                        🎬 Gestionar Espacios Audiovisuales (REA)
                       </Link>
+                      <div
+                        className={styles.dropdownItem + " " + styles.disabled}
+                      >
+                        👤 Usuario del Banco de Contenidos
+                        <span className={styles.comingSoon}>Próximamente</span>
+                      </div>
                       <div
                         className={styles.dropdownItem + " " + styles.disabled}
                       >
@@ -192,17 +208,34 @@ export function Navbar() {
                       <div
                         className={styles.dropdownItem + " " + styles.disabled}
                       >
-                        📍 Catálogo de Locaciones
+                        🎓 Talleres y Capacitaciones
                         <span className={styles.comingSoon}>Próximamente</span>
                       </div>
-                      <div
-                        className={styles.dropdownItem + " " + styles.disabled}
+                      <div className={styles.dropdownDivider}></div>
+                      <div className={styles.dropdownSectionTitle}>Haz Cine</div>
+                      {profile?.legalStatus === LegalStatus.LEGAL_ENTITY ? (
+                        <div
+                          className={styles.dropdownItem + " " + styles.disabled}
+                        >
+                          🏢 Directorio de Empresas
+                          <span className={styles.comingSoon}>Próximamente</span>
+                        </div>
+                      ) : (
+                        <Link
+                          href="/professional-profile"
+                          className={styles.dropdownItem}
+                          onClick={() => setIsServicesOpen(false)}
+                        >
+                          👤 Perfil de Profesionales
+                        </Link>
+                      )}
+                      <Link
+                        href="/movies-management"
+                        className={styles.dropdownItem}
+                        onClick={() => setIsServicesOpen(false)}
                       >
-                        {profile?.legalStatus === LegalStatus.LEGAL_ENTITY
-                          ? "🏢 Directorio de Empresas"
-                          : "👤 Perfil de Profesionales"}
-                        <span className={styles.comingSoon}>Próximamente</span>
-                      </div>
+                        🎬 Gestión de Películas
+                      </Link>
                     </div>
                   )}
                 </div>
