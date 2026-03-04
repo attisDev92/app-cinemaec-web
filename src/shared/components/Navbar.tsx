@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useAuth, usePermissions } from "@/features/auth/hooks"
 import { useProfile } from "@/features/profile/hooks/useProfile"
 import { usePathname } from "next/navigation"
@@ -128,7 +129,15 @@ export function Navbar() {
         <div className={styles.content}>
           <div className={styles.leftSection}>
             <Link href="/" className={styles.logo}>
-              CinemaEC
+              <Image
+                src="/images/logos/logo icca.png"
+                alt="Logo ICCA"
+                width={40}
+                height={40}
+                className={styles.logoImage}
+                priority
+              />
+              <span className={styles.logoText}>CinemaEc APP</span>
             </Link>
 
             {isAuthenticated && isUserRole && (

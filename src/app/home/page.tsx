@@ -8,7 +8,7 @@ import { useProfile } from "@/features/profile/hooks/useProfile"
 import { UserRole } from "@/shared/types/auth"
 import { LegalStatus } from "@/features/profile/types"
 import { Navbar } from "@/shared/components/Navbar"
-import { Card, Button } from "@/shared/components/ui"
+import { Button, Card } from "@/shared/components/ui"
 import styles from "./page.module.css"
 
 export default function DashboardPage() {
@@ -84,8 +84,6 @@ export default function DashboardPage() {
   )
 }
 
-type PanelKey = "vive" | "haz"
-
 function HomePanels({
   router,
   isLegalEntity,
@@ -93,199 +91,170 @@ function HomePanels({
   router: ReturnType<typeof useRouter>
   isLegalEntity: boolean
 }) {
-  const [openPanel, setOpenPanel] = useState<PanelKey | null>(null)
+  const [openGroup, setOpenGroup] = useState<"vive" | "haz" | null>(null)
 
-  const togglePanel = (key: PanelKey) => {
-    setOpenPanel((prev) => (prev === key ? null : key))
+  const toggleGroup = (group: "vive" | "haz") => {
+    setOpenGroup((prev) => (prev === group ? null : group))
   }
 
   return (
     <>
       <section className={styles.section}>
-        <div
-          className={`${styles.panelCard} ${styles.viveCard} ${
-            openPanel === "vive" ? styles.panelOpen : ""
-          }`}
-          onClick={() => togglePanel("vive")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") togglePanel("vive")
-          }}
-        >
-          <div className={styles.panelHeader}>
-            <div className={styles.panelLogoSection}>
+        <div className={styles.groupsGrid}>
+          <article
+            className={`${styles.serviceGroup} ${styles.viveGroup} ${
+              openGroup === "vive"
+                ? `${styles.panelOpen} ${styles.expanded}`
+                : openGroup === "haz"
+                  ? styles.collapsed
+                  : ""
+            }`}
+            onClick={() => toggleGroup("vive")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") toggleGroup("vive")
+            }}
+          >
+            <div className={styles.logoFrame}>
               <Image
-                src="/images/logos/ViveCine-Logo-FC.png"
-                alt="Vive Cine Logo"
+                src="/images/logos/vivecine-horizontal-oscuro.png"
+                alt="Vive Cine"
                 width={240}
-                height={150}
-                className={styles.panelLogo}
+                height={120}
+                className={styles.groupLogo}
               />
             </div>
-            <div className={styles.panelContent}>
-              <div className={styles.panelTitleRow}>
-                <h2 className={`${styles.sectionTitle} ${styles.viveTitle}`}>
-                  Vive Cine
-                </h2>
+            {openGroup === "vive" && (
+              <div
+                className={styles.panelModules}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className={`${styles.moduleCard} ${styles.viveModule}`}>
+                  <Card title="Espacios Audiovisuales de Vive Cine (REA)">
+                    <p className={styles.cardContent}>
+                      Registra y accede a tus espacios audiovisuales para formar
+                      parte de Vive Cine (Red de Espacios Audiovisuales).
+                    </p>
+                    <Button
+                      onClick={() => router.push("/rea-spaces")}
+                      variant="secondary"
+                      className={styles.cardButton}
+                    >
+                      Gestionar Espacios →
+                    </Button>
+                  </Card>
+                </div>
+
+                <div className={`${styles.moduleCard} ${styles.viveModule}`}>
+                  <Card title="Usuario del Banco de Contenidos">
+                    <p className={styles.cardContent}>
+                      Accede al préstamo de obras cinematográficas para
+                      exhibición en espacios de la REA y gestores culturales.
+                    </p>
+                    <p className={styles.tag}>Próximamente</p>
+                  </Card>
+                </div>
+
+                <div className={`${styles.moduleCard} ${styles.viveModule}`}>
+                  <Card title="Banco de Contenidos">
+                    <p className={styles.cardContent}>
+                      Plataforma de acceso a obras cinematográficas para
+                      exhibición de Espacios Audiovisuales y Gestores
+                      registrados en Vive Cine.
+                    </p>
+                    <p className={styles.tag}>Próximamente</p>
+                  </Card>
+                </div>
+
+                <div className={`${styles.moduleCard} ${styles.viveModule}`}>
+                  <Card title="Talleres y Capacitaciones">
+                    <p className={styles.cardContent}>
+                      Accede a talleres, capacitaciones y recursos educativos
+                      para Espacios Audiovisuales y Gestores registrados.
+                    </p>
+                    <p className={styles.tag}>Próximamente</p>
+                  </Card>
+                </div>
               </div>
-              <p
-                className={`${styles.panelDescription} ${styles.viveDescription}`}
-              >
-                Registra tu espacio audiovisual y accede a otros beneficios de
-                Vive Cine.
-              </p>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  router.push("/rea-spaces/register")
-                }}
-                variant="primary"
-                className={styles.panelCta}
-              >
-                Haz clic y regístra un espacio audiovisual
-              </Button>
+            )}
+          </article>
+
+          <article
+            className={`${styles.serviceGroup} ${styles.hazGroup} ${
+              openGroup === "haz"
+                ? `${styles.panelOpen} ${styles.expanded}`
+                : openGroup === "vive"
+                  ? styles.collapsed
+                  : ""
+            }`}
+            onClick={() => toggleGroup("haz")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") toggleGroup("haz")
+            }}
+          >
+            <div className={styles.logoFrame}>
+              <Image
+                src="/images/logos/hazcine-horizontal-oscuro.png"
+                alt="Haz Cine"
+                width={240}
+                height={120}
+                className={styles.groupLogo}
+              />
             </div>
-          </div>
-          <div className={styles.panelFooter}>
-            <span className={styles.footerText}>Otras opciones</span>
-            <span
-              className={`${styles.chevron} ${styles.chevronVive} ${
-                openPanel === "vive" ? styles.chevronOpen : ""
-              }`}
-              aria-hidden
-            >
-              ▾
-            </span>
-          </div>
-        </div>
-
-        {openPanel === "vive" && (
-          <div className={styles.optionsGrid}>
-            <Card title="Espacios Audiovisuales de Vive Cine (REA)">
-              <p className={styles.cardContent}>
-                Registra y accede a tus espacios audiovisuales para formar parte
-                de Vive Cine (Red de Espacios Audiovisuales)
-              </p>
-              <Button
-                onClick={() => router.push("/rea-spaces")}
-                variant="secondary"
-                className={styles.cardButton}
+            {openGroup === "haz" && (
+              <div
+                className={styles.panelModules}
+                onClick={(e) => e.stopPropagation()}
               >
-                Gestionar Espacios →
-              </Button>
-            </Card>
+                <div className={`${styles.moduleCard} ${styles.hazModule}`}>
+                  <Card
+                    title={
+                      isLegalEntity
+                        ? "Directorio de Empresas"
+                        : "Perfil Profesional"
+                    }
+                  >
+                    <p className={styles.cardContent}>
+                      {isLegalEntity
+                        ? "Registra y gestiona tu empresa productora en el directorio de empresas de la Ecuador Film Commission."
+                        : "Registra y gestiona tu perfil como profesional del audiovisual."}
+                    </p>
+                    {isLegalEntity ? (
+                      <p className={styles.tag}>Próximamente</p>
+                    ) : (
+                      <Button
+                        onClick={() => router.push("/professional-profile")}
+                        variant="secondary"
+                        className={styles.cardButton}
+                      >
+                        Gestionar Perfil →
+                      </Button>
+                    )}
+                  </Card>
+                </div>
 
-            <Card title="Usuario del Banco de Contenidos">
-              <p className={styles.cardContent}>
-                Accede al préstamo de obras cinematográficas para gestores con
-                proyectos de exhibición itinerante o espacios en el exterior
-                como misiones diplomáticas de Ecuador en el mundo.
-              </p>
-              <p className={styles.tag}>Próximamente</p>
-            </Card>
-
-            <Card title="Banco de Contenidos">
-              <p className={styles.cardContent}>
-                Plataforma de acceso a obras cinematográficas para exhibición de
-                Espacios Audiovisuales y Gestores registrados en Vive Cine.
-              </p>
-              <p className={styles.tag}>Próximamente</p>
-            </Card>
-
-            <Card title="Talleres y Capacitaciones">
-              <p className={styles.cardContent}>
-                Accede a talleres, capacitaciones y recursos educativos para
-                Espacios Audiovisuales y Gestores registrados en Vive Cine.
-              </p>
-              <p className={styles.tag}>Próximamente</p>
-            </Card>
-          </div>
-        )}
-      </section>
-
-      <section className={styles.section}>
-        <div
-          className={`${styles.panelCard} ${styles.hazCard} ${
-            openPanel === "haz" ? styles.panelOpen : ""
-          }`}
-          onClick={() => togglePanel("haz")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") togglePanel("haz")
-          }}
-        >
-          <div className={styles.panelHeader}>
-            <div className={styles.panelContent}>
-              <div className={styles.panelTitleRow}>
-                <h2 className={`${styles.sectionTitle} ${styles.hazTitle}`}>
-                  Haz Cine
-                </h2>
+                <div className={`${styles.moduleCard} ${styles.hazModule}`}>
+                  <Card title="Gestión de Películas">
+                    <p className={styles.cardContent}>
+                      Registra, organiza y actualiza la información de tus
+                      producciones audiovisuales.
+                    </p>
+                    <Button
+                      onClick={() => router.push("/movies-management")}
+                      variant="secondary"
+                      className={styles.cardButton}
+                    >
+                      Gestionar Películas →
+                    </Button>
+                  </Card>
+                </div>
               </div>
-              <p
-                className={`${styles.panelDescription} ${styles.hazDescription}`}
-              >
-                Gestiona y registrate en los catálogos de profesionales,
-                productoras, locaciones del cine ecuatoriano. (próximamente)
-              </p>
-            </div>
-          </div>
-          <div className={styles.panelFooter}>
-            <span className={styles.footerText}>Otras opciones</span>
-            <span
-              className={`${styles.chevron} ${styles.chevronHaz} ${
-                openPanel === "haz" ? styles.chevronOpen : ""
-              }`}
-              aria-hidden
-            >
-              ▾
-            </span>
-          </div>
+            )}
+          </article>
         </div>
-
-        {openPanel === "haz" && (
-          <div className={styles.optionsGrid}>
-            <Card
-              title={
-                isLegalEntity
-                  ? "Directorio de Empresas"
-                  : "Perfil de Profesionales"
-              }
-            >
-              <p className={styles.cardContent}>
-                {isLegalEntity
-                  ? "Registra y gestiona tu empresa productora en el directorio de empresas de la Ecuador Film Commission."
-                  : "Registra tu perfil como profesional del audiovisual en el directorio de profesionales ecuatorianos."}
-              </p>
-              {isLegalEntity ? (
-                <p className={styles.tag}>Próximamente</p>
-              ) : (
-                <Button
-                  onClick={() => router.push("/professional-profile")}
-                  variant="secondary"
-                  className={styles.cardButton}
-                >
-                  Gestionar Perfil Profesional →
-                </Button>
-              )}
-            </Card>
-
-            <Card title="Gestión de Películas">
-              <p className={styles.cardContent}>
-                Registra, organiza y actualiza la información de tus
-                producciones audiovisuales.
-              </p>
-              <Button
-                onClick={() => router.push("/movies-management")}
-                variant="secondary"
-                className={styles.cardButton}
-              >
-                Gestionar Películas →
-              </Button>
-            </Card>
-          </div>
-        )}
       </section>
     </>
   )

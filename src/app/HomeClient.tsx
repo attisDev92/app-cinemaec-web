@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useAuth } from "@/features/auth/hooks"
 import { Navbar } from "@/shared/components/Navbar"
-import { Card } from "@/shared/components/ui"
 import styles from "./home.module.css"
 
 export default function HomeClient() {
@@ -37,43 +37,46 @@ export default function HomeClient() {
           </div>
         </div>
 
-        <div className={styles.grid}>
-          <Card>
-            <div className={styles.featureCard}>
-              <div className={styles.icon}>🎬</div>
-              <h3 className={styles.featureTitle}>
-                Catálogo de empresas productoras
-              </h3>
-              <p className={styles.featureDescription}>
-                Registra tu empresa en el catálogo de servicios cinematográficos
-                de la Ecuador Film Commission.
-              </p>
+        <div className={styles.groupsGrid}>
+          <article className={`${styles.serviceGroup} ${styles.viveGroup}`}>
+            <div className={styles.logoFrame}>
+              <Image
+                src="/images/logos/vivecine-horizontal-oscuro.png"
+                alt="Vive Cine"
+                width={240}
+                height={120}
+                className={styles.groupLogo}
+              />
             </div>
-          </Card>
+            <p className={styles.groupIntro}>
+              Exhibiciones de cine y formación de públicos
+            </p>
+            <ul className={styles.serviceList}>
+              <li>
+                Registra tu espacio audiovisual y accede al Banco de Películas
+                del ICCA.
+              </li>
+            </ul>
+          </article>
 
-          <Card>
-            <div className={styles.featureCard}>
-              <div className={styles.icon}>🎟️</div>
-              <h3 className={styles.featureTitle}>Préstamo de Obras</h3>
-              <p className={styles.featureDescription}>
-                Accede al prestamo de obras para la exhibición cinematográfica
-                en espacios de la REA y gestores culturales.
-              </p>
+          <article className={`${styles.serviceGroup} ${styles.hazGroup}`}>
+            <div className={styles.logoFrame}>
+              <Image
+                src="/images/logos/hazcine-horizontal-oscuro.png"
+                alt="Haz Cine"
+                width={240}
+                height={120}
+                className={styles.groupLogo}
+              />
             </div>
-          </Card>
-
-          <Card>
-            <div className={styles.featureCard}>
-              <div className={styles.icon}>⭐</div>
-              <h3 className={styles.featureTitle}>
-                Accede a otros servicos del ICCA
-              </h3>
-              <p className={styles.featureDescription}>
-                Accede a registro de espacios, gestores culturales, catálogo de
-                películas, registro de locaciones y otros servicios del ICCA.
-              </p>
-            </div>
-          </Card>
+            <p className={styles.groupIntro}>
+              Registro de creadores y proyectos cinematográficos.
+            </p>
+            <ul className={styles.serviceList}>
+              <li>Regístrate como profesional de la industria audiovisual.</li>
+              <li>Registra tu película o proyecto cinematográfico.</li>
+            </ul>
+          </article>
         </div>
 
         <div className={styles.section}>
