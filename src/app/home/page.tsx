@@ -118,13 +118,25 @@ function HomePanels({
           >
             <div className={styles.logoFrame}>
               <Image
-                src="/images/logos/vivecine-horizontal-oscuro.png"
+                src="/images/logos/vivecine-horizontal-oscuro1.png"
                 alt="Vive Cine"
                 width={240}
                 height={120}
                 className={styles.groupLogo}
               />
             </div>
+
+            <p className={styles.groupIntro}>
+              Servicios disponibles para espacios, gestores y usuarios de la
+              Red de Espacios Audiovisuales.
+            </p>
+
+            <ul className={styles.serviceList}>
+              <li>Registro y gestión de Espacios REA</li>
+              <li>Acceso al Banco de Contenidos</li>
+              <li>Talleres y capacitaciones</li>
+            </ul>
+
             {openGroup === "vive" && (
               <div
                 className={styles.panelModules}
@@ -197,13 +209,25 @@ function HomePanels({
           >
             <div className={styles.logoFrame}>
               <Image
-                src="/images/logos/hazcine-horizontal-oscuro.png"
+                src="/images/logos/hazcine-horizontal-oscuro1.png"
                 alt="Haz Cine"
                 width={240}
                 height={120}
                 className={styles.groupLogo}
               />
             </div>
+
+            <p className={styles.groupIntro}>
+              Herramientas para profesionales, empresas y proyectos del sector
+              audiovisual ecuatoriano.
+            </p>
+
+            <ul className={styles.serviceList}>
+              <li>Perfil profesional o directorio de empresas</li>
+              <li>Gestión integral de películas</li>
+              <li>Registro y actualización de información audiovisual</li>
+            </ul>
+
             {openGroup === "haz" && (
               <div
                 className={styles.panelModules}

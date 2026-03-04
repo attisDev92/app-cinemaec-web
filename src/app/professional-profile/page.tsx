@@ -94,6 +94,9 @@ export default function ProfessionalProfilePage() {
   >([])
   const [isLoadingParticipations, setIsLoadingParticipations] = useState(false)
 
+  const toProfileImageProxyUrl = (url: string): string =>
+    `/api/image-proxy?url=${encodeURIComponent(url)}`
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       setMessage("")
@@ -236,7 +239,9 @@ export default function ProfessionalProfilePage() {
 
         const profilePhoto = profilePhotoAssets[0]
         setDisplayProfilePhotoUrl(
-          profilePhoto ? assetService.getPublicAssetUrl(profilePhoto) : null,
+          profilePhoto
+            ? toProfileImageProxyUrl(assetService.getPublicAssetUrl(profilePhoto))
+            : null,
         )
 
         setDisplayPortfolioUrls(
@@ -499,7 +504,7 @@ export default function ProfessionalProfilePage() {
     .map((roleId) => roles.find((role) => role.id === roleId)?.name)
     .filter(Boolean)
 
-  const handleDownloadProfilePdf = () => {
+  const handleDownloadProfilePdf = async () => {
     if (!claimData?.alreadyClaimedByYou || !claimData.professionalId) {
       return
     }
@@ -526,9 +531,9 @@ export default function ProfessionalProfilePage() {
       ]
     }
 
-    const [primaryR, primaryG, primaryB] = hexToRgb(
-      getColorVar("--color-primary", "#eb0045"),
-    )
+    const [primaryR, primaryG, primaryB] = hexToRgb("#6d2d8f")
+    const [hazBlueR, hazBlueG, hazBlueB] = hexToRgb("#0f3554")
+    const [hazVioletR, hazVioletG, hazVioletB] = hexToRgb("#b784cc")
     const [textR, textG, textB] = hexToRgb(
       getColorVar("--color-text-primary", "#111827"),
     )
@@ -538,6 +543,109 @@ export default function ProfessionalProfilePage() {
     const [surfaceR, surfaceG, surfaceB] = hexToRgb(
       getColorVar("--color-background-secondary", "#f9fafb"),
     )
+
+    const loadImageAsDataUrl = async (src: string): Promise<string | null> => {
+      try {
+        const response = await fetch(src)
+        if (!response.ok) {
+          return null
+        }
+        const blob = await response.blob()
+        return await new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve((reader.result as string) || null)
+          reader.onerror = () => resolve(null)
+          reader.readAsDataURL(blob)
+        })
+      } catch {
+        return null
+      }
+    }
+
+
+    const loadImageWithSize = async (
+      src: string,
+    ): Promise<{ dataUrl: string; width: number; height: number } | null> => {
+      try {
+        return await new Promise((resolve) => {
+          const image = new window.Image()
+          image.onload = () => {
+            const canvas = document.createElement("canvas")
+            canvas.width = image.width
+            canvas.height = image.height
+            const context = canvas.getContext("2d")
+
+            if (!context) {
+              resolve(null)
+              return
+            }
+
+            context.drawImage(image, 0, 0)
+            resolve({
+              dataUrl: canvas.toDataURL("image/png"),
+              width: image.width,
+              height: image.height,
+            })
+          }
+          image.onerror = () => resolve(null)
+          image.src = src
+        })
+      } catch {
+        return null
+      }
+    }
+
+    const getCircularAvatarFromRenderedImage = (size = 240): string | null => {
+      const imageElement = document.getElementById(
+        "professional-profile-avatar",
+      ) as HTMLImageElement | null
+
+      if (!imageElement || !imageElement.complete || imageElement.naturalWidth === 0) {
+        return null
+      }
+
+      try {
+        const canvas = document.createElement("canvas")
+        canvas.width = size
+        canvas.height = size
+        const context = canvas.getContext("2d")
+
+        if (!context) {
+          return null
+        }
+
+        context.save()
+        context.beginPath()
+        context.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
+        context.closePath()
+        context.clip()
+
+        context.fillStyle = "#ffffff"
+        context.fillRect(0, 0, size, size)
+
+        const widthScale = size / imageElement.naturalWidth
+        const heightScale = size / imageElement.naturalHeight
+        const scale = Math.min(widthScale, heightScale)
+
+        const drawWidth = imageElement.naturalWidth * scale
+        const drawHeight = imageElement.naturalHeight * scale
+        const drawX = (size - drawWidth) / 2
+        const drawY = (size - drawHeight) / 2
+
+        context.drawImage(
+          imageElement,
+          drawX,
+          drawY,
+          drawWidth,
+          drawHeight,
+        )
+        context.restore()
+
+        return canvas.toDataURL("image/png")
+      } catch {
+        return null
+      }
+    }
 
     const pdf = new jsPDF()
     const pageWidth = pdf.internal.pageSize.getWidth()
@@ -605,25 +713,129 @@ export default function ProfessionalProfilePage() {
       })
     }
 
+    const profileTitle =
+      professionalData?.nickName?.trim() || claimData.professionalName || "-"
+
+    const iccaLogo = await loadImageWithSize("/images/logos/logo icca.png")
+    const hazLogo = await loadImageWithSize(
+      "/images/logos/hazcine-horizontal-oscuro1.png",
+    )
+
+    pdf.setFillColor(248, 250, 252)
+    pdf.rect(0, 0, pageWidth, 40, "F")
+    pdf.setFillColor(hazBlueR, hazBlueG, hazBlueB)
+    pdf.rect(0, 0, pageWidth, 7, "F")
     pdf.setFillColor(primaryR, primaryG, primaryB)
-    pdf.rect(0, 0, pageWidth, 22, "F")
+    pdf.rect(0, 33, pageWidth, 7, "F")
+
+    if (iccaLogo) {
+      const logoMaxWidth = 52
+      const logoMaxHeight = 20
+      const logoRatio = iccaLogo.width / iccaLogo.height
+      let renderWidth = logoMaxWidth
+      let renderHeight = renderWidth / logoRatio
+
+      if (renderHeight > logoMaxHeight) {
+        renderHeight = logoMaxHeight
+        renderWidth = renderHeight * logoRatio
+      }
+
+      pdf.addImage(
+        iccaLogo.dataUrl,
+        "PNG",
+        margin,
+        10 + (logoMaxHeight - renderHeight) / 2,
+        renderWidth,
+        renderHeight,
+      )
+    } else {
+      pdf.setTextColor(hazBlueR, hazBlueG, hazBlueB)
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(10)
+      pdf.text("ICCA", margin, 23)
+    }
+
+    if (hazLogo) {
+      const hazMaxWidth = 54
+      const hazMaxHeight = 22
+      const hazRatio = hazLogo.width / hazLogo.height
+      let hazRenderWidth = hazMaxWidth
+      let hazRenderHeight = hazRenderWidth / hazRatio
+
+      if (hazRenderHeight > hazMaxHeight) {
+        hazRenderHeight = hazMaxHeight
+        hazRenderWidth = hazRenderHeight * hazRatio
+      }
+
+      pdf.addImage(
+        hazLogo.dataUrl,
+        "PNG",
+        pageWidth - margin - hazRenderWidth,
+        9 + (hazMaxHeight - hazRenderHeight) / 2,
+        hazRenderWidth,
+        hazRenderHeight,
+      )
+    }
+
+    const photoSize = 40
+    const photoX = margin
+    const photoY = 48
+
+    const embeddedProfilePhoto = getCircularAvatarFromRenderedImage(300)
+
+    if (embeddedProfilePhoto) {
+      pdf.addImage(embeddedProfilePhoto, "PNG", photoX, photoY, photoSize, photoSize)
+    } else {
+      const initial = (profileTitle || "P").trim().charAt(0).toUpperCase() || "P"
+      pdf.setDrawColor(hazVioletR, hazVioletG, hazVioletB)
+      pdf.setLineWidth(1.6)
+      pdf.circle(photoX + photoSize / 2, photoY + photoSize / 2, photoSize / 2 + 1)
+      pdf.setFillColor(primaryR, primaryG, primaryB)
+      pdf.circle(photoX + photoSize / 2, photoY + photoSize / 2, photoSize / 2, "F")
+      pdf.setTextColor(255, 255, 255)
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(18)
+      pdf.text(initial, photoX + photoSize / 2, photoY + photoSize / 2 + 2, {
+        align: "center",
+      })
+    }
+
+    const infoX = photoX + photoSize + 10
+    const infoWidth = pageWidth - margin - infoX
+    let infoY = 55
+
+    const addSummaryField = (label: string, value?: string | null) => {
+      const printable = value && value.trim() ? value : "-"
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(10)
+      pdf.setTextColor(textR, textG, textB)
+      pdf.text(`${label}:`, infoX, infoY)
+
+      const wrapped = pdf.splitTextToSize(printable, infoWidth - 28)
+      pdf.setFont("helvetica", "normal")
+      pdf.setTextColor(mutedR, mutedG, mutedB)
+      pdf.text(wrapped, infoX + 28, infoY)
+      infoY += Math.max(6, wrapped.length * 4.5)
+    }
+
+    pdf.setTextColor(hazBlueR, hazBlueG, hazBlueB)
     pdf.setFont("helvetica", "bold")
-    pdf.setFontSize(14)
-    pdf.setTextColor(255, 255, 255)
-    pdf.text("Perfil Profesional", margin, 14)
+    pdf.setFontSize(20)
+    pdf.text(profileTitle, infoX, 52)
 
-    y = 30
-    addField("Nombre", claimData.professionalName)
-    addField("Nickname", professionalData?.nickName || "")
-    addField("Cédula", claimData.dniNumber || "")
-    addField("Teléfono", professionalData?.phone || "")
-    addField("Celular", professionalData?.mobile || "")
+    addSummaryField("Nickname", professionalData?.nickName || "")
+    addSummaryField("Nombre", claimData.professionalName)
+    addSummaryField("Cédula", claimData.dniNumber || "")
+    addSummaryField("Teléfono", professionalData?.phone || "")
+    addSummaryField("Celular", professionalData?.mobile || "")
 
-    addTitle("Enlaces")
-    addField("Sitio web", professionalData?.website || "")
-    addField("LinkedIn", professionalData?.linkedin || "")
-    addField("Reel", professionalData?.reelLink || "")
-    addField("Portafolio / RRSS", professionalData?.rrss || "")
+    pdf.setFont("helvetica", "normal")
+    if (professionalData?.companyNameCEO?.trim()) {
+      addSummaryField("Empresa", professionalData.companyNameCEO)
+      addSummaryField("Cargo", "CEO")
+    }
+
+    y = Math.max(photoY + photoSize + 10, infoY + 4)
 
     addTitle("Biofilmografía")
     addField("Español", professionalData?.bio || "")
@@ -649,9 +861,11 @@ export default function ProfessionalProfilePage() {
       }),
     )
 
-    addTitle("Imágenes")
-    addField("Foto de perfil", displayProfilePhotoUrl ? "Cargada" : "No cargada")
-    addField("Imágenes de galería", String(displayPortfolioUrls.length))
+    addTitle("Enlaces")
+    addField("Sitio web", professionalData?.website || "")
+    addField("LinkedIn", professionalData?.linkedin || "")
+    addField("Reel", professionalData?.reelLink || "")
+    addField("Portafolio / RRSS", professionalData?.rrss || "")
 
     const safeName = (claimData.professionalName || "perfil-profesional")
       .toLowerCase()
@@ -752,6 +966,7 @@ export default function ProfessionalProfilePage() {
                 <div className={styles.avatarCircle}>
                   {displayProfilePhotoUrl ? (
                     <Image
+                      id="professional-profile-avatar"
                       src={displayProfilePhotoUrl}
                       alt="Foto de perfil"
                       className={styles.avatarImage}

@@ -41,7 +41,7 @@ export default function HomeClient() {
           <article className={`${styles.serviceGroup} ${styles.viveGroup}`}>
             <div className={styles.logoFrame}>
               <Image
-                src="/images/logos/vivecine-horizontal-oscuro.png"
+                src="/images/logos/vivecine-horizontal-oscuro1.png"
                 alt="Vive Cine"
                 width={240}
                 height={120}
@@ -49,12 +49,18 @@ export default function HomeClient() {
               />
             </div>
             <p className={styles.groupIntro}>
-              Exhibiciones de cine y formación de públicos
+              Servicios para espacios, gestores y usuarios de la Red de
+              Espacios Audiovisuales.
             </p>
             <ul className={styles.serviceList}>
               <li>
-                Registra tu espacio audiovisual y accede al Banco de Películas
-                del ICCA.
+                Registro y gestión de Espacios REA para exhibición audiovisual.
+              </li>
+              <li>
+                Acceso al Banco de Contenidos para programación en territorio.
+              </li>
+              <li>
+                Talleres y capacitaciones para fortalecer la gestión cultural.
               </li>
             </ul>
           </article>
@@ -62,7 +68,7 @@ export default function HomeClient() {
           <article className={`${styles.serviceGroup} ${styles.hazGroup}`}>
             <div className={styles.logoFrame}>
               <Image
-                src="/images/logos/hazcine-horizontal-oscuro.png"
+                src="/images/logos/hazcine-horizontal-oscuro1.png"
                 alt="Haz Cine"
                 width={240}
                 height={120}
@@ -70,11 +76,13 @@ export default function HomeClient() {
               />
             </div>
             <p className={styles.groupIntro}>
-              Registro de creadores y proyectos cinematográficos.
+              Herramientas para profesionales, empresas y proyectos del sector
+              audiovisual ecuatoriano.
             </p>
             <ul className={styles.serviceList}>
-              <li>Regístrate como profesional de la industria audiovisual.</li>
-              <li>Registra tu película o proyecto cinematográfico.</li>
+              <li>Perfil profesional o directorio de empresas del sector.</li>
+              <li>Gestión integral de películas y proyectos audiovisuales.</li>
+              <li>Actualización de datos para circulación y visibilidad.</li>
             </ul>
           </article>
         </div>
