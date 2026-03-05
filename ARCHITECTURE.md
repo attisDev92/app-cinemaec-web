@@ -106,7 +106,7 @@ src/
 │   ├── api-client.ts            # Cliente HTTP para la API
 │   └── environment.ts           # Variables de entorno
 │
-└── middleware.ts                 # Middleware de Next.js (protección de rutas)
+└── proxy.ts                      # Proxy de Next.js (protección de rutas)
 ```
 
 ## Flujo de la Aplicación
@@ -361,7 +361,7 @@ import styles from './Component.module.css';
 - Perfil de usuario (ver, editar)
 - Cambio de contraseña
 - Panel de administración básico
-- Protección de rutas con middleware
+- Protección de rutas con proxy
 - CSS Modules en todos los componentes
 - Tipos TypeScript para todas las features
 - **Build exitoso con 13 rutas**

@@ -16,7 +16,7 @@ npm run dev
 
 Mensaje: `The "middleware" file convention is deprecated. Please use "proxy" instead.`
 
-Acción: migrar a la convención `proxy` cuando se toque esa parte.
+Acción aplicada: la protección de rutas ya usa `src/proxy.ts`.
 
 ## Descarga de .docx no inicia
 
