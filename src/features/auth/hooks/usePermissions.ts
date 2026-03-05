@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from "react"
 import { useAuth } from "./useAuth"
 import { PermissionEnum } from "@/shared/types"
 
@@ -11,34 +12,37 @@ export const usePermissions = () => {
   /**
    * Verifica si el usuario tiene un permiso específico
    */
-  const hasPermission = (permission: PermissionEnum): boolean => {
+  const hasPermission = useCallback((permission: PermissionEnum): boolean => {
     if (!user || !user.permissions) return false
     return user.permissions.includes(permission)
-  }
+  }, [user])
 
   /**
    * Verifica si el usuario tiene al menos uno de los permisos especificados
    */
-  const hasAnyPermission = (permissions: PermissionEnum[]): boolean => {
+  const hasAnyPermission = useCallback((permissions: PermissionEnum[]): boolean => {
     if (!user || !user.permissions) return false
     return permissions.some((permission) =>
       user.permissions!.includes(permission),
     )
-  }
+  }, [user])
 
   /**
    * Verifica si el usuario tiene todos los permisos especificados
    */
-  const hasAllPermissions = (permissions: PermissionEnum[]): boolean => {
+  const hasAllPermissions = useCallback((permissions: PermissionEnum[]): boolean => {
     if (!user || !user.permissions) return false
     return permissions.every((permission) =>
       user.permissions!.includes(permission),
     )
-  }
+  }, [user])
 
-  return {
-    hasPermission,
-    hasAnyPermission,
-    hasAllPermissions,
-  }
+  return useMemo(
+    () => ({
+      hasPermission,
+      hasAnyPermission,
+      hasAllPermissions,
+    }),
+    [hasPermission, hasAnyPermission, hasAllPermissions],
+  )
 }

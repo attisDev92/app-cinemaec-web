@@ -12,6 +12,7 @@ import styles from "./rea-spaces.module.css"
 export default function REASpacesPage() {
   const router = useRouter()
   const { user, isLoading } = useAuth()
+  const userId = user?.id
   const [spaces, setSpaces] = useState<Space[]>([])
   const [loadingSpaces, setLoadingSpaces] = useState(true)
 
@@ -65,10 +66,10 @@ export default function REASpacesPage() {
       }
     }
 
-    if (!isLoading && user) {
+    if (!isLoading && userId) {
       fetchSpaces()
     }
-  }, [user, isLoading])
+  }, [userId, isLoading])
 
   const handleRegisterSpace = () => {
     // Por ahora solo navegamos a una página de registro (se creará después)

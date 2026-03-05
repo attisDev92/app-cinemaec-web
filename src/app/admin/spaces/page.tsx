@@ -75,6 +75,11 @@ export default function AdminSpacesPage() {
     [spaces, selectedSpaceId],
   )
 
+  const canAccessAdminSpaces = useMemo(
+    () => !!user && user.role === UserRole.ADMIN && hasPermission(PermissionEnum.ADMIN_SPACES),
+    [user, hasPermission],
+  )
+
   // Usar el mapeo centralizado de campos
   const reviewableFields = FIELD_LABELS
 
@@ -84,12 +89,11 @@ export default function AdminSpacesPage() {
     } else if (
       !isLoading &&
       user &&
-      (user.role !== UserRole.ADMIN ||
-        !hasPermission(PermissionEnum.ADMIN_SPACES))
+      !canAccessAdminSpaces
     ) {
       router.push("/home")
     }
-  }, [isAuthenticated, isLoading, user, hasPermission, router])
+  }, [isAuthenticated, isLoading, user, canAccessAdminSpaces, router])
 
   const fetchSpaces = useCallback(async () => {
     setLoadingSpaces(true)
@@ -125,13 +129,13 @@ export default function AdminSpacesPage() {
     } finally {
       setLoadingSpaces(false)
     }
-  }, [selectedSpaceId, statusFilter])
+  }, [statusFilter])
 
   useEffect(() => {
-    if (!isLoading && user && hasPermission(PermissionEnum.ADMIN_SPACES)) {
+    if (!isLoading && canAccessAdminSpaces) {
       fetchSpaces()
     }
-  }, [fetchSpaces, hasPermission, isLoading, user])
+  }, [fetchSpaces, canAccessAdminSpaces, isLoading])
 
   const fetchReviews = useCallback(async (spaceId: number) => {
     setLoadingReviews(true)
