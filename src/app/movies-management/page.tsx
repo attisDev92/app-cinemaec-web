@@ -135,6 +135,13 @@ export default function MoviesManagementPage() {
       const contentWidth = pageWidth - marginX * 2
       let cursorY = 18
 
+      const paintPageBackground = () => {
+        pdf.setFillColor(255, 255, 255)
+        pdf.rect(0, 0, pageWidth, pageHeight, "F")
+      }
+
+      paintPageBackground()
+
       const loadImageAsDataUrl = async (src: string): Promise<string | null> => {
         try {
           const response = await fetch(src)
@@ -189,6 +196,7 @@ export default function MoviesManagementPage() {
       const ensureSpace = (neededHeight: number) => {
         if (cursorY + neededHeight > pageHeight - 16) {
           pdf.addPage()
+          paintPageBackground()
           cursorY = 18
         }
       }

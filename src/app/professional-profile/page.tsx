@@ -509,16 +509,6 @@ export default function ProfessionalProfilePage() {
       return
     }
 
-    const getColorVar = (name: string, fallback: string): string => {
-      if (typeof window === "undefined") {
-        return fallback
-      }
-      const value = getComputedStyle(document.documentElement)
-        .getPropertyValue(name)
-        .trim()
-      return value || fallback
-    }
-
     const hexToRgb = (hex: string): [number, number, number] => {
       const normalized = hex.replace("#", "")
       if (normalized.length !== 6) {
@@ -534,15 +524,9 @@ export default function ProfessionalProfilePage() {
     const [primaryR, primaryG, primaryB] = hexToRgb("#6d2d8f")
     const [hazBlueR, hazBlueG, hazBlueB] = hexToRgb("#0f3554")
     const [hazVioletR, hazVioletG, hazVioletB] = hexToRgb("#b784cc")
-    const [textR, textG, textB] = hexToRgb(
-      getColorVar("--color-text-primary", "#111827"),
-    )
-    const [mutedR, mutedG, mutedB] = hexToRgb(
-      getColorVar("--color-text-secondary", "#6b7280"),
-    )
-    const [surfaceR, surfaceG, surfaceB] = hexToRgb(
-      getColorVar("--color-background-secondary", "#f9fafb"),
-    )
+    const [textR, textG, textB] = hexToRgb("#111827")
+    const [mutedR, mutedG, mutedB] = hexToRgb("#6b7280")
+    const [surfaceR, surfaceG, surfaceB] = hexToRgb("#f9fafb")
 
     const loadImageAsDataUrl = async (src: string): Promise<string | null> => {
       try {
@@ -654,9 +638,17 @@ export default function ProfessionalProfilePage() {
     const maxWidth = pageWidth - margin * 2
     let y = 14
 
+    const paintPageBackground = () => {
+      pdf.setFillColor(255, 255, 255)
+      pdf.rect(0, 0, pageWidth, pageHeight, "F")
+    }
+
+    paintPageBackground()
+
     const ensureSpace = (needed = 8) => {
       if (y + needed > pageHeight - margin) {
         pdf.addPage()
+        paintPageBackground()
         y = margin
       }
     }
