@@ -2,25 +2,59 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/features/auth/hooks"
 import { notificationService } from "@/shared/services/notification.service"
 import { Notification, NotificationType } from "@/shared/types"
 import styles from "./NotificationDropdown.module.css"
 
 export const NotificationDropdown = () => {
   const router = useRouter()
+  const { isAuthenticated } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const unreadRequestInFlight = useRef(false)
 
-  // Cargar contador de notificaciones no leídas al montar
+  // Cargar contador de no leídas solo cuando hay sesión activa
+  // y pausar polling cuando la pestaña no está visible.
   useEffect(() => {
-    loadUnreadCount()
-    // Actualizar cada 30 segundos
-    const interval = setInterval(loadUnreadCount, 30000)
-    return () => clearInterval(interval)
-  }, [])
+    if (!isAuthenticated) {
+      setUnreadCount(0)
+      return
+    }
+
+    const refreshUnreadCount = async () => {
+      if (document.hidden || unreadRequestInFlight.current) {
+        return
+      }
+
+      unreadRequestInFlight.current = true
+      try {
+        await loadUnreadCount()
+      } finally {
+        unreadRequestInFlight.current = false
+      }
+    }
+
+    void refreshUnreadCount()
+
+    const interval = setInterval(refreshUnreadCount, 60000)
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        void refreshUnreadCount()
+      }
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener("visibilitychange", onVisibilityChange)
+    }
+  }, [isAuthenticated])
 
   // Cargar notificaciones cuando se abre el dropdown
   useEffect(() => {
