@@ -31,11 +31,17 @@ type MovieCountryRelation = {
   name?: string
 }
 
+type MoviePosterAsset = {
+  id?: number
+  url?: string | null
+}
+
 type MovieWithRelations = Movie & {
   professionals?: MovieProfessionalRelation[]
   companies?: MovieCompanyRelation[]
   languages?: Array<MovieLanguageRelation | string>
   country?: MovieCountryRelation
+  posterAsset?: MoviePosterAsset | null
 }
 
 export default function MoviesManagementPage() {
@@ -142,22 +148,6 @@ export default function MoviesManagementPage() {
 
       paintPageBackground()
 
-      const loadImageAsDataUrl = async (src: string): Promise<string | null> => {
-        try {
-          const response = await fetch(src)
-          if (!response.ok) return null
-          const blob = await response.blob()
-          return await new Promise((resolve) => {
-            const reader = new FileReader()
-            reader.onloadend = () => resolve((reader.result as string) || null)
-            reader.onerror = () => resolve(null)
-            reader.readAsDataURL(blob)
-          })
-        } catch {
-          return null
-        }
-      }
-
       const loadImageWithSize = async (
         src: string,
       ): Promise<{ dataUrl: string; width: number; height: number } | null> => {
@@ -192,6 +182,31 @@ export default function MoviesManagementPage() {
 
       const toProxyImageUrl = (url: string) =>
         `/api/image-proxy?url=${encodeURIComponent(url)}`
+
+      const toPublicAssetUrl = (url: string) =>
+        assetService.getPublicAssetUrl(
+          { url } as Parameters<typeof assetService.getPublicAssetUrl>[0],
+        )
+
+      const resolvePosterProxyUrl = async (): Promise<string | null> => {
+        const directPosterUrl = movie.posterAsset?.url?.trim()
+
+        if (directPosterUrl) {
+          return toProxyImageUrl(toPublicAssetUrl(directPosterUrl))
+        }
+
+        const posterAssetId = movie.posterAsset?.id ?? movie.posterAssetId
+        if (!posterAssetId) {
+          return null
+        }
+
+        try {
+          const posterAsset = await assetService.getAsset(posterAssetId)
+          return toProxyImageUrl(assetService.getPublicAssetUrl(posterAsset))
+        } catch {
+          return null
+        }
+      }
 
       const ensureSpace = (neededHeight: number) => {
         if (cursorY + neededHeight > pageHeight - 16) {
@@ -323,18 +338,8 @@ export default function MoviesManagementPage() {
 
       await addHeader()
 
-      let posterUrl: string | null = null
-      if (movie.posterAssetId) {
-        try {
-          const posterAsset = await assetService.getAsset(movie.posterAssetId)
-          const publicPosterUrl = assetService.getPublicAssetUrl(posterAsset)
-          posterUrl = toProxyImageUrl(publicPosterUrl)
-        } catch {
-          posterUrl = null
-        }
-      }
-
-      const posterDataUrl = posterUrl ? await loadImageAsDataUrl(posterUrl) : null
+      const posterUrl = await resolvePosterProxyUrl()
+      const posterImage = posterUrl ? await loadImageWithSize(posterUrl) : null
 
       const posterX = marginX
       const posterY = cursorY
@@ -343,25 +348,22 @@ export default function MoviesManagementPage() {
 
       pdf.setDrawColor(209, 213, 219)
       pdf.roundedRect(posterX, posterY, posterW, posterH, 2, 2, "S")
-      if (posterDataUrl) {
-        const imageMeta = await loadImageWithSize(posterDataUrl)
-        if (imageMeta) {
-          const ratio = imageMeta.width / imageMeta.height
+      if (posterImage) {
+        const ratio = posterImage.width / posterImage.height
           let drawW = posterW - 2
           let drawH = drawW / ratio
           if (drawH > posterH - 2) {
             drawH = posterH - 2
             drawW = drawH * ratio
           }
-          pdf.addImage(
-            imageMeta.dataUrl,
-            "PNG",
-            posterX + (posterW - drawW) / 2,
-            posterY + (posterH - drawH) / 2,
-            drawW,
-            drawH,
-          )
-        }
+        pdf.addImage(
+          posterImage.dataUrl,
+          "PNG",
+          posterX + (posterW - drawW) / 2,
+          posterY + (posterH - drawH) / 2,
+          drawW,
+          drawH,
+        )
       } else {
         pdf.setFont("helvetica", "bold")
         pdf.setFontSize(9)
