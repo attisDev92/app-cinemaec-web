@@ -125,7 +125,7 @@ interface FormValues {
   }>
   posterAssetId: number | null
   trailerLink: string
-  makingOffLink: string
+  makingOfLink: string
   dossierAssetId: number | null
   dossierEnAssetId: number | null
   pedagogicalGuideAssetId: number | null
@@ -382,7 +382,7 @@ const mapMovieToFormValues = (movie: MovieDetail): FormValues => {
         : initialValues.contentBank,
     posterAssetId: movie.posterAsset?.id ?? null,
     trailerLink: movie.trailerLink ?? "",
-    makingOffLink: movie.makingOfLink ?? "",
+    makingOfLink: movie.makingOfLink ?? "",
     dossierAssetId: movie.dossierAsset?.id ?? null,
     dossierEnAssetId: movie.dossierAssetEn?.id ?? null,
     pedagogicalGuideAssetId: movie.pedagogicalSheetAsset?.id ?? null,
@@ -575,7 +575,7 @@ const initialValues: FormValues = {
   ],
   posterAssetId: null,
   trailerLink: "",
-  makingOffLink: "",
+  makingOfLink: "",
   dossierAssetId: null,
   dossierEnAssetId: null,
   pedagogicalGuideAssetId: null,
@@ -867,7 +867,7 @@ export function MovieForm({
           dossierEnAssetId: values.dossierEnAssetId ?? undefined,
           pedagogicalGuideAssetId: values.pedagogicalGuideAssetId ?? undefined,
           trailerLink: values.trailerLink.trim() || undefined,
-          makingOfLink: values.makingOffLink.trim() || undefined,
+          makingOfLink: values.makingOfLink.trim() || undefined,
           stillAssetIds:
             values.stillAssetIds.length > 0
               ? values.stillAssetIds
@@ -2655,9 +2655,9 @@ export function MovieForm({
                   />
 
                   <LinkInput
-                    label="Link making off"
-                    name="makingOffLink"
-                    value={formik.values.makingOffLink}
+                    label="Link MakingOf"
+                    name="makingOfLink"
+                    value={formik.values.makingOfLink}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     placeholder="https://"
