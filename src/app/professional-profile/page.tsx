@@ -528,25 +528,6 @@ export default function ProfessionalProfilePage() {
     const [mutedR, mutedG, mutedB] = hexToRgb("#6b7280")
     const [surfaceR, surfaceG, surfaceB] = hexToRgb("#f9fafb")
 
-    const loadImageAsDataUrl = async (src: string): Promise<string | null> => {
-      try {
-        const response = await fetch(src)
-        if (!response.ok) {
-          return null
-        }
-        const blob = await response.blob()
-        return await new Promise((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve((reader.result as string) || null)
-          reader.onerror = () => resolve(null)
-          reader.readAsDataURL(blob)
-        })
-      } catch {
-        return null
-      }
-    }
-
-
     const loadImageWithSize = async (
       src: string,
     ): Promise<{ dataUrl: string; width: number; height: number } | null> => {
