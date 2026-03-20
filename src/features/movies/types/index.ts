@@ -2,6 +2,8 @@ export type MovieType =
   | "Cortometraje"
   | "Mediometraje"
   | "Largometraje"
+  | "Series"
+  | "Videojuegos"
   | "Sin catalogar"
 
 export type MovieGenre =

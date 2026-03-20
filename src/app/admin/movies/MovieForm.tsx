@@ -2124,6 +2124,8 @@ export function MovieForm({
                     <option value="Cortometraje">Cortometraje</option>
                     <option value="Mediometraje">Mediometraje</option>
                     <option value="Largometraje">Largometraje</option>
+                    <option value="Series">Series</option>
+                    <option value="Videojuegos">Videojuegos</option>
                     <option value="Sin catalogar">Sin catalogar</option>
                   </Select>
 

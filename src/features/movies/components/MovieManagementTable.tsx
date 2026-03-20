@@ -25,6 +25,8 @@ const MOVIE_TYPE_LABELS: Record<string, string> = {
   Cortometraje: "Cortometraje",
   Mediometraje: "Mediometraje",
   Largometraje: "Largometraje",
+  Series: "Series",
+  Videojuegos: "Videojuegos",
   "Sin catalogar": "Sin catalogar",
 }
 
