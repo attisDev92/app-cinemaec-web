@@ -1,0 +1,101 @@
+.container {
+  min-height: 100vh;
+  background-color: var(--color-background-secondary);
+}
+
+.hero {
+  padding: var(--spacing-3xl) var(--spacing-md) var(--spacing-2xl);
+  background: linear-gradient(135deg, #ffbf3f 0%, #e6ad39 100%);
+}
+
+.heroContent {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  color: #1b2a3a;
+  margin: 0 0 var(--spacing-sm);
+}
+
+.subtitle {
+  font-size: var(--font-size-lg);
+  color: #1b2a3a;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.content {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: var(--spacing-xl) var(--spacing-md);
+  transform: translateY(-2rem);
+}
+
+.actions {
+  margin-bottom: var(--spacing-xl);
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.movieCard {
+  background: var(--color-surface);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-base);
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.movieTitle {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.metaList {
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+.metaList p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.metaList strong,
+.synopsis strong {
+  color: var(--color-text-primary);
+}
+
+.synopsis {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+.stateText,
+.errorText {
+  margin: 0;
+  padding: var(--spacing-lg);
+  font-size: var(--font-size-base);
+  text-align: center;
+}
+
+.errorText {
+  color: var(--color-error-dark);
+}

@@ -55,6 +55,44 @@ export type ContactPosition =
 
 export type ExhibitionWindow = "Nacional" | "Internacional" | "VOD"
 
+export interface Professional {
+  id: number
+  fullName: string
+  documentType?: string
+  documentNumber?: string
+  email?: string
+  phone?: string
+}
+
+export interface CinematicRole {
+  id: number
+  name: string
+  category?: string
+}
+
+export interface Country {
+  id: number
+  name: string
+  code?: string
+}
+
+export interface Asset {
+  id: number
+  url: string
+  name?: string
+  filetype?: string
+}
+
+export interface MovieProfessional {
+  id: number
+  movieId: number
+  professionalId: number
+  cinematicRoleId: number
+  accredited?: boolean
+  professional?: Professional
+  cinematicRole?: CinematicRole
+}
+
 export interface CreateMoviePayload {
   title: string
   titleEn?: string
@@ -143,8 +181,12 @@ export interface CreateMoviePayload {
 export interface Movie extends CreateMoviePayload {
   id: number
   isActive: boolean
+  isPublishedToCatalog: boolean
   status: MovieStatus
   createdAt: string
   updatedAt?: string | null
   ownerId?: number | null
+  country?: Country
+  professionals?: MovieProfessional[]
+  posterAsset?: Asset
 }

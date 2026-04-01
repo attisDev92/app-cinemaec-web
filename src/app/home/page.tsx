@@ -175,7 +175,13 @@ function HomePanels({
                       exhibición de Espacios Audiovisuales y Gestores
                       registrados en Vive Cine.
                     </p>
-                    <p className={styles.tag}>Próximamente</p>
+                    <Button
+                      onClick={() => router.push("/content-bank")}
+                      variant="secondary"
+                      className={styles.cardButton}
+                    >
+                      Solicitar películas →
+                    </Button>
                   </Card>
                 </div>
 

@@ -4,6 +4,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { useAuth } from "@/features/auth/hooks"
 import { Navbar } from "@/shared/components/Navbar"
+import { PublicMenu } from "@/shared/components/PublicMenu"
+import { CatalogBanner } from "@/shared/components/CatalogBanner"
 import styles from "./home.module.css"
 
 export default function HomeClient() {
@@ -12,6 +14,7 @@ export default function HomeClient() {
   return (
     <div className={styles.container}>
       <Navbar />
+      <PublicMenu />
 
       <main className={styles.main}>
         <div className={styles.header}>
@@ -103,6 +106,8 @@ export default function HomeClient() {
             </p>
           </div>
         </div>
+
+        <CatalogBanner />
       </main>
     </div>
   )

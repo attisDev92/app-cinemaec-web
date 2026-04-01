@@ -96,6 +96,10 @@ export const movieService = {
     return apiClient.put<Movie>(`/movies/${id}/toggle-active`, {})
   },
 
+  async togglePublishedToCatalog(id: number): Promise<Movie> {
+    return apiClient.put<Movie>(`/movies/${id}/toggle-published-to-catalog`, {})
+  },
+
   async updateStatus(
     id: number,
     status: "draft" | "in_review" | "approved" | "rejected" | "archived",
@@ -143,3 +147,14 @@ export const movieService = {
     return apiClient.patch(`/movies/claim-requests/${id}/review`, payload)
   },
 }
+
+export const publicMovieService = {
+  async getPublicCatalog(): Promise<Movie[]> {
+    return apiClient.get<Movie[]>("/movies-public/catalog")
+  },
+
+  async getPublicById(id: number): Promise<Movie> {
+    return apiClient.get<Movie>(`/movies-public/catalog/${id}`)
+  },
+}
+

@@ -1,0 +1,129 @@
+.banner {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #d70037 100%);
+  padding: var(--spacing-3xl) var(--spacing-md);
+  margin: var(--spacing-2xl) 0;
+}
+
+.bannerContent {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+}
+
+.bannerTitle {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: white;
+  margin: 0 0 var(--spacing-sm) 0;
+  text-align: center;
+}
+
+.bannerSubtitle {
+  font-size: var(--font-size-lg);
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  margin: 0 0 var(--spacing-2xl) 0;
+}
+
+.optionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+}
+
+.optionCard {
+  background: white;
+  border-radius: var(--border-radius-xl);
+  padding: var(--spacing-xl);
+  text-decoration: none;
+  transition: all 0.3s ease-in-out;
+  box-shadow: var(--shadow-base);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.optionCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease-in-out;
+}
+
+.optionCard:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+}
+
+.optionCard:hover::before {
+  transform: scaleX(1);
+}
+
+.iconBox {
+  font-size: 2.5rem;
+  margin-bottom: var(--spacing-md);
+  display: inline-flex;
+  align-items: center;
+  width: 60px;
+  height: 60px;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffe6eb 0%, #ffb3c6 100%);
+  border-radius: var(--border-radius-lg);
+}
+
+.optionTitle {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.optionDescription {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  flex-grow: 1;
+  line-height: var(--line-height-relaxed);
+}
+
+.arrowIcon {
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-xl);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+  transition: transform 0.3s ease-in-out;
+}
+
+.optionCard:hover .arrowIcon {
+  transform: translateX(4px);
+}
+
+@media (max-width: 768px) {
+  .banner {
+    padding: var(--spacing-2xl) var(--spacing-md);
+    margin: var(--spacing-lg) 0;
+  }
+
+  .bannerTitle {
+    font-size: var(--font-size-2xl);
+  }
+
+  .bannerSubtitle {
+    font-size: var(--font-size-base);
+  }
+
+  .optionsGrid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+}

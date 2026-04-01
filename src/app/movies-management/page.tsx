@@ -399,13 +399,13 @@ export default function MoviesManagementPage() {
       const directors =
         movie.professionals
           ?.filter((entry) => entry.cinematicRole?.id === 1)
-          .map((entry) => entry.professional?.name)
+          .map((entry) => entry.professional?.fullName)
           .filter(Boolean) || []
 
       const producers =
         movie.professionals
           ?.filter((entry) => entry.cinematicRole?.id === 2)
-          .map((entry) => entry.professional?.name)
+          .map((entry) => entry.professional?.fullName)
           .filter(Boolean) || []
 
       const contactDirectors =

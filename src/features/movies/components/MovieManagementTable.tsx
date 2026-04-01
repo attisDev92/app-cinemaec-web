@@ -38,6 +38,7 @@ export function MovieManagementTable({
 }: MovieManagementTableProps) {
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set())
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set())
+  const [publishingIds, setPublishingIds] = useState<Set<number>>(new Set())
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Estás seguro de que deseas eliminar esta película?")) {
@@ -75,6 +76,22 @@ export function MovieManagementTable({
     }
   }
 
+  const handleTogglePublishedToCatalog = async (id: number) => {
+    setPublishingIds((prev) => new Set(prev).add(id))
+    try {
+      await movieService.togglePublishedToCatalog(id)
+      await onRefresh()
+    } catch (error) {
+      console.error("Error al cambiar estado de publicación:", error)
+    } finally {
+      setPublishingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }
+  }
+
   if (isLoading) {
     return <div className={styles.loading}>Cargando películas...</div>
   }
@@ -94,6 +111,7 @@ export function MovieManagementTable({
             <th>Estado de Proyecto</th>
             <th>Año de Lanzamiento</th>
             <th>Activo</th>
+            <th>Publicado en Catálogo</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -124,6 +142,21 @@ export function MovieManagementTable({
                     : movie.isActive
                       ? "Activo"
                       : "Desactivado"}
+                </button>
+              </td>
+              <td>
+                <button
+                  onClick={() => handleTogglePublishedToCatalog(movie.id)}
+                  disabled={publishingIds.has(movie.id)}
+                  className={`${styles.toggleBtn} ${
+                    movie.isPublishedToCatalog ? styles.active : styles.inactive
+                  }`}
+                >
+                  {publishingIds.has(movie.id)
+                    ? "..."
+                    : movie.isPublishedToCatalog
+                      ? "Publicado"
+                      : "No Publicado"}
                 </button>
               </td>
               <td className={styles.actions}>
