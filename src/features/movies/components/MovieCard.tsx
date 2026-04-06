@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import { useState } from "react"
 import { Movie } from "../types"
 import styles from "./MovieCard.module.css"
 
@@ -11,76 +12,61 @@ interface MovieCardProps {
 
 const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   desarrollo: {
-    color: "#3b82f6",
-    label: "En Desarrollo",
+    color: "#FF9500",
+    label: "Desarrollo",
   },
   produccion: {
-    color: "#f59e0b",
-    label: "En Producción",
+    color: "#007AFF",
+    label: "Producción",
   },
   postproduccion: {
-    color: "#8b5cf6",
-    label: "Post-Producción",
+    color: "#5856D6",
+    label: "Postproducción",
   },
   distribucion: {
-    color: "#06b6d4",
+    color: "#34C759",
     label: "Distribución",
   },
   finalizado: {
-    color: "#10b981",
+    color: "#00B894",
     label: "Finalizado",
   },
 }
 
 export function MovieCard({ movie }: MovieCardProps) {
+  const [posterError, setPosterError] = useState(false)
   const statusConfig =
     STATUS_CONFIG[movie.projectStatus as keyof typeof STATUS_CONFIG] ||
     STATUS_CONFIG.desarrollo
 
-  // Obtener directores y productores
-  const directors =
-    (movie.professionals?.length ?? 0) > 0
-      ? movie.professionals
-          ?.filter((p) => p.cinematicRoleId === 1)
-          ?.map((p) => p.professional?.fullName || "Desconocido")
-          ?.slice(0, 2)
-      : []
-
-  const producers =
-    (movie.professionals?.length ?? 0) > 0
-      ? movie.professionals
-          ?.filter((p) => p.cinematicRoleId === 2)
-          ?.map((p) => p.professional?.fullName || "Desconocido")
-          ?.slice(0, 2)
-      : []
+  const hasPoster = Boolean(movie.posterAsset?.url) && !posterError
 
   return (
     <Link href={`/public/catalog/${movie.id}`} className={styles.cardLink}>
       <div className={styles.card}>
         {/* Poster */}
         <div className={styles.posterContainer}>
-          {movie.posterAsset?.url ? (
+          {hasPoster ? (
             <Image
-              src={movie.posterAsset.url}
+              src={movie.posterAsset?.url || ""}
               alt={movie.title}
               fill
               className={styles.poster}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              onError={(e) => {
-                const img = e.target as HTMLImageElement
-                img.style.display = "none"
-              }}
+              onError={() => setPosterError(true)}
             />
           ) : null}
-          <div className={styles.posterPlaceholder}>
-            <span>🎬</span>
-          </div>
+          {!hasPoster && (
+            <div className={styles.posterPlaceholder}>
+              <span>🎬</span>
+            </div>
+          )}
         </div>
 
         {/* Status Badge */}
         <div
           className={styles.statusBadge}
-          style={{ backgroundColor: statusConfig.color }}
+          style={{ "--status-color": statusConfig.color } as React.CSSProperties}
         >
           {statusConfig.label}
         </div>
@@ -94,26 +80,8 @@ export function MovieCard({ movie }: MovieCardProps) {
             {movie.country?.name || "País desconocido"}
           </p>
 
-          {/* Directors */}
-          {directors && directors.length > 0 && (
-            <div className={styles.info}>
-              <span className={styles.label}>Director/a:</span>
-              <p className={styles.value}>{directors.join(", ")}</p>
-            </div>
-          )}
-
-          {/* Producers */}
-          {producers && producers.length > 0 && (
-            <div className={styles.info}>
-              <span className={styles.label}>Productor/a:</span>
-              <p className={styles.value}>{producers.join(", ")}</p>
-            </div>
-          )}
-
           {/* Year */}
-          {movie.releaseYear && (
-            <div className={styles.year}>{movie.releaseYear}</div>
-          )}
+          <div className={styles.year}>{movie.releaseYear || "Año no disponible"}</div>
         </div>
       </div>
     </Link>

@@ -1,0 +1,837 @@
+"use client"
+/* eslint-disable @next/next/no-img-element */
+
+import { useRef, useState } from "react"
+import QRCode from "qrcode"
+import html2canvas from "html2canvas"
+import { jsPDF } from "jspdf"
+import { Barlow_Condensed } from "next/font/google"
+import { assetService } from "@/features/assets/services/asset.service"
+import styles from "./MovieInfoSheetSection.module.css"
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+})
+
+type BasicEntity = {
+  id?: number
+  name?: string | null
+}
+
+type ProfessionalData = {
+  fullName?: string | null
+  name?: string | null
+  bio?: string | null
+  bioEn?: string | null
+  profilePhotoAssetId?: number | null
+  profilePhotoAsset?: { url?: string | null } | null
+}
+
+type SheetMovie = {
+  id: number
+  title?: string | null
+  titleEn?: string | null
+  genre?: string | null
+  type?: string | null
+  durationMinutes?: number | null
+  projectStatus?: string | null
+  synopsis?: string | null
+  synopsisEn?: string | null
+  projectNeed?: string | null
+  projectNeedEn?: string | null
+  country?: BasicEntity
+  subgenres?: BasicEntity[]
+  platforms?: Array<{ link?: string | null }>
+  contacts?: Array<{ name?: string | null; role?: string | null; phone?: string | null; email?: string | null }>
+  funding?: Array<{ fund?: BasicEntity; year?: number | null }>
+  festivalNominations?: Array<{ fund?: BasicEntity; category?: string | null; result?: string | null; year?: number | null }>
+  professionals?: Array<{
+    cinematicRoleId?: number
+    cinematicRole?: BasicEntity
+    professional?: ProfessionalData
+  }>
+  internationalCoproductions?: Array<{ country?: BasicEntity }>
+}
+
+type Props = {
+  movie: SheetMovie
+  posterElementId?: string
+  directorPhotoElementId?: string
+  producerPhotoElementId?: string
+}
+
+const DESIGN_WIDTH = 1772
+const DESIGN_HEIGHT = 1181
+
+type PreviewData = {
+  movieUrl: string
+  qrDataUrl: string
+  posterSrc: string | null
+  directorPhotoSrc: string | null
+  producerPhotoSrc: string | null
+}
+
+const statusLabel = (value?: string | null): string => {
+  const map: Record<string, string> = {
+    desarrollo: "Desarrollo",
+    produccion: "Producción",
+    postproduccion: "Postproducción",
+    distribucion: "Distribución",
+    finalizado: "Finalizado",
+  }
+  const key = String(value || "").toLowerCase()
+  return map[key] || "No especificado"
+}
+
+const countryStatusLabel = (country?: string | null, status?: string | null): string => {
+  return `${textValue(country, "ECUADOR")} - EN ${statusLabel(status)}`
+}
+
+const textValue = (value: unknown, fallback = "No disponible"): string => {
+  const text = String(value || "").trim()
+  return text.length ? text : fallback
+}
+
+const truncate = (value: string, max = 300): string => {
+  if (value.length <= max) return value
+  return `${value.slice(0, max - 1)}...`
+}
+
+const getLoadedImageFromDom = (elementId: string, fallbackSelector?: string): HTMLImageElement | null => {
+  const byId = document.getElementById(elementId)
+  if (byId instanceof HTMLImageElement && byId.complete) return byId
+
+  if (!fallbackSelector) return null
+  const fallback = document.querySelector(fallbackSelector)
+  if (fallback instanceof HTMLImageElement && fallback.complete) return fallback
+
+  return null
+}
+
+const pxToX = (value: number): string => `${(value / DESIGN_WIDTH) * 100}%`
+const pxToY = (value: number): string => `${(value / DESIGN_HEIGHT) * 100}%`
+
+const normalizeLocalAssetPath = (value: string): string => {
+  if (/^https?:\/\//i.test(value)) return value
+  return value
+    .split("/")
+    .map((segment, idx) => {
+      if (!segment) return idx === 0 ? "" : segment
+      return encodeURIComponent(decodeURIComponent(segment))
+    })
+    .join("/")
+}
+
+const normalizeExternalImageUrl = (value?: string | null): string | null => {
+  const raw = String(value || "").trim()
+  if (!raw) return null
+
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const parsed = new URL(raw)
+      parsed.pathname = parsed.pathname
+        .split("/")
+        .map((segment) => (segment ? encodeURIComponent(decodeURIComponent(segment)) : segment))
+        .join("/")
+      return parsed.toString()
+    } catch {
+      return raw
+    }
+  }
+
+  return normalizeLocalAssetPath(raw)
+}
+
+const getImageSrc = (elementId: string, fallbackSelector: string): string | null => {
+  const image = getLoadedImageFromDom(elementId, fallbackSelector)
+  if (!image) return null
+  return normalizeExternalImageUrl(image.currentSrc || image.src)
+}
+
+const toAbsolute = (value: string): string => {
+  if (/^https?:\/\//i.test(value)) return value
+  return `${window.location.origin}${value.startsWith("/") ? value : `/${value}`}`
+}
+
+const toPdfProxyUrl = (value: string): string => {
+  if (typeof window === "undefined") return value
+  return `${window.location.origin}/api/image-proxy?url=${encodeURIComponent(value)}`
+}
+
+const htmlEscape = (value: string): string => {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;")
+}
+
+const nlToBr = (value: string): string => htmlEscape(value).replaceAll("\n", "<br />")
+
+const normalizeForMatch = (value: unknown): string =>
+  String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+
+const absolutizeUrl = (value?: string | null): string | null => {
+  const raw = String(value || "").trim()
+  if (!raw) return null
+  if (/^https?:\/\//i.test(raw)) return raw
+  const base = typeof window !== "undefined" ? window.location.origin : ""
+  const normalized = raw.startsWith("/") ? raw : `/${raw}`
+  return base ? `${base}${normalized}` : normalized
+}
+
+const roleIdOf = (entry?: { cinematicRoleId?: number; cinematicRole?: BasicEntity }): number | undefined => {
+  return entry?.cinematicRoleId ?? entry?.cinematicRole?.id
+}
+
+const isRoleMatch = (
+  entry: { cinematicRoleId?: number; cinematicRole?: BasicEntity },
+  role: "director" | "producer",
+): boolean => {
+  const roleId = roleIdOf(entry)
+  if (role === "director" && roleId === 1) return true
+  if (role === "producer" && roleId === 2) return true
+
+  const roleName = normalizeForMatch(entry.cinematicRole?.name)
+  if (!roleName) return false
+
+  if (role === "director") {
+    return roleName.includes("director") || roleName.includes("direccion")
+  }
+
+  return roleName.includes("productor") || roleName.includes("produccion") || roleName.includes("producer")
+}
+
+const findProfessionalEntry = (
+  entries: Array<{ cinematicRoleId?: number; cinematicRole?: BasicEntity; professional?: ProfessionalData }> | undefined,
+  role: "director" | "producer",
+) => {
+  return (entries || []).find((entry) => isRoleMatch(entry, role))
+}
+
+const getProfessionalPhotoSrc = (
+  entry?: { professional?: ProfessionalData },
+): string | null => {
+  const url = entry?.professional?.profilePhotoAsset?.url
+  return absolutizeUrl(normalizeExternalImageUrl(url))
+}
+
+const getProfessionalBio = (entry?: { professional?: ProfessionalData }): string => {
+  const professional = entry?.professional
+  return textValue(
+    professional?.bio || professional?.bioEn,
+    "Biofilmografia no disponible",
+  )
+}
+
+const resolveProfessionalPhotoSrc = async (
+  entry?: { professional?: ProfessionalData },
+): Promise<string | null> => {
+  // Primary: use the eagerly-loaded asset relation
+  const fromFields = getProfessionalPhotoSrc(entry)
+  if (fromFields) return fromFields
+
+  // Fallback: fetch via API if the asset wasn't loaded (shouldn't happen after backend fix)
+  const assetId = entry?.professional?.profilePhotoAssetId
+  if (!assetId) return null
+
+  try {
+    const asset = await assetService.getAsset(assetId)
+    return absolutizeUrl(assetService.getPublicAssetUrl(asset))
+  } catch {
+    return null
+  }
+}
+
+const buildContactBlock = (contacts?: Array<{ name?: string | null; role?: string | null; phone?: string | null; email?: string | null }>): string => {
+  const lines = (contacts || [])
+    .filter((c) => c?.name || c?.phone || c?.email)
+    .map((c) => {
+      const parts: string[] = []
+      if (c.role) parts.push(c.role)
+      const info: string[] = []
+      if (c.name) info.push(c.name)
+      if (c.phone) info.push(c.phone)
+      if (info.length) parts.push(info.join(" · "))
+      if (c.email) parts.push(c.email)
+      return parts.join("\n")
+    })
+  return lines.join("\n") || "Sin información de contacto"
+}
+
+const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true): string => {
+  const director = findProfessionalEntry(movie.professionals, "director")
+  const producer = findProfessionalEntry(movie.professionals, "producer")
+
+  const subgenres = (movie.subgenres || [])
+    .map((item) => textValue(item?.name, ""))
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(", ")
+
+  const coproductionCountries = (movie.internationalCoproductions || [])
+    .map((item) => textValue(item?.country?.name, ""))
+    .filter(Boolean)
+    .join(", ")
+
+  const directorName = textValue(director?.professional?.fullName || director?.professional?.name)
+  const producerName = textValue(producer?.professional?.fullName || producer?.professional?.name)
+  const directorBio = getProfessionalBio(director)
+  const producerBio = getProfessionalBio(producer)
+
+  const needsEs = String(movie.projectNeed || "").trim()
+  const needsEn = String(movie.projectNeedEn || "").trim()
+  const needsText = needsEs || needsEn
+    ? [needsEs && truncate(needsEs, 200), needsEn && truncate(needsEn, 150)].filter(Boolean).join("\n\n")
+    : "No especificado"
+
+  const fundingItems = (movie.funding || [])
+    .slice(0, 5)
+    .map((f) => `• ${textValue(f.fund?.name, "Fondo")}${f.year ? ` (${f.year})` : ""}`)
+    .join("\n")
+  const awardItems = (movie.festivalNominations || [])
+    .slice(0, 5)
+    .map((n) => `• ${textValue(n.fund?.name, "Festival")}${n.year ? ` (${n.year})` : ""}${n.result ? ` — ${n.result}` : ""}`)
+    .join("\n")
+  const awardsText = [fundingItems, awardItems].filter(Boolean).join("\n") || "Sin registros"
+
+  const synopsisEs = String(movie.synopsis || "").trim()
+  const synopsisEn = String(movie.synopsisEn || "").trim()
+  const combinedSynopsis = [synopsisEs, synopsisEn].filter(Boolean).join("\n\n")
+  const isDenseLeftCol = combinedSynopsis.length > 200
+
+  const printCss = `
+    @page { size: 150mm 100mm landscape; margin: 0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Barlow Condensed", sans-serif; background: #111; }
+    .sheet-page { position: relative; width: 150mm; height: 100mm; overflow: hidden; border-radius: 0; page-break-after: always; }
+    .sheet-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .sheet-layer { position: absolute; inset: 0; }
+    .field { position: absolute; color: #fff; font-size: 8.2pt; line-height: 1.12; font-weight: 500; white-space: pre-wrap; overflow: hidden; }
+    .field.bold { font-weight: 700; }
+    .field.semibold { font-weight: 600; }
+    .field.title-es { font-size: 18.59pt; line-height: 0.96; overflow: visible; padding-bottom: 0.08em; }
+    .field.title-en { font-size: 11pt; line-height: 0.96; overflow: visible; padding-bottom: 0.08em; }
+    .field.small { font-size: 7.4pt; line-height: 1.08; }
+    .divider-h { position: absolute; height: 2px; background: rgba(255,255,255,0.95); }
+    .divider-v { position: absolute; width: 2px; background: rgba(255,255,255,0.95); }
+    .page1-grid { position: absolute; inset: ${pxToY(40)} 0 ${pxToY(40)} ${pxToX(60)}; display: grid; grid-template-columns: ${(75 - 60 / DESIGN_WIDTH * 150).toFixed(2)}mm minmax(0, 1fr); column-gap: 0; }
+    .page1-column { --status-fs: 8.2pt; --status-lh: 1.12; --status-gap: 2pt; --logo-h: calc((3 * 1em * var(--status-lh)) + (2 * var(--status-gap))); display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; row-gap: ${pxToY(26)}; min-height: 0; }
+    .page1-column-left { min-width: 0; }
+    .page1-column-right { --poster-width: calc(100% - var(--logo-h) - ${pxToX(14)}); min-width: 0; row-gap: 0; }
+    .page1-top-left { display: grid; grid-template-columns: 90px ${pxToX(22)} minmax(0, 1fr); align-items: end; column-gap: ${pxToX(14)}; min-width: 0; min-height: 0; }
+    .page1-top-left .qr-container { grid-column: 1; }
+    .page1-top-left .title-box { grid-column: 3; width: 100%; align-self: end; justify-content: end; }
+    .qr-container { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%; height: 100%; gap: 0; }
+    .qr-wrap { align-self: start; justify-self: center; width: 100%; height: 100%; margin-top: 0; max-width: 100%; max-height: 100%; overflow: hidden; }
+    .qr-url { position: absolute; top: calc(100% + 2px); left: 50%; transform: translateX(-50%); font-size: 5.5pt; line-height: 1; font-weight: 600; color: #fff; text-align: center; width: fit-content; letter-spacing: 0.3px; white-space: nowrap; }
+    .page1-top-right { display: flex; justify-content: space-between; align-items: start; justify-self: center; width: var(--poster-width); min-width: 0; min-height: 0; }
+    .title-box { min-width: 0; display: grid; grid-template-rows: auto auto; row-gap: ${pxToY(6)}; align-self: start; }
+    .status-box { min-width: 0; align-self: start; display: grid; row-gap: var(--status-gap); font-size: var(--status-fs); line-height: var(--status-lh); }
+    .page1-column-right .status-box { width: auto; max-width: calc(100% - var(--logo-h) - ${pxToX(14)}); height: var(--logo-h); align-content: start; font-size: calc(var(--status-fs) * 1.48); }
+    .status-box .field { font-size: 1em; line-height: inherit; text-transform: uppercase; }
+    .status-box .type-genre { font-size: 0.99em; }
+    .logo-wrap { align-self: start; justify-self: end; display: flex; justify-content: flex-end; width: var(--logo-h); height: var(--logo-h); font-size: var(--status-fs); }
+    .page1-main { min-height: 0; }
+    .page1-column-left .page1-main { display: grid; align-items: stretch; margin-right: 0; }
+    .page1-column-right .page1-main { display: grid; justify-items: center; overflow: hidden; }
+    .left-col { --left-divider-x: -68px; --left-content-gap: 6px; --left-status-divider-height: 170px; position: relative; align-self: stretch; display: grid; grid-template-rows: auto auto 1px auto; align-content: end; row-gap: ${pxToY(18)}; min-height: 100%; height: 100%; margin-left: calc(102px + var(--left-divider-x) + var(--left-content-gap)); margin-top: 0; margin-bottom: 4pt; padding-left: 0; }
+    .left-col.dense { row-gap: ${pxToY(10)}; margin-bottom: 8pt; }
+    .left-col::before { content: ""; position: absolute; left: calc(0px - var(--left-content-gap)); top: auto; bottom: 0; height: var(--left-status-divider-height); width: 1px; background: rgba(255,255,255,0.5); }
+    .project-status-vertical { position: absolute; left: calc(-34px - var(--left-content-gap)); bottom: 0; transform: rotate(180deg); writing-mode: vertical-rl; text-orientation: mixed; font-size: 32pt; font-style: italic; font-weight: 300; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.78); line-height: 1; white-space: nowrap; pointer-events: none; }
+    .project-status-vertical::after { content: none; }
+    .left-col .field { font-size: 9.02pt; }
+    .left-col .field.small { font-size: 8.14pt; margin-left: 0; width: 100%; overflow: visible; }
+    .left-col.dense .field.small { font-size: 7.6pt; line-height: 1.02; }
+    .technical-field, .contact-field { overflow: visible; overflow-wrap: anywhere; word-break: break-word; }
+    .synopsis-field { height: auto; overflow: visible; align-self: start; margin-left: 0; width: 100%; }
+    .left-col .synopsis-field { font-size: 8pt; line-height: 1; }
+    .poster-box { justify-self: center; align-self: start; width: var(--poster-width); max-width: 100%; max-height: 100%; aspect-ratio: 2 / 3; border-radius: 0; overflow: hidden; height: auto; }
+    .cover-image { width: 100%; height: 100%; object-fit: cover; }
+    .line-h { height: 1px; background: rgba(255,255,255,0.5); margin-left: 0; width: 100%; }
+    .line-v { width: 2px; background: rgba(255,255,255,0.95); justify-self: start; }
+    .fixed-label { color: #fff; font-size: 7.1pt; line-height: 1.05; font-weight: 600; white-space: pre-wrap; }
+    .cover-image { position: absolute; object-fit: cover; }
+    .face-image { position: absolute; object-fit: cover; border-radius: 18px; }
+    .logo { position: relative; display: block; object-fit: contain; object-position: right top; width: 100%; height: 100%; aspect-ratio: 1 / 1; }
+    .qr { position: relative; display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; aspect-ratio: 1 / 1; object-fit: contain; object-position: right top; }
+    .sheet-page:last-child { page-break-after: auto; }
+    .page2-grid { position: absolute; inset: ${pxToY(40)} ${pxToX(60)} ${pxToY(40)} ${pxToX(60)}; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: ${pxToX(60)}; align-items: stretch; z-index: 3; }
+    .page2-column { display: grid; grid-template-rows: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1fr); row-gap: ${pxToY(20)}; min-height: 0; min-width: 0; height: 100%; }
+    .page2-header { grid-row: 1; display: grid; grid-template-columns: 2fr 1.4fr; column-gap: 3%; min-height: 0; }
+    .page2-header-text { grid-column: 1; display: grid; grid-template-rows: auto auto; row-gap: 0.25em; align-content: end; min-height: 0; }
+    .page2-role-label { display: flex; flex-direction: column; gap: 0.15em; }
+    .page2-role-label-es { font-size: 14pt; font-weight: 700; text-transform: uppercase; color: #fff; line-height: 1; letter-spacing: 0.04em; }
+    .page2-role-label-en { font-size: 8.5pt; font-weight: 400; font-style: italic; color: rgba(255,255,255,0.6); line-height: 1; }
+    .page2-name { font-size: 10.5pt; font-weight: 600; color: #fff; line-height: 1.15; white-space: pre-wrap; margin: 0; }
+    .page2-photo { grid-column: 2; align-self: stretch; width: 100%; height: 100%; object-fit: cover; border-radius: 2.3%; min-height: 0; display: block; z-index: 1; }
+    .page2-photo-placeholder { grid-column: 2; min-height: 0; }
+    .page2-bio { grid-row: 2; font-size: 8pt; color: #fff; line-height: 1; white-space: pre-wrap; overflow: hidden; align-self: start; min-height: 0; margin: 0; }
+    .page2-row3 { grid-row: 3; overflow: hidden; min-height: 0; display: flex; flex-direction: column; gap: 0.18em; }
+    .page2-row3-label { font-size: 8.5pt; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.55); letter-spacing: 0.06em; line-height: 1; margin: 0 0 0.25em; }
+    .page2-row3-text { font-size: 8pt; color: #fff; line-height: 1; white-space: pre-wrap; overflow: hidden; flex: 1; margin: 0; }
+    .page2-divider { height: 1px; background: rgba(255,255,255,0.25); margin: 0.2em 0; flex-shrink: 0; }
+  `
+
+  return `<!doctype html>
+  <html lang="es">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Ficha ${htmlEscape(textValue(movie.title, `pelicula-${movie.id}`))}</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <style>${printCss}</style>
+    </head>
+    <body>
+      <section class="sheet-page">
+        <img class="sheet-bg" src="${toAbsolute(normalizeLocalAssetPath("/images/movies-pdf/Fondo 1.png"))}" alt="" />
+        <div class="sheet-layer page1-grid">
+          <div class="page1-column page1-column-left">
+            <div class="page1-top-left">
+              <div class="qr-container">
+                <div class="qr-wrap"><img class="qr" src="${data.qrDataUrl}" alt="QR" /></div>
+                <div class="qr-url">app.cinemaec.com</div>
+              </div>
+              <div class="title-box">
+                <div class="field bold title-es">${nlToBr(truncate(textValue(movie.title), 120))}</div>
+                <div class="field title-en">${nlToBr(truncate(textValue(movie.titleEn, ""), 120))}</div>
+              </div>
+            </div>
+
+            <div class="page1-main">
+              <div class="left-col${isDenseLeftCol ? " dense" : ""}">
+                <div class="project-status-vertical">${nlToBr(statusLabel(movie.projectStatus))}</div>
+                <div style="display:grid;grid-template-columns:1fr;">
+                  <div class="field small technical-field">${nlToBr(`${textValue(movie.type)}\n${textValue(movie.genre)}\n${subgenres || "Sin subgénero"}\n${movie.durationMinutes || "-"} min\n${textValue(movie.country?.name)}${coproductionCountries ? ` y ${coproductionCountries}` : ""}`)}</div>
+                </div>
+                <div class="field small contact-field">${nlToBr(buildContactBlock(movie.contacts))}</div>
+                <div class="line-h"></div>
+                <div class="field synopsis-field">${nlToBr(combinedSynopsis || "Sinopsis no disponible")}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="page1-column page1-column-right">
+            <div class="page1-top-right">
+              <div class="status-box">
+                <div class="field semibold">${nlToBr(countryStatusLabel(movie.country?.name, movie.projectStatus))}</div>
+                <div class="field semibold type-genre">${nlToBr(`${textValue(movie.type)} - ${textValue(movie.genre)}`)}</div>
+              </div>
+              <div class="logo-wrap">
+                <img class="logo" src="${toAbsolute(normalizeLocalAssetPath("/images/movies-pdf/logo-para-pdf.png"))}" alt="Logo" />
+              </div>
+            </div>
+
+            <div class="page1-main">
+              <div class="poster-box">
+                ${data.posterSrc ? `<img class="cover-image" src="${data.posterSrc}" alt="Afiche" />` : ""}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="sheet-page">
+        <img class="sheet-bg" src="${toAbsolute(normalizeLocalAssetPath("/images/movies-pdf/Fondo 2.png"))}" alt="" />
+        <div class="sheet-layer page2-grid">
+          <div class="page2-column">
+            <div class="page2-header">
+              <div class="page2-header-text">
+                <div class="page2-role-label">
+                  <span class="page2-role-label-es">Director/a</span>
+                  <span class="page2-role-label-en">Direction</span>
+                </div>
+                <div class="page2-name">${nlToBr(directorName)}</div>
+              </div>
+              ${data.directorPhotoSrc ? `<img class="page2-photo" src="${toAbsolute(data.directorPhotoSrc)}" alt="Director" />` : `<div class="page2-photo-placeholder"></div>`}
+            </div>
+            <div class="page2-bio">${nlToBr(truncate(directorBio, 220))}</div>
+            <div class="page2-row3">
+              <div class="page2-row3-label">Necesidades · Project Needs</div>
+              <div class="page2-row3-text">${nlToBr(needsText)}</div>
+            </div>
+          </div>
+          <div class="page2-column">
+            <div class="page2-header">
+              <div class="page2-header-text">
+                <div class="page2-role-label">
+                  <span class="page2-role-label-es">Productor/a</span>
+                  <span class="page2-role-label-en">Production</span>
+                </div>
+                <div class="page2-name">${nlToBr(producerName)}</div>
+              </div>
+              ${data.producerPhotoSrc ? `<img class="page2-photo" src="${toAbsolute(data.producerPhotoSrc)}" alt="Productor" />` : `<div class="page2-photo-placeholder"></div>`}
+            </div>
+            <div class="page2-bio">${nlToBr(truncate(producerBio, 220))}</div>
+            <div class="page2-row3">
+              <div class="page2-row3-label">Fondos y Premios · Funds &amp; Awards</div>
+              <div class="page2-row3-text">${nlToBr(awardsText)}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      ${autoPrint
+        ? `<script>
+        window.addEventListener("load", () => {
+          setTimeout(() => window.print(), 220)
+        })
+      </script>`
+        : ""}
+    </body>
+  </html>`
+}
+
+export function MovieInfoSheetSection({
+  movie,
+  posterElementId = "public-movie-poster",
+  directorPhotoElementId = "public-director-photo",
+  producerPhotoElementId = "public-producer-photo",
+}: Props) {
+  const [isPreparing, setIsPreparing] = useState(false)
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
+  const [isPdfCaptureMode, setIsPdfCaptureMode] = useState(false)
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const previewPagesRef = useRef<HTMLDivElement | null>(null)
+
+  const handlePreview = async () => {
+    try {
+      setIsPreparing(true)
+
+      await document.fonts.load(`500 10pt ${barlowCondensed.style.fontFamily}`)
+
+      const movieUrl = `${window.location.origin}/public/catalog/${movie.id}`
+      const qrDataUrl = await QRCode.toDataURL(movieUrl, {
+        width: 280,
+        margin: 1,
+        color: { dark: "#ffffff", light: "#0000" },
+      })
+
+      const director = findProfessionalEntry(movie.professionals, "director")
+      const producer = findProfessionalEntry(movie.professionals, "producer")
+
+      const domDirectorPhoto = getImageSrc(directorPhotoElementId, "[data-director-photo='true']")
+      const domProducerPhoto = getImageSrc(producerPhotoElementId, "[data-producer-photo='true']")
+      const resolvedDirectorPhoto =
+        absolutizeUrl(domDirectorPhoto) || (await resolveProfessionalPhotoSrc(director))
+      const resolvedProducerPhoto =
+        absolutizeUrl(domProducerPhoto) || (await resolveProfessionalPhotoSrc(producer))
+
+      const posterSrc = getImageSrc(posterElementId, "[data-poster-image='true']")
+
+      setPreviewData({
+        movieUrl,
+        qrDataUrl,
+        posterSrc,
+        directorPhotoSrc: resolvedDirectorPhoto,
+        producerPhotoSrc: resolvedProducerPhoto,
+      })
+      setIsPreviewOpen(true)
+    } catch (error) {
+      console.error("Error preparando ficha para impresión:", error)
+      alert("No se pudo preparar la ficha. Verifica que los recursos estén disponibles.")
+    } finally {
+      setIsPreparing(false)
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!previewData) return
+    if (!previewPagesRef.current) {
+      alert("No se pudo acceder a la previsualización para exportar PDF.")
+      return
+    }
+
+    const imagesToRestore: Array<{ element: HTMLImageElement; src: string }> = []
+
+    try {
+      setIsDownloadingPdf(true)
+      setIsPdfCaptureMode(true)
+
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve())
+        })
+      })
+
+      if ("fonts" in document) {
+        await document.fonts.ready
+      }
+
+      const pageElements = Array.from(previewPagesRef.current.querySelectorAll<HTMLElement>("[data-pdf-page='true']"))
+      if (!pageElements.length) {
+        throw new Error("No se encontraron páginas para exportar")
+      }
+
+      const pageImages = Array.from(previewPagesRef.current.querySelectorAll<HTMLImageElement>("[data-pdf-page='true'] img"))
+
+      for (const image of pageImages) {
+        const currentSrc = image.currentSrc || image.src
+        if (!currentSrc) continue
+
+        const isExternal = /^https?:\/\//i.test(currentSrc) && !currentSrc.startsWith(window.location.origin)
+        if (!isExternal) continue
+
+        imagesToRestore.push({ element: image, src: image.src })
+        image.crossOrigin = "anonymous"
+        image.src = toPdfProxyUrl(currentSrc)
+      }
+
+      await Promise.all(
+        imagesToRestore.map(
+          ({ element }) =>
+            new Promise<void>((resolve) => {
+              if (element.complete) {
+                resolve()
+                return
+              }
+              const onDone = () => {
+                element.removeEventListener("load", onDone)
+                element.removeEventListener("error", onDone)
+                resolve()
+              }
+              element.addEventListener("load", onDone)
+              element.addEventListener("error", onDone)
+            }),
+        ),
+      )
+
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: [150, 100],
+      })
+
+      for (let index = 0; index < pageElements.length; index += 1) {
+        const page = pageElements[index]
+        const canvas = await html2canvas(page, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: null,
+          logging: false,
+          windowWidth: page.scrollWidth,
+          windowHeight: page.scrollHeight,
+        })
+
+        if (index > 0) {
+          pdf.addPage([150, 100], "landscape")
+        }
+
+        const imageData = canvas.toDataURL("image/jpeg", 0.95)
+        pdf.addImage(imageData, "JPEG", 0, 0, 150, 100, undefined, "FAST")
+      }
+
+      const safeTitle = textValue(movie.title, `pelicula-${movie.id}`)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9-_ ]/g, "")
+        .trim()
+        .replace(/\s+/g, "-")
+        .toLowerCase()
+
+      pdf.save(`${safeTitle || `pelicula-${movie.id}`}.pdf`)
+
+    } catch (error) {
+      console.error("Error descargando ficha en PDF:", error)
+      alert("No se pudo descargar la ficha en PDF. Intenta nuevamente.")
+    } finally {
+      for (const { element, src } of imagesToRestore) {
+        element.src = src
+      }
+      setIsPdfCaptureMode(false)
+      setIsDownloadingPdf(false)
+    }
+  }
+
+  const director = findProfessionalEntry(movie.professionals, "director")
+  const producer = findProfessionalEntry(movie.professionals, "producer")
+
+  const subgenres = (movie.subgenres || [])
+    .map((item) => textValue(item?.name, ""))
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(", ")
+
+  const coproductionCountries = (movie.internationalCoproductions || [])
+    .map((item) => textValue(item?.country?.name, ""))
+    .filter(Boolean)
+    .join(", ")
+
+  const directorName = textValue(director?.professional?.fullName || director?.professional?.name)
+  const producerName = textValue(producer?.professional?.fullName || producer?.professional?.name)
+  const directorBio = getProfessionalBio(director)
+  const producerBio = getProfessionalBio(producer)
+
+  const needsEs = String(movie.projectNeed || "").trim()
+  const needsEn = String(movie.projectNeedEn || "").trim()
+  const needsText = needsEs || needsEn
+    ? [needsEs && truncate(needsEs, 200), needsEn && truncate(needsEn, 150)].filter(Boolean).join("\n\n")
+    : "No especificado"
+
+  const fundingItems = (movie.funding || [])
+    .slice(0, 5)
+    .map((f) => `• ${textValue(f.fund?.name, "Fondo")}${f.year ? ` (${f.year})` : ""}`)
+    .join("\n")
+  const awardItems = (movie.festivalNominations || [])
+    .slice(0, 5)
+    .map((n) => `• ${textValue(n.fund?.name, "Festival")}${n.year ? ` (${n.year})` : ""}${n.result ? ` — ${n.result}` : ""}`)
+    .join("\n")
+  const awardsText = [fundingItems, awardItems].filter(Boolean).join("\n") || "Sin registros"
+
+  const synopsisEs = String(movie.synopsis || "").trim()
+  const synopsisEn = String(movie.synopsisEn || "").trim()
+  const combinedSynopsis = [synopsisEs, synopsisEn].filter(Boolean).join("\n\n")
+  const isDenseLeftCol = combinedSynopsis.length > 200
+
+  return (
+    <section className={`${styles.sheetSection} ${barlowCondensed.className}`}>
+      <button type="button" onClick={handlePreview} disabled={isPreparing} className={styles.downloadButton}>
+        {isPreparing ? "Preparando previsualización..." : "Ver ficha técnica"}
+      </button>
+
+      {previewData && isPreviewOpen && (
+        <div className={styles.previewModal} role="dialog" aria-modal="true" aria-label="Previsualización de ficha">
+          <button
+            type="button"
+            className={styles.previewBackdrop}
+            aria-label="Cerrar previsualización"
+            onClick={() => setIsPreviewOpen(false)}
+          />
+
+          <div className={styles.previewWrap}>
+            <div className={styles.previewActions}>
+                <button type="button" onClick={handleDownloadPdf} className={styles.printButton} disabled={isDownloadingPdf}>
+                  {isDownloadingPdf ? "Descargando PDF..." : "Descargar ficha"}
+              </button>
+              <button type="button" onClick={() => setIsPreviewOpen(false)} className={styles.closeButton}>
+                Cerrar
+              </button>
+            </div>
+
+            <div
+              className={`${styles.previewPages} ${isPdfCaptureMode ? styles.pdfCaptureMode : ""}`}
+              ref={previewPagesRef}
+            >
+            <article className={styles.sheetPage} data-pdf-page="true">
+              <img className={styles.background} src={normalizeLocalAssetPath("/images/movies-pdf/Fondo 1.png")} alt="Plantilla página 1" />
+
+              <div className={styles.page1Grid}>
+                <div className={`${styles.page1Column} ${styles.page1ColumnLeft}`}>
+                  <div className={styles.page1TopLeft}>
+                    <div className={styles.qrContainer}>
+                      <div className={styles.qrWrap}>
+                        <img className={styles.qr} src={previewData.qrDataUrl} alt="QR" />
+                      </div>
+                      <div className={styles.qrUrl}>app.cinemaec.com</div>
+                    </div>
+
+                    <div className={styles.titleBox}>
+                      <p className={`${styles.field} ${styles.bold} ${styles.titleEs}`}>{truncate(textValue(movie.title), 120)}</p>
+                      <p className={`${styles.field} ${styles.titleEn}`}>{truncate(textValue(movie.titleEn, ""), 120)}</p>
+                    </div>
+                  </div>
+
+                  <div className={styles.page1Main}>
+                    <div className={`${styles.leftCol} ${isDenseLeftCol ? styles.leftColDense : ""}`}>
+                      <p className={styles.projectStatusVertical}>{statusLabel(movie.projectStatus)}</p>
+                      <div className={styles.infoBlock}>
+                        <p className={`${styles.field} ${styles.smallField} ${styles.technicalField}`}>
+                          {`${textValue(movie.type)}\n${textValue(movie.genre)}\n${subgenres || "Sin subgénero"}\n${movie.durationMinutes || "-"} min\n${textValue(movie.country?.name)}${coproductionCountries ? ` y ${coproductionCountries}` : ""}`}
+                        </p>
+                      </div>
+
+                      <p className={`${styles.field} ${styles.smallField} ${styles.contactField}`}>
+                        {buildContactBlock(movie.contacts)}
+                      </p>
+
+                      <div className={styles.lineH} />
+
+                      <p className={`${styles.field} ${styles.synopsisField}`}>{combinedSynopsis || "Sinopsis no disponible"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`${styles.page1Column} ${styles.page1ColumnRight}`}>
+                  <div className={styles.page1TopRight}>
+                    <div className={styles.statusBox}>
+                      <p className={`${styles.field} ${styles.semibold}`}>{countryStatusLabel(movie.country?.name, movie.projectStatus)}</p>
+                      <p className={`${styles.field} ${styles.semibold} ${styles.typeGenre}`}>{`${textValue(movie.type)} - ${textValue(movie.genre)}`}</p>
+                    </div>
+
+                    <div className={styles.logoWrap}>
+                      <img className={styles.logo} src={normalizeLocalAssetPath("/images/movies-pdf/logo-para-pdf.png")} alt="Logo" />
+                    </div>
+                  </div>
+
+                  <div className={styles.page1Main}>
+                    <div className={styles.posterBox}>
+                      {previewData.posterSrc && <img className={styles.coverImage} src={previewData.posterSrc} alt="Afiche" />}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article className={styles.sheetPage} data-pdf-page="true">
+              <img className={styles.background} src={normalizeLocalAssetPath("/images/movies-pdf/Fondo 2.png")} alt="Plantilla página 2" />
+
+              <div className={styles.page2Grid}>
+                <div className={styles.page2Column}>
+                  <div className={styles.page2Header}>
+                    <div className={styles.page2HeaderText}>
+                      <div className={styles.page2RoleLabel}>
+                        <span className={styles.page2RoleLabelEs}>Director/a</span>
+                        <span className={styles.page2RoleLabelEn}>Direction</span>
+                      </div>
+                      <p className={styles.page2Name}>{directorName}</p>
+                    </div>
+                    {previewData.directorPhotoSrc
+                      ? <img className={styles.page2Photo} src={previewData.directorPhotoSrc} alt="Director" />
+                      : <div className={styles.page2PhotoPlaceholder} />}
+                  </div>
+                  <p className={styles.page2Bio}>{truncate(directorBio, 220)}</p>
+                  <div className={styles.page2Row3}>
+                    <p className={styles.page2Row3Label}>Necesidades · Project Needs</p>
+                    <p className={styles.page2Row3Text}>{needsText}</p>
+                  </div>
+                </div>
+
+                <div className={styles.page2Column}>
+                  <div className={styles.page2Header}>
+                    <div className={styles.page2HeaderText}>
+                      <div className={styles.page2RoleLabel}>
+                        <span className={styles.page2RoleLabelEs}>Productor/a</span>
+                        <span className={styles.page2RoleLabelEn}>Production</span>
+                      </div>
+                      <p className={styles.page2Name}>{producerName}</p>
+                    </div>
+                    {previewData.producerPhotoSrc
+                      ? <img className={styles.page2Photo} src={previewData.producerPhotoSrc} alt="Productor" />
+                      : <div className={styles.page2PhotoPlaceholder} />}
+                  </div>
+                  <p className={styles.page2Bio}>{truncate(producerBio, 220)}</p>
+                  <div className={styles.page2Row3}>
+                    <p className={styles.page2Row3Label}>Fondos y Premios · Funds &amp; Awards</p>
+                    <p className={styles.page2Row3Text}>{awardsText}</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </section>
+  )
+}
