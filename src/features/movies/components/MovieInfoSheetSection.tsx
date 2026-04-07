@@ -589,12 +589,12 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
             <div class="page2-header">
               <div class="page2-header-text">
                 <div class="page2-role-label">
-                  <span class="page2-role-label-es">Director/a</span>
-                  <span class="page2-role-label-en">Direction</span>
+                  <span class="page2-role-label-es">${htmlEscape(directorRoleEs)}</span>
+                  <span class="page2-role-label-en">${htmlEscape(directorRoleEn)}</span>
                 </div>
                 <div class="page2-name">${nlToBr(directorName)}</div>
               </div>
-              ${data.directorPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.directorPhotoSrc))}" alt="Director" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
+              ${firstSlot && data.directorPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.directorPhotoSrc))}" alt="Director" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(directorBioText)}</div>
             <div class="page2-row3">
@@ -606,12 +606,12 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
             <div class="page2-header">
               <div class="page2-header-text">
                 <div class="page2-role-label">
-                  <span class="page2-role-label-es">Productor/a</span>
-                  <span class="page2-role-label-en">Production</span>
+                  <span class="page2-role-label-es">${htmlEscape(producerRoleEs)}</span>
+                  <span class="page2-role-label-en">${htmlEscape(producerRoleEn)}</span>
                 </div>
                 <div class="page2-name">${nlToBr(producerName)}</div>
               </div>
-              ${data.producerPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.producerPhotoSrc))}" alt="Productor" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
+              ${secondSlot && data.producerPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.producerPhotoSrc))}" alt="Productor" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(producerBioText)}</div>
             <div class="page2-row3">
