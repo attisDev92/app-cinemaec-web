@@ -388,12 +388,12 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .technical-field, .contact-field { overflow: visible; overflow-wrap: anywhere; word-break: break-word; }
     .synopsis-field { height: auto; overflow: visible; align-self: start; margin-left: 0; width: 100%; }
     .left-col .synopsis-field { font-size: 8pt; line-height: 1; }
-    .poster-box { justify-self: center; align-self: start; width: var(--poster-width); max-width: 100%; max-height: 100%; aspect-ratio: 2 / 3; border-radius: 0; overflow: hidden; height: auto; }
-    .cover-image { width: 100%; height: 100%; object-fit: cover; }
+    .poster-box { justify-self: center; align-self: start; position: relative; width: var(--poster-width); max-width: 100%; max-height: 100%; aspect-ratio: 2 / 3; border-radius: 0; overflow: hidden; height: auto; }
+    .cover-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
     .line-h { height: 1px; background: rgba(255,255,255,0.5); margin-left: 0; width: 100%; }
     .line-v { width: 2px; background: rgba(255,255,255,0.95); justify-self: start; }
     .fixed-label { color: #fff; font-size: 7.1pt; line-height: 1.05; font-weight: 600; white-space: pre-wrap; }
-    .cover-image { position: absolute; object-fit: cover; }
+    .cover-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
     .face-image { position: absolute; object-fit: cover; border-radius: 18px; }
     .logo { position: relative; display: block; object-fit: contain; object-position: right top; width: 100%; height: 100%; aspect-ratio: 1 / 1; }
     .qr { position: relative; display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; aspect-ratio: 1 / 1; object-fit: contain; object-position: right top; }
@@ -406,7 +406,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .page2-role-label-es { font-size: 14pt; font-weight: 700; text-transform: uppercase; color: #fff; line-height: 1; letter-spacing: 0.04em; }
     .page2-role-label-en { font-size: 8.5pt; font-weight: 400; font-style: italic; color: rgba(255,255,255,0.6); line-height: 1; }
     .page2-name { font-size: 10.5pt; font-weight: 600; color: #fff; line-height: 1.15; white-space: pre-wrap; margin: 0; }
-    .page2-photo-frame { grid-column: 2; align-self: stretch; justify-self: end; width: auto; height: 100%; aspect-ratio: 1 / 1; max-width: 100%; max-height: 100%; border-radius: 2.3%; min-height: 0; overflow: hidden; display: block; z-index: 1; }
+    .page2-photo-frame { grid-column: 2; position: relative; align-self: stretch; justify-self: end; width: auto; height: 100%; aspect-ratio: 1 / 1; max-width: 100%; max-height: 100%; border-radius: 2.3%; min-height: 0; overflow: hidden; display: block; z-index: 1; }
     .page2-photo { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
     .page2-photo-placeholder { grid-column: 2; justify-self: end; width: auto; height: 100%; aspect-ratio: 1 / 1; max-width: 100%; max-height: 100%; min-height: 0; }
     .page2-bio { grid-row: 2; font-size: 8pt; color: #fff; line-height: 1; white-space: pre-wrap; overflow: hidden; align-self: start; min-height: 0; margin: 0; }
@@ -662,13 +662,30 @@ export function MovieInfoSheetSection({
 
             const photoImageNodes = clonedDoc.querySelectorAll<HTMLImageElement>("img[class*='page2Photo']")
             for (const node of photoImageNodes) {
+              node.style.position = "static"
               node.style.width = "100%"
               node.style.height = "100%"
-              node.style.display = "block"
               node.style.objectFit = "cover"
               node.style.objectPosition = "center"
-              node.style.maxWidth = "100%"
-              node.style.minWidth = "0"
+              node.style.display = "block"
+            }
+
+            const posterFrameNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='posterBox']")
+            for (const node of posterFrameNodes) {
+              node.style.position = "relative"
+              node.style.overflow = "hidden"
+            }
+
+            const posterImageNodes = clonedDoc.querySelectorAll<HTMLImageElement>("img[class*='coverImage']")
+            for (const node of posterImageNodes) {
+              node.style.position = "absolute"
+              node.style.top = "0"
+              node.style.left = "0"
+              node.style.width = "100%"
+              node.style.height = "100%"
+              node.style.objectFit = "cover"
+              node.style.objectPosition = "center"
+              node.style.display = "block"
             }
 
             const photoPlaceholderNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='page2PhotoPlaceholder']")
