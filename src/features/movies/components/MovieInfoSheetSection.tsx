@@ -560,7 +560,7 @@ export function MovieInfoSheetSection({
       for (let index = 0; index < pageElements.length; index += 1) {
         const page = pageElements[index]
         const canvas = await html2canvas(page, {
-          scale: 4,
+          scale: 3,
           useCORS: true,
           allowTaint: false,
           backgroundColor: null,
@@ -582,27 +582,32 @@ export function MovieInfoSheetSection({
             )
 
             for (const imageNode of fitImages) {
-              const src = imageNode.currentSrc || imageNode.src
-              if (!src) continue
+              try {
+                const src = imageNode.currentSrc || imageNode.src
+                if (!src) {
+                  imageNode.style.display = "none"
+                  continue
+                }
 
-              // Keep img tag but improve rendering
-              imageNode.style.position = "absolute"
-              imageNode.style.inset = "0"
-              imageNode.style.width = "100%"
-              imageNode.style.height = "100%"
-              imageNode.style.objectFit = "cover"
-              imageNode.style.objectPosition = "center"
-              imageNode.style.display = "block"
-              
-              // Force high-quality rendering
-              imageNode.style.imageRendering = "high-quality"
-              imageNode.crossOrigin = "anonymous"
-              
-              // Ensure src is absolute
-              if (!src.startsWith("http")) {
-                imageNode.src = src.startsWith("/") 
-                  ? `${window.location.origin}${src}` 
-                  : `${window.location.origin}/${src}`
+                // Replace img with div for better html2canvas rendering
+                const div = clonedDoc.createElement("div")
+                div.className = imageNode.className
+                
+                // Copy all computed styles
+                const computedStyle = window.getComputedStyle(imageNode)
+                div.style.backgroundImage = `url("${src}")`
+                div.style.backgroundSize = "cover"
+                div.style.backgroundPosition = "center"
+                div.style.backgroundRepeat = "no-repeat"
+                div.style.position = computedStyle.position || "absolute"
+                div.style.inset = "0"
+                div.style.width = "100%"
+                div.style.height = "100%"
+                div.style.display = computedStyle.display || "block"
+                
+                imageNode.replaceWith(div)
+              } catch (err) {
+                console.warn("Image replacement failed:", err)
               }
             }
           },

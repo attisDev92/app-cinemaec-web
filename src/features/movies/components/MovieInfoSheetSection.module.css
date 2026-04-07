@@ -447,17 +447,16 @@
   position: relative;
   align-self: stretch;
   justify-self: end;
-  width: 100%;
+  width: auto;
   height: 100%;
   aspect-ratio: 1 / 1;
   max-width: 100%;
   max-height: 100%;
-  min-width: 140px;
-  min-height: 140px;
   border-radius: 2.3%;
   overflow: hidden;
   display: block;
   z-index: 1;
+  min-height: 0;
 }
 
 .page2Photo {
