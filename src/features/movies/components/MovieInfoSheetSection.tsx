@@ -38,6 +38,10 @@ type SheetMovie = {
   projectStatus?: string | null
   synopsis?: string | null
   synopsisEn?: string | null
+  logLine?: string | null
+  logLineEn?: string | null
+  logline?: string | null
+  loglineEn?: string | null
   projectNeed?: string | null
   projectNeedEn?: string | null
   country?: BasicEntity
@@ -81,14 +85,19 @@ const statusLabel = (value?: string | null): string => {
     finalizado: "Finalizado",
   }
   const key = String(value || "").toLowerCase()
-  return map[key] || "No especificado"
+  return map[key] || ""
 }
 
 const countryStatusLabel = (country?: string | null, status?: string | null): string => {
-  return `${textValue(country, "ECUADOR")} - EN ${statusLabel(status)}`
+  const countryText = textValue(country)
+  const statusText = statusLabel(status)
+  if (countryText && statusText) return `${countryText} - EN ${statusText}`
+  if (countryText) return countryText
+  if (statusText) return `EN ${statusText}`
+  return ""
 }
 
-const textValue = (value: unknown, fallback = "No disponible"): string => {
+const textValue = (value: unknown, fallback = ""): string => {
   const text = String(value || "").trim()
   return text.length ? text : fallback
 }
@@ -224,10 +233,7 @@ const getProfessionalPhotoSrc = (
 
 const getProfessionalBio = (entry?: { professional?: ProfessionalData }): string => {
   const professional = entry?.professional
-  return textValue(
-    professional?.bio || professional?.bioEn,
-    "Biofilmografia no disponible",
-  )
+  return textValue(professional?.bio || professional?.bioEn)
 }
 
 const resolveProfessionalPhotoSrc = async (
@@ -262,7 +268,7 @@ const buildContactBlock = (contacts?: Array<{ name?: string | null; role?: strin
       if (c.email) parts.push(c.email)
       return parts.join("\n")
     })
-  return lines.join("\n") || "Sin información de contacto"
+  return lines.join("\n")
 }
 
 const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true): string => {
@@ -284,12 +290,17 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
   const producerName = textValue(producer?.professional?.fullName || producer?.professional?.name)
   const directorBio = getProfessionalBio(director)
   const producerBio = getProfessionalBio(producer)
+  const durationText = movie.durationMinutes ? `${movie.durationMinutes} min` : ""
+  const locationText = [textValue(movie.country?.name), coproductionCountries].filter(Boolean).join(" y ")
+  const technicalInfoText = [textValue(movie.type), textValue(movie.genre), subgenres, durationText, locationText]
+    .filter(Boolean)
+    .join("\n")
 
   const needsEs = String(movie.projectNeed || "").trim()
   const needsEn = String(movie.projectNeedEn || "").trim()
   const needsText = needsEs || needsEn
-    ? [needsEs && truncate(needsEs, 200), needsEn && truncate(needsEn, 150)].filter(Boolean).join("\n\n")
-    : "No especificado"
+    ? [needsEs && truncate(needsEs, 350), needsEn && truncate(needsEn, 350)].filter(Boolean).join("\n\n")
+    : ""
 
   const fundingItems = (movie.funding || [])
     .slice(0, 5)
@@ -299,12 +310,16 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .slice(0, 5)
     .map((n) => `• ${textValue(n.fund?.name, "Festival")}${n.year ? ` (${n.year})` : ""}${n.result ? ` — ${n.result}` : ""}`)
     .join("\n")
-  const awardsText = [fundingItems, awardItems].filter(Boolean).join("\n") || "Sin registros"
+  const awardsText = [fundingItems, awardItems].filter(Boolean).join("\n")
 
+  const loglineEs = String(movie.logLine ?? movie.logline ?? "").trim()
+  const loglineEn = String(movie.logLineEn ?? movie.loglineEn ?? "").trim()
   const synopsisEs = String(movie.synopsis || "").trim()
   const synopsisEn = String(movie.synopsisEn || "").trim()
-  const combinedSynopsis = [synopsisEs, synopsisEn].filter(Boolean).join("\n\n")
-  const isDenseLeftCol = combinedSynopsis.length > 200
+  const sheetTextEs = truncate((loglineEs.length >= 200 ? loglineEs : synopsisEs) || loglineEs, 300)
+  const sheetTextEn = truncate((loglineEn.length >= 200 ? loglineEn : synopsisEn) || loglineEn, 300)
+  const combinedLogline = [sheetTextEs, sheetTextEn].filter(Boolean).join("\n\n")
+  const isDenseLeftCol = combinedLogline.length > 200
 
   const printCss = `
     @page { size: 150mm 100mm landscape; margin: 0; }
@@ -363,7 +378,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .qr { position: relative; display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; aspect-ratio: 1 / 1; object-fit: contain; object-position: right top; }
     .sheet-page:last-child { page-break-after: auto; }
     .page2-grid { position: absolute; inset: ${pxToY(40)} ${pxToX(60)} ${pxToY(40)} ${pxToX(60)}; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: ${pxToX(60)}; align-items: stretch; z-index: 3; }
-    .page2-column { display: grid; grid-template-rows: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1fr); row-gap: ${pxToY(20)}; min-height: 0; min-width: 0; height: 100%; }
+    .page2-column { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); row-gap: ${pxToY(14)}; min-height: 0; min-width: 0; height: 100%; }
     .page2-header { grid-row: 1; display: grid; grid-template-columns: 2fr 1.4fr; column-gap: 3%; min-height: 0; }
     .page2-header-text { grid-column: 1; display: grid; grid-template-rows: auto auto; row-gap: 0.25em; align-content: end; min-height: 0; }
     .page2-role-label { display: flex; flex-direction: column; gap: 0.15em; }
@@ -410,11 +425,11 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
               <div class="left-col${isDenseLeftCol ? " dense" : ""}">
                 <div class="project-status-vertical">${nlToBr(statusLabel(movie.projectStatus))}</div>
                 <div style="display:grid;grid-template-columns:1fr;">
-                  <div class="field small technical-field">${nlToBr(`${textValue(movie.type)}\n${textValue(movie.genre)}\n${subgenres || "Sin subgénero"}\n${movie.durationMinutes || "-"} min\n${textValue(movie.country?.name)}${coproductionCountries ? ` y ${coproductionCountries}` : ""}`)}</div>
+                  <div class="field small technical-field">${nlToBr(technicalInfoText)}</div>
                 </div>
                 <div class="field small contact-field">${nlToBr(buildContactBlock(movie.contacts))}</div>
                 <div class="line-h"></div>
-                <div class="field synopsis-field">${nlToBr(combinedSynopsis || "Sinopsis no disponible")}</div>
+                <div class="field synopsis-field">${nlToBr(combinedLogline)}</div>
               </div>
             </div>
           </div>
@@ -453,7 +468,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
               </div>
               ${data.directorPhotoSrc ? `<img class="page2-photo" src="${toAbsolute(data.directorPhotoSrc)}" alt="Director" />` : `<div class="page2-photo-placeholder"></div>`}
             </div>
-            <div class="page2-bio">${nlToBr(truncate(directorBio, 220))}</div>
+            <div class="page2-bio">${nlToBr(directorBio)}</div>
             <div class="page2-row3">
               <div class="page2-row3-label">Necesidades · Project Needs</div>
               <div class="page2-row3-text">${nlToBr(needsText)}</div>
@@ -470,7 +485,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
               </div>
               ${data.producerPhotoSrc ? `<img class="page2-photo" src="${toAbsolute(data.producerPhotoSrc)}" alt="Productor" />` : `<div class="page2-photo-placeholder"></div>`}
             </div>
-            <div class="page2-bio">${nlToBr(truncate(producerBio, 220))}</div>
+            <div class="page2-bio">${nlToBr(producerBio)}</div>
             <div class="page2-row3">
               <div class="page2-row3-label">Fondos y Premios · Funds &amp; Awards</div>
               <div class="page2-row3-text">${nlToBr(awardsText)}</div>
@@ -498,7 +513,6 @@ export function MovieInfoSheetSection({
 }: Props) {
   const [isPreparing, setIsPreparing] = useState(false)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
-  const [isPdfCaptureMode, setIsPdfCaptureMode] = useState(false)
   const [previewData, setPreviewData] = useState<PreviewData | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const previewPagesRef = useRef<HTMLDivElement | null>(null)
@@ -555,7 +569,6 @@ export function MovieInfoSheetSection({
 
     try {
       setIsDownloadingPdf(true)
-      setIsPdfCaptureMode(true)
 
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => {
@@ -614,21 +627,41 @@ export function MovieInfoSheetSection({
       for (let index = 0; index < pageElements.length; index += 1) {
         const page = pageElements[index]
         const canvas = await html2canvas(page, {
-          scale: 2,
+          scale: Math.max(2, window.devicePixelRatio || 1),
           useCORS: true,
           allowTaint: false,
           backgroundColor: null,
           logging: false,
-          windowWidth: page.scrollWidth,
-          windowHeight: page.scrollHeight,
+          onclone: (clonedDoc) => {
+            const statusNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='projectStatusVertical']")
+            for (const node of statusNodes) {
+              node.style.writingMode = "horizontal-tb"
+              node.style.textOrientation = "mixed"
+              node.style.transformOrigin = "left bottom"
+              node.style.transform = "rotate(-90deg)"
+              node.style.left = "calc(-14px - var(--left-content-gap))"
+              node.style.bottom = "0"
+              node.style.letterSpacing = "0.03em"
+            }
+
+            const photoNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='page2Photo']")
+            for (const node of photoNodes) {
+              node.style.objectFit = "cover"
+              node.style.objectPosition = "center"
+              node.style.width = "auto"
+              node.style.height = "100%"
+              node.style.aspectRatio = "1 / 1"
+              node.style.maxWidth = "100%"
+            }
+          },
         })
 
         if (index > 0) {
           pdf.addPage([150, 100], "landscape")
         }
 
-        const imageData = canvas.toDataURL("image/jpeg", 0.95)
-        pdf.addImage(imageData, "JPEG", 0, 0, 150, 100, undefined, "FAST")
+        const imageData = canvas.toDataURL("image/png")
+        pdf.addImage(imageData, "PNG", 0, 0, 150, 100, undefined, "FAST")
       }
 
       const safeTitle = textValue(movie.title, `pelicula-${movie.id}`)
@@ -648,7 +681,6 @@ export function MovieInfoSheetSection({
       for (const { element, src } of imagesToRestore) {
         element.src = src
       }
-      setIsPdfCaptureMode(false)
       setIsDownloadingPdf(false)
     }
   }
@@ -671,12 +703,17 @@ export function MovieInfoSheetSection({
   const producerName = textValue(producer?.professional?.fullName || producer?.professional?.name)
   const directorBio = getProfessionalBio(director)
   const producerBio = getProfessionalBio(producer)
+  const durationText = movie.durationMinutes ? `${movie.durationMinutes} min` : ""
+  const locationText = [textValue(movie.country?.name), coproductionCountries].filter(Boolean).join(" y ")
+  const technicalInfoText = [textValue(movie.type), textValue(movie.genre), subgenres, durationText, locationText]
+    .filter(Boolean)
+    .join("\n")
 
   const needsEs = String(movie.projectNeed || "").trim()
   const needsEn = String(movie.projectNeedEn || "").trim()
   const needsText = needsEs || needsEn
-    ? [needsEs && truncate(needsEs, 200), needsEn && truncate(needsEn, 150)].filter(Boolean).join("\n\n")
-    : "No especificado"
+    ? [needsEs && truncate(needsEs, 350), needsEn && truncate(needsEn, 350)].filter(Boolean).join("\n\n")
+    : ""
 
   const fundingItems = (movie.funding || [])
     .slice(0, 5)
@@ -686,12 +723,16 @@ export function MovieInfoSheetSection({
     .slice(0, 5)
     .map((n) => `• ${textValue(n.fund?.name, "Festival")}${n.year ? ` (${n.year})` : ""}${n.result ? ` — ${n.result}` : ""}`)
     .join("\n")
-  const awardsText = [fundingItems, awardItems].filter(Boolean).join("\n") || "Sin registros"
+  const awardsText = [fundingItems, awardItems].filter(Boolean).join("\n")
 
+  const loglineEs = String(movie.logLine ?? movie.logline ?? "").trim()
+  const loglineEn = String(movie.logLineEn ?? movie.loglineEn ?? "").trim()
   const synopsisEs = String(movie.synopsis || "").trim()
   const synopsisEn = String(movie.synopsisEn || "").trim()
-  const combinedSynopsis = [synopsisEs, synopsisEn].filter(Boolean).join("\n\n")
-  const isDenseLeftCol = combinedSynopsis.length > 200
+  const sheetTextEs = truncate((loglineEs.length >= 200 ? loglineEs : synopsisEs) || loglineEs, 300)
+  const sheetTextEn = truncate((loglineEn.length >= 200 ? loglineEn : synopsisEn) || loglineEn, 300)
+  const combinedLogline = [sheetTextEs, sheetTextEn].filter(Boolean).join("\n\n")
+  const isDenseLeftCol = combinedLogline.length > 200
 
   return (
     <section className={`${styles.sheetSection} ${barlowCondensed.className}`}>
@@ -719,7 +760,7 @@ export function MovieInfoSheetSection({
             </div>
 
             <div
-              className={`${styles.previewPages} ${isPdfCaptureMode ? styles.pdfCaptureMode : ""}`}
+              className={styles.previewPages}
               ref={previewPagesRef}
             >
             <article className={styles.sheetPage} data-pdf-page="true">
@@ -746,7 +787,7 @@ export function MovieInfoSheetSection({
                       <p className={styles.projectStatusVertical}>{statusLabel(movie.projectStatus)}</p>
                       <div className={styles.infoBlock}>
                         <p className={`${styles.field} ${styles.smallField} ${styles.technicalField}`}>
-                          {`${textValue(movie.type)}\n${textValue(movie.genre)}\n${subgenres || "Sin subgénero"}\n${movie.durationMinutes || "-"} min\n${textValue(movie.country?.name)}${coproductionCountries ? ` y ${coproductionCountries}` : ""}`}
+                          {technicalInfoText}
                         </p>
                       </div>
 
@@ -756,7 +797,7 @@ export function MovieInfoSheetSection({
 
                       <div className={styles.lineH} />
 
-                      <p className={`${styles.field} ${styles.synopsisField}`}>{combinedSynopsis || "Sinopsis no disponible"}</p>
+                      <p className={`${styles.field} ${styles.synopsisField}`}>{combinedLogline}</p>
                     </div>
                   </div>
                 </div>
@@ -799,7 +840,7 @@ export function MovieInfoSheetSection({
                       ? <img className={styles.page2Photo} src={previewData.directorPhotoSrc} alt="Director" />
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
-                  <p className={styles.page2Bio}>{truncate(directorBio, 220)}</p>
+                  <p className={styles.page2Bio}>{directorBio}</p>
                   <div className={styles.page2Row3}>
                     <p className={styles.page2Row3Label}>Necesidades · Project Needs</p>
                     <p className={styles.page2Row3Text}>{needsText}</p>
@@ -819,7 +860,7 @@ export function MovieInfoSheetSection({
                       ? <img className={styles.page2Photo} src={previewData.producerPhotoSrc} alt="Productor" />
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
-                  <p className={styles.page2Bio}>{truncate(producerBio, 220)}</p>
+                  <p className={styles.page2Bio}>{producerBio}</p>
                   <div className={styles.page2Row3}>
                     <p className={styles.page2Row3Label}>Fondos y Premios · Funds &amp; Awards</p>
                     <p className={styles.page2Row3Text}>{awardsText}</p>

@@ -384,8 +384,8 @@
 
 .page2Column {
   display: grid;
-  grid-template-rows: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1fr);
-  row-gap: 2%;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
+  row-gap: 1.2%;
   min-height: 0;
   min-width: 0;
   height: 100%;
@@ -444,9 +444,13 @@
 .page2Photo {
   grid-column: 2;
   align-self: stretch;
-  width: 100%;
+  justify-self: end;
+  width: auto;
   height: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
   object-fit: cover;
+  object-position: center;
   border-radius: 2.3%;
   min-height: 0;
   display: block;
