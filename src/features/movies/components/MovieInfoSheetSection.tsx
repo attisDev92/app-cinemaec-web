@@ -161,39 +161,65 @@ const toAbsoluteDomUri = (value?: string | null): string | null => {
   }
 }
 
-const toHighResImageUri = (value?: string | null): string | null => {
-  const absolute = toAbsoluteDomUri(value)
-  if (!absolute) return null
-
-  try {
-    const url = new URL(absolute, window.location.origin)
-
-    // Next.js optimizer URL: /_next/image?url=...&w=...&q=...
-    if (url.pathname === "/_next/image") {
-      const currentWidth = Number(url.searchParams.get("w") || "0")
-      if (!Number.isFinite(currentWidth) || currentWidth < 1200) {
-        url.searchParams.set("w", "1200")
+const fetchAsDataUrl = (src: string): Promise<string | null> =>
+  new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas")
+        c.width = img.naturalWidth
+        c.height = img.naturalHeight
+        const ctx = c.getContext("2d")
+        if (!ctx) { resolve(null); return }
+        ctx.drawImage(img, 0, 0)
+        resolve(c.toDataURL("image/png", 1.0))
+      } catch {
+        resolve(null)
       }
-
-      const currentQuality = Number(url.searchParams.get("q") || "0")
-      if (!Number.isFinite(currentQuality) || currentQuality < 95) {
-        url.searchParams.set("q", "100")
-      }
-
-      return url.toString()
     }
+    img.onerror = () => resolve(null)
+    img.src = src
+  })
 
-    return absolute
-  } catch {
-    return absolute
+const pickBestImageUri = (image: HTMLImageElement): string | null => {
+  const srcset = String(image.getAttribute("srcset") || "").trim()
+  if (!srcset) {
+    return toAbsoluteDomUri(image.currentSrc || image.src)
   }
+
+  const candidates = srcset
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const [url = "", descriptor = ""] = item.split(/\s+/)
+      const widthMatch = descriptor.match(/^(\d+)w$/i)
+      const densityMatch = descriptor.match(/^(\d+(?:\.\d+)?)x$/i)
+      return {
+        url,
+        width: widthMatch ? Number(widthMatch[1]) : 0,
+        density: densityMatch ? Number(densityMatch[1]) : 0,
+      }
+    })
+    .filter((entry) => entry.url)
+
+  if (!candidates.length) {
+    return toAbsoluteDomUri(image.currentSrc || image.src)
+  }
+
+  candidates.sort((a, b) => {
+    if (b.width !== a.width) return b.width - a.width
+    return b.density - a.density
+  })
+  return toAbsoluteDomUri(candidates[0].url || image.currentSrc || image.src)
 }
 
 const waitForRenderedImageUri = async (elementId?: string): Promise<string | null> => {
   const image = getImageElementFromDom(elementId)
   if (!image) return null
 
-  const getUri = () => toHighResImageUri(image.currentSrc || image.src)
+  const getUri = () => pickBestImageUri(image)
   if (image.complete) return getUri()
 
   await new Promise<void>((resolve) => {
@@ -579,16 +605,34 @@ export function MovieInfoSheetSection({
         throw new Error("No se encontraron páginas para exportar")
       }
 
+      // Pre-fetch all sheet images as crisp data URLs so html2canvas gets true high-res pixels
+      const allSheetImages = Array.from(
+        previewPagesRef.current.querySelectorAll<HTMLImageElement>(
+          "img[class*='coverImage'], img[class*='page2Photo']",
+        ),
+      )
+      const dataUrlBySrc = new Map<string, string>()
+      for (const imgEl of allSheetImages) {
+        const src = pickBestImageUri(imgEl)
+        if (src && !dataUrlBySrc.has(src)) {
+          const dataUrl = await fetchAsDataUrl(src)
+          if (dataUrl) dataUrlBySrc.set(src, dataUrl)
+        }
+      }
+
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "mm",
         format: [150, 100],
+        compress: false,
       })
+
+      const pdfScale = Math.max(4, Math.ceil(window.devicePixelRatio || 1) * 2)
 
       for (let index = 0; index < pageElements.length; index += 1) {
         const page = pageElements[index]
         const canvas = await html2canvas(page, {
-          scale: 3,
+          scale: pdfScale,
           useCORS: true,
           allowTaint: false,
           backgroundColor: null,
@@ -611,28 +655,26 @@ export function MovieInfoSheetSection({
 
             for (const imageNode of fitImages) {
               try {
-                const src = toHighResImageUri(imageNode.currentSrc || imageNode.src)
-                if (!src) {
+                const src = pickBestImageUri(imageNode)
+                // Prefer pre-fetched data URL for maximum quality
+                const finalSrc = (src ? dataUrlBySrc.get(src) : null) || src
+                if (!finalSrc) {
                   imageNode.style.display = "none"
                   continue
                 }
 
-                // Replace img with div for better html2canvas rendering
                 const div = clonedDoc.createElement("div")
                 div.className = imageNode.className
-                
-                // Copy all computed styles
-                const computedStyle = window.getComputedStyle(imageNode)
-                div.style.backgroundImage = `url("${src}")`
+                div.style.backgroundImage = `url("${finalSrc}")`
                 div.style.backgroundSize = "cover"
                 div.style.backgroundPosition = "center"
                 div.style.backgroundRepeat = "no-repeat"
-                div.style.position = computedStyle.position || "absolute"
+                div.style.position = "absolute"
                 div.style.inset = "0"
                 div.style.width = "100%"
                 div.style.height = "100%"
-                div.style.display = computedStyle.display || "block"
-                
+                div.style.display = "block"
+
                 imageNode.replaceWith(div)
               } catch (err) {
                 console.warn("Image replacement failed:", err)
@@ -645,8 +687,8 @@ export function MovieInfoSheetSection({
           pdf.addPage([150, 100], "landscape")
         }
 
-        const imageData = canvas.toDataURL("image/png")
-        pdf.addImage(imageData, "PNG", 0, 0, 150, 100, undefined, "SLOW")
+        const imageData = canvas.toDataURL("image/png", 1.0)
+        pdf.addImage(imageData, "PNG", 0, 0, 150, 100, undefined, "NONE")
       }
 
       const safeTitle = textValue(movie.title, `pelicula-${movie.id}`)

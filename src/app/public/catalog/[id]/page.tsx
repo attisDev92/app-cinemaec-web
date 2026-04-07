@@ -915,8 +915,9 @@ export default function PublicCatalogMoviePage() {
                               id={photoElementId}
                               src={photoUrl}
                               alt={name}
-                              width={300}
-                              height={400}
+                              width={1200}
+                              height={1600}
+                              quality={100}
                               className={styles.professionalPhoto}
                             />
                           ) : (
