@@ -63,6 +63,14 @@ export default function AdminPage() {
       permission: PermissionEnum.ADMIN_USERS,
     },
     {
+      id: "professionals",
+      title: "Revisión de Profesionales",
+      description: "Revisar profesionales registrados en la plataforma",
+      icon: "🧑‍💼",
+      route: "/admin/professionals",
+      permission: PermissionEnum.ADMIN_PROFESSIONALS,
+    },
+    {
       id: "roles",
       title: "Roles y Permisos",
       description: "Asignar roles y permisos (En desarrollo)",

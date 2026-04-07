@@ -14,6 +14,7 @@ export default function RolesAdminPage() {
   const { users, loading, error } = useUserList()
   const [searchId, setSearchId] = useState("")
   const [searchError, setSearchError] = useState("")
+  const adminUsers = users.filter((u) => u.role === UserRole.ADMIN)
 
   // Verificar permisos
   const hasAssignRolesPermission =
@@ -109,18 +110,18 @@ export default function RolesAdminPage() {
           <>
             <div className={styles.statsBar}>
               <div className={styles.stat}>
-                <span className={styles.statValue}>{users.length}</span>
-                <span className={styles.statLabel}>Total Usuarios</span>
+                <span className={styles.statValue}>{adminUsers.length}</span>
+                <span className={styles.statLabel}>Admins en Tabla</span>
               </div>
               <div className={styles.stat}>
                 <span className={styles.statValue}>
-                  {users.filter((u) => u.role === UserRole.ADMIN).length}
+                  {adminUsers.length}
                 </span>
                 <span className={styles.statLabel}>Administradores</span>
               </div>
               <div className={styles.stat}>
                 <span className={styles.statValue}>
-                  {users.filter((u) => u.isActive).length}
+                  {adminUsers.filter((u) => u.isActive).length}
                 </span>
                 <span className={styles.statLabel}>Activos</span>
               </div>
@@ -141,14 +142,14 @@ export default function RolesAdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.length === 0 ? (
+                  {adminUsers.length === 0 ? (
                     <tr>
                       <td colSpan={8} className={styles.emptyState}>
-                        No hay usuarios registrados
+                        No hay administradores registrados
                       </td>
                     </tr>
                   ) : (
-                    users.map((userItem) => (
+                    adminUsers.map((userItem) => (
                       <tr key={userItem.id}>
                         <td className={styles.idCell}>{userItem.id}</td>
                         <td className={styles.email}>{userItem.email}</td>

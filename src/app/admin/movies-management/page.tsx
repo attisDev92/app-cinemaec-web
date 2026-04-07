@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth, usePermissions } from "@/features/auth/hooks"
 import {
@@ -12,6 +12,15 @@ import { Navbar } from "@/shared/components/Navbar"
 import { PermissionEnum, UserRole } from "@/shared/types"
 import { Movie } from "@/features/movies/types"
 import styles from "./page.module.css"
+
+const normalizeText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+
+const includesNormalized = (source: string, query: string) =>
+  normalizeText(source).includes(normalizeText(query))
 
 export default function MoviesAdminPage() {
   const { user, isAuthenticated, isLoading } = useAuth()
@@ -25,6 +34,10 @@ export default function MoviesAdminPage() {
   const [claimObservations, setClaimObservations] = useState<Record<number, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<"list" | "claims" | "create">("list")
+  const [filters, setFilters] = useState({
+    title: "",
+    type: "",
+  })
 
   const hasMoviesAdminPermission = hasPermission(PermissionEnum.ADMIN_MOVIES)
 
@@ -101,6 +114,26 @@ export default function MoviesAdminPage() {
     }
   }
 
+  const movieTypeOptions = useMemo(
+    () =>
+      [...new Set(movies.map((movie) => movie.type).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "es"),
+      ),
+    [movies],
+  )
+
+  const filteredMovies = useMemo(() => {
+    const { title, type } = filters
+
+    return movies.filter((movie) => {
+      const matchesTitle =
+        !title.trim() || includesNormalized(movie.title || "", title.trim())
+      const matchesType = !type || movie.type === type
+
+      return matchesTitle && matchesType
+    })
+  }, [filters, movies])
+
   if (isLoading) {
     return (
       <div className={styles.page}>
@@ -162,12 +195,63 @@ export default function MoviesAdminPage() {
 
         <div className={styles.tabContent}>
           {activeTab === "list" && (
-            <MovieManagementTable
-              movies={movies}
-              isLoading={moviesLoading}
-              onRefresh={loadMovies}
-              onDelete={handleDeleteMovie}
-            />
+            <>
+              <div className={styles.filtersBar}>
+                <div className={styles.filterField}>
+                  <label htmlFor="movie-title-filter">Nombre</label>
+                  <input
+                    id="movie-title-filter"
+                    type="text"
+                    placeholder="Buscar por nombre de película"
+                    value={filters.title}
+                    onChange={(event) =>
+                      setFilters((prev) => ({ ...prev, title: event.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className={styles.filterField}>
+                  <label htmlFor="movie-type-filter">Tipo</label>
+                  <select
+                    id="movie-type-filter"
+                    value={filters.type}
+                    onChange={(event) =>
+                      setFilters((prev) => ({ ...prev, type: event.target.value }))
+                    }
+                  >
+                    <option value="">Todos</option>
+                    {movieTypeOptions.map((typeOption) => (
+                      <option key={typeOption} value={typeOption}>
+                        {typeOption}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  className={styles.clearFiltersBtn}
+                  onClick={() =>
+                    setFilters({ title: "", type: "" })
+                  }
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+
+              {!moviesLoading && (
+                <div className={styles.filterResults}>
+                  Mostrando {filteredMovies.length} de {movies.length} película(s)
+                </div>
+              )}
+
+              <MovieManagementTable
+                movies={filteredMovies}
+                isLoading={moviesLoading}
+                onRefresh={loadMovies}
+                onDelete={handleDeleteMovie}
+              />
+            </>
           )}
 
           {activeTab === "claims" && (

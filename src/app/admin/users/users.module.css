@@ -49,6 +49,64 @@
   margin-bottom: var(--spacing-lg);
 }
 
+.filtersBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  align-items: end;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterField label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filterField input,
+.filterField select {
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: 0 var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+}
+
+.filterField input:focus,
+.filterField select:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.clearFiltersBtn {
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  padding: 0 var(--spacing-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.clearFiltersBtn:hover {
+  background: var(--color-background-tertiary);
+  color: var(--color-text-primary);
+}
+
 .stat {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -563,6 +621,10 @@
 @media (max-width: 768px) {
   .header {
     flex-direction: column;
+  }
+
+  .filtersBar {
+    grid-template-columns: 1fr;
   }
 
   .tableWrapper {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Navbar } from "@/shared/components/Navbar"
 import { useAuth } from "@/features/auth/hooks/useAuth"
@@ -12,9 +12,30 @@ export default function AdminUsersPage() {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
   const { users, loading, error } = useUserList()
+  const [filters, setFilters] = useState({
+    email: "",
+    cedula: "",
+    status: "all",
+  })
 
   // Filtrar solo usuarios regulares (no admins)
   const regularUsers = users.filter((u) => u.role === UserRole.USER)
+
+  const filteredUsers = useMemo(() => {
+    const emailQuery = filters.email.trim().toLowerCase()
+    const cedulaQuery = filters.cedula.trim()
+
+    return regularUsers.filter((u) => {
+      const matchesEmail =
+        !emailQuery || u.email.toLowerCase().includes(emailQuery)
+      const matchesCedula = !cedulaQuery || u.cedula.includes(cedulaQuery)
+      const matchesStatus =
+        filters.status === "all" ||
+        (filters.status === "active" ? u.isActive : !u.isActive)
+
+      return matchesEmail && matchesCedula && matchesStatus
+    })
+  }, [regularUsers, filters])
 
   // Verificar permisos
   const hasAdminUsersPermission =
@@ -93,21 +114,74 @@ export default function AdminUsersPage() {
           <>
             <div className={styles.statsBar}>
               <div className={styles.stat}>
-                <span className={styles.statValue}>{regularUsers.length}</span>
+                <span className={styles.statValue}>{filteredUsers.length}</span>
                 <span className={styles.statLabel}>Total Usuarios</span>
               </div>
               <div className={styles.stat}>
                 <span className={styles.statValue}>
-                  {regularUsers.filter((u) => u.isActive).length}
+                  {filteredUsers.filter((u) => u.isActive).length}
                 </span>
                 <span className={styles.statLabel}>Activos</span>
               </div>
               <div className={styles.stat}>
                 <span className={styles.statValue}>
-                  {regularUsers.filter((u) => u.profileId).length}
+                  {filteredUsers.filter((u) => u.profileId).length}
                 </span>
                 <span className={styles.statLabel}>Con Perfil</span>
               </div>
+            </div>
+
+            <div className={styles.filtersBar}>
+              <div className={styles.filterField}>
+                <label htmlFor="filter-email">Email</label>
+                <input
+                  id="filter-email"
+                  type="text"
+                  placeholder="Buscar por email"
+                  value={filters.email}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, email: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className={styles.filterField}>
+                <label htmlFor="filter-cedula">Cédula</label>
+                <input
+                  id="filter-cedula"
+                  type="text"
+                  placeholder="Buscar por cédula"
+                  value={filters.cedula}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, cedula: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className={styles.filterField}>
+                <label htmlFor="filter-status">Estado</label>
+                <select
+                  id="filter-status"
+                  value={filters.status}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, status: e.target.value }))
+                  }
+                >
+                  <option value="all">Todos</option>
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                className={styles.clearFiltersBtn}
+                onClick={() =>
+                  setFilters({ email: "", cedula: "", status: "all" })
+                }
+              >
+                Limpiar filtros
+              </button>
             </div>
 
             <div className={styles.tableWrapper}>
@@ -124,14 +198,14 @@ export default function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {regularUsers.length === 0 ? (
+                  {filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan={7} className={styles.emptyState}>
-                        No hay usuarios registrados
+                        No hay usuarios que coincidan con los filtros
                       </td>
                     </tr>
                   ) : (
-                    regularUsers.map((userItem) => (
+                    filteredUsers.map((userItem) => (
                       <tr key={userItem.id}>
                         <td className={styles.idCell}>{userItem.id}</td>
                         <td className={styles.email}>{userItem.email}</td>

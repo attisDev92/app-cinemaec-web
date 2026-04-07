@@ -73,6 +73,68 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.filtersBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: end;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterField label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+
+.filterField input,
+.filterField select {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d8d8d8;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+  background: #fff;
+}
+
+.filterField input:focus,
+.filterField select:focus {
+  outline: none;
+  border-color: #0277bd;
+  box-shadow: 0 0 0 3px rgba(2, 119, 189, 0.12);
+}
+
+.clearFiltersBtn {
+  height: 40px;
+  border: 1px solid #d8d8d8;
+  background: #fafafa;
+  color: #555;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 16px;
+  transition: all 0.2s ease;
+}
+
+.clearFiltersBtn:hover {
+  background: #f0f0f0;
+  border-color: #c7c7c7;
+}
+
+.filterResults {
+  margin-bottom: 8px;
+  color: #666;
+  font-size: 13px;
+}
+
 .createForm {
   padding: 40px 20px;
   text-align: center;
@@ -305,5 +367,9 @@
 
   .tabContent {
     padding: 15px;
+  }
+
+  .filtersBar {
+    grid-template-columns: 1fr;
   }
 }

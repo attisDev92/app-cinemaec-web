@@ -97,6 +97,13 @@ export function Navbar() {
       permission: PermissionEnum.ADMIN_USERS,
     },
     {
+      id: "professionals",
+      label: "Revisión de Profesionales",
+      icon: "🧑‍💼",
+      route: "/admin/professionals",
+      permission: PermissionEnum.ADMIN_PROFESSIONALS,
+    },
+    {
       id: "roles",
       label: "Roles y Permisos",
       icon: "🔐",
