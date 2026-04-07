@@ -643,21 +643,18 @@ export function MovieInfoSheetSection({
 
             const photoFrameNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='page2PhotoFrame']")
             for (const node of photoFrameNodes) {
-              const side = Math.min(node.clientWidth || 0, node.clientHeight || 0)
-              if (side > 0) {
-                node.style.width = `${side}px`
-                node.style.height = `${side}px`
-              } else {
-                node.style.width = "auto"
-                node.style.height = "100%"
-              }
-              node.style.aspectRatio = ""
+              node.style.width = "auto"
+              node.style.height = "100%"
+              node.style.aspectRatio = "1 / 1"
               node.style.maxWidth = "100%"
               node.style.maxHeight = "100%"
               node.style.minWidth = "0"
+              node.style.minHeight = "0"
+              node.style.position = "relative"
               node.style.display = "block"
               node.style.overflow = "hidden"
               node.style.justifySelf = "end"
+              node.style.alignSelf = "stretch"
             }
 
             const photoImageNodes = clonedDoc.querySelectorAll<HTMLImageElement>("img[class*='page2Photo']")
@@ -690,18 +687,13 @@ export function MovieInfoSheetSection({
 
             const photoPlaceholderNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='page2PhotoPlaceholder']")
             for (const node of photoPlaceholderNodes) {
-              const side = Math.min(node.clientWidth || 0, node.clientHeight || 0)
-              if (side > 0) {
-                node.style.width = `${side}px`
-                node.style.height = `${side}px`
-              } else {
-                node.style.width = "auto"
-                node.style.height = "100%"
-              }
-              node.style.aspectRatio = ""
+              node.style.width = "auto"
+              node.style.height = "100%"
+              node.style.aspectRatio = "1 / 1"
               node.style.maxWidth = "100%"
               node.style.maxHeight = "100%"
               node.style.minWidth = "0"
+              node.style.minHeight = "0"
               node.style.display = "block"
               node.style.justifySelf = "end"
             }
