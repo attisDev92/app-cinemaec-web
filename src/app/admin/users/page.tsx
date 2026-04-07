@@ -15,27 +15,38 @@ export default function AdminUsersPage() {
   const [filters, setFilters] = useState({
     email: "",
     cedula: "",
+    role: "all",
     status: "all",
   })
 
-  // Filtrar solo usuarios regulares (no admins)
-  const regularUsers = users.filter((u) => u.role === UserRole.USER)
+  const roleClassMap: Record<UserRole, string> = {
+    [UserRole.ADMIN]: styles.admin,
+    [UserRole.EDITOR]: styles.editor,
+    [UserRole.USER]: styles.user,
+  }
+
+  const roleLabelMap: Record<UserRole, string> = {
+    [UserRole.ADMIN]: "ADMIN",
+    [UserRole.EDITOR]: "EDITOR",
+    [UserRole.USER]: "USER",
+  }
 
   const filteredUsers = useMemo(() => {
     const emailQuery = filters.email.trim().toLowerCase()
     const cedulaQuery = filters.cedula.trim()
 
-    return regularUsers.filter((u) => {
+    return users.filter((u) => {
       const matchesEmail =
         !emailQuery || u.email.toLowerCase().includes(emailQuery)
       const matchesCedula = !cedulaQuery || u.cedula.includes(cedulaQuery)
+      const matchesRole = filters.role === "all" || u.role === filters.role
       const matchesStatus =
         filters.status === "all" ||
         (filters.status === "active" ? u.isActive : !u.isActive)
 
-      return matchesEmail && matchesCedula && matchesStatus
+      return matchesEmail && matchesCedula && matchesRole && matchesStatus
     })
-  }, [regularUsers, filters])
+  }, [users, filters])
 
   // Verificar permisos
   const hasAdminUsersPermission =
@@ -159,6 +170,22 @@ export default function AdminUsersPage() {
               </div>
 
               <div className={styles.filterField}>
+                <label htmlFor="filter-role">Rol</label>
+                <select
+                  id="filter-role"
+                  value={filters.role}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, role: e.target.value }))
+                  }
+                >
+                  <option value="all">Todos</option>
+                  <option value={UserRole.ADMIN}>Admin</option>
+                  <option value={UserRole.EDITOR}>Editor</option>
+                  <option value={UserRole.USER}>User</option>
+                </select>
+              </div>
+
+              <div className={styles.filterField}>
                 <label htmlFor="filter-status">Estado</label>
                 <select
                   id="filter-status"
@@ -177,7 +204,7 @@ export default function AdminUsersPage() {
                 type="button"
                 className={styles.clearFiltersBtn}
                 onClick={() =>
-                  setFilters({ email: "", cedula: "", status: "all" })
+                  setFilters({ email: "", cedula: "", role: "all", status: "all" })
                 }
               >
                 Limpiar filtros
@@ -191,6 +218,7 @@ export default function AdminUsersPage() {
                     <th>ID</th>
                     <th>Email</th>
                     <th>Cédula</th>
+                    <th>Rol</th>
                     <th>Perfil</th>
                     <th>Estado</th>
                     <th>Último Acceso</th>
@@ -200,7 +228,7 @@ export default function AdminUsersPage() {
                 <tbody>
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className={styles.emptyState}>
+                      <td colSpan={8} className={styles.emptyState}>
                         No hay usuarios que coincidan con los filtros
                       </td>
                     </tr>
@@ -210,6 +238,11 @@ export default function AdminUsersPage() {
                         <td className={styles.idCell}>{userItem.id}</td>
                         <td className={styles.email}>{userItem.email}</td>
                         <td>{userItem.cedula}</td>
+                        <td>
+                          <span className={`${styles.badge} ${roleClassMap[userItem.role]}`}>
+                            {roleLabelMap[userItem.role]}
+                          </span>
+                        </td>
                         <td>
                           {userItem.profileId ? (
                             <span className={styles.statusBadge}>
@@ -268,8 +301,8 @@ export default function AdminUsersPage() {
               <h3>ℹ️ Información</h3>
               <ul>
                 <li>
-                  Esta sección muestra solo usuarios con rol{" "}
-                  <strong>USER</strong>
+                  Esta sección muestra todos los usuarios registrados, incluidos
+                  <strong> ADMIN</strong>, <strong>EDITOR</strong> y <strong>USER</strong>
                 </li>
                 <li>
                   Puedes ver el perfil completo de cada usuario haciendo clic en
