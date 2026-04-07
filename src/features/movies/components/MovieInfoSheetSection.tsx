@@ -731,6 +731,33 @@ export function MovieInfoSheetSection({
         }
       }
 
+      const overlayPosterOnPdf = (pageElement: HTMLElement) => {
+        const pageRect = pageElement.getBoundingClientRect()
+        if (!pageRect.width || !pageRect.height) return
+
+        const posterFrame = pageElement.querySelector<HTMLElement>("[class*='posterBox']")
+        if (!posterFrame) return
+
+        const posterImage = posterFrame.querySelector<HTMLImageElement>("img[class*='coverImage']")
+        if (!posterImage) return
+
+        const src = pickBestImageUri(posterImage)
+        if (!src) return
+
+        const highResDataUrl = dataUrlBySrc.get(src)
+        if (!highResDataUrl) return
+
+        const rect = posterFrame.getBoundingClientRect()
+        if (!rect.width || !rect.height) return
+
+        const x = ((rect.left - pageRect.left) / pageRect.width) * 150
+        const y = ((rect.top - pageRect.top) / pageRect.height) * 100
+        const w = (rect.width / pageRect.width) * 150
+        const h = (rect.height / pageRect.height) * 100
+
+        pdf.addImage(highResDataUrl, "PNG", x, y, w, h, undefined, "NONE")
+      }
+
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "mm",
@@ -800,6 +827,9 @@ export function MovieInfoSheetSection({
 
         const imageData = canvas.toDataURL("image/png", 1.0)
         pdf.addImage(imageData, "PNG", 0, 0, 150, 100, undefined, "NONE")
+
+        // Re-draw poster directly from high-res source to avoid raster blur.
+        overlayPosterOnPdf(page)
       }
 
       const safeTitle = textValue(movie.title, `pelicula-${movie.id}`)
