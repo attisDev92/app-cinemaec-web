@@ -19,6 +19,7 @@ type BasicEntity = {
 }
 
 type ProfessionalData = {
+  id?: number
   fullName?: string | null
   name?: string | null
   bio?: string | null
@@ -264,6 +265,110 @@ const findProfessionalEntry = (
   return (entries || []).find((entry) => isRoleMatch(entry, role))
 }
 
+type SheetProfessionalEntry = NonNullable<SheetMovie["professionals"]>[number]
+
+type ProfessionalSlot = {
+  entry: SheetProfessionalEntry
+  roleEs: string
+  roleEn: string
+}
+
+const professionalIdentityKey = (entry?: SheetProfessionalEntry): string => {
+  const professional = entry?.professional
+  if (professional?.id) return `id:${professional.id}`
+
+  const normalizedName = normalizeForMatch(professional?.fullName || professional?.name)
+  if (normalizedName) return `name:${normalizedName}`
+
+  return `role:${roleIdOf(entry) || "unknown"}`
+}
+
+const buildDirectorProducerSlots = (entries?: SheetMovie["professionals"]): ProfessionalSlot[] => {
+  const relevant = (entries || []).filter((entry) => isRoleMatch(entry, "director") || isRoleMatch(entry, "producer"))
+  if (!relevant.length) return []
+
+  type Group = {
+    key: string
+    entry: SheetProfessionalEntry
+    hasDirector: boolean
+    hasProducer: boolean
+    firstIndex: number
+  }
+
+  const grouped = new Map<string, Group>()
+
+  for (let index = 0; index < relevant.length; index += 1) {
+    const entry = relevant[index]
+    const key = professionalIdentityKey(entry)
+    const hasDirector = isRoleMatch(entry, "director")
+    const hasProducer = isRoleMatch(entry, "producer")
+    const existing = grouped.get(key)
+
+    if (!existing) {
+      grouped.set(key, {
+        key,
+        entry,
+        hasDirector,
+        hasProducer,
+        firstIndex: index,
+      })
+      continue
+    }
+
+    existing.hasDirector = existing.hasDirector || hasDirector
+    existing.hasProducer = existing.hasProducer || hasProducer
+
+    if (!existing.entry?.professional?.profilePhotoAsset?.url && entry?.professional?.profilePhotoAsset?.url) {
+      existing.entry = entry
+    }
+  }
+
+  const groups = Array.from(grouped.values()).sort((a, b) => a.firstIndex - b.firstIndex)
+  const selected: Group[] = []
+
+  const mergedRolePerson = groups.find((group) => group.hasDirector && group.hasProducer)
+  if (mergedRolePerson) {
+    selected.push(mergedRolePerson)
+    const second = groups.find((group) => group.key !== mergedRolePerson.key)
+    if (second) selected.push(second)
+  } else {
+    const firstDirector = groups.find((group) => group.hasDirector)
+    if (firstDirector) selected.push(firstDirector)
+
+    const firstProducer = groups.find((group) => group.hasProducer && group.key !== selected[0]?.key)
+    if (firstProducer) selected.push(firstProducer)
+
+    if (selected.length < 2) {
+      const fallback = groups.find((group) => group.key !== selected[0]?.key)
+      if (fallback) selected.push(fallback)
+    }
+  }
+
+  return selected.slice(0, 2).map((group) => {
+    if (group.hasDirector && group.hasProducer) {
+      return {
+        entry: group.entry,
+        roleEs: "Dirección / Producción",
+        roleEn: "Direction / Production",
+      }
+    }
+
+    if (group.hasDirector) {
+      return {
+        entry: group.entry,
+        roleEs: "Director/a",
+        roleEn: "Direction",
+      }
+    }
+
+    return {
+      entry: group.entry,
+      roleEs: "Productor/a",
+      roleEn: "Production",
+    }
+  })
+}
+
 const getProfessionalBio = (entry?: { professional?: ProfessionalData }): string => {
   const professional = entry?.professional
   return textValue(professional?.bio || professional?.bioEn)
@@ -286,8 +391,9 @@ const buildContactBlock = (contacts?: Array<{ name?: string | null; role?: strin
 }
 
 const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true): string => {
-  const director = findProfessionalEntry(movie.professionals, "director")
-  const producer = findProfessionalEntry(movie.professionals, "producer")
+  const professionalSlots = buildDirectorProducerSlots(movie.professionals)
+  const firstSlot = professionalSlots[0]
+  const secondSlot = professionalSlots[1]
 
   const subgenres = (movie.subgenres || [])
     .map((item) => textValue(item?.name, ""))
@@ -300,10 +406,15 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .filter(Boolean)
     .join(", ")
 
-  const directorName = textValue(director?.professional?.fullName || director?.professional?.name)
-  const producerName = textValue(producer?.professional?.fullName || producer?.professional?.name)
-  const directorBio = getProfessionalBio(director)
-  const producerBio = getProfessionalBio(producer)
+  const directorRoleEs = firstSlot?.roleEs || "Director/a"
+  const directorRoleEn = firstSlot?.roleEn || "Direction"
+  const producerRoleEs = secondSlot?.roleEs || "Productor/a"
+  const producerRoleEn = secondSlot?.roleEn || "Production"
+
+  const directorName = textValue(firstSlot?.entry?.professional?.fullName || firstSlot?.entry?.professional?.name)
+  const producerName = textValue(secondSlot?.entry?.professional?.fullName || secondSlot?.entry?.professional?.name)
+  const directorBio = getProfessionalBio(firstSlot?.entry)
+  const producerBio = getProfessionalBio(secondSlot?.entry)
   const directorBioText = truncate(directorBio, 400)
   const producerBioText = truncate(producerBio, 400)
   const durationText = movie.durationMinutes ? `${movie.durationMinutes} min` : ""
@@ -709,8 +820,9 @@ export function MovieInfoSheetSection({
     }
   }
 
-  const director = findProfessionalEntry(movie.professionals, "director")
-  const producer = findProfessionalEntry(movie.professionals, "producer")
+  const professionalSlots = buildDirectorProducerSlots(movie.professionals)
+  const firstSlot = professionalSlots[0]
+  const secondSlot = professionalSlots[1]
 
   const subgenres = (movie.subgenres || [])
     .map((item) => textValue(item?.name, ""))
@@ -723,10 +835,15 @@ export function MovieInfoSheetSection({
     .filter(Boolean)
     .join(", ")
 
-  const directorName = textValue(director?.professional?.fullName || director?.professional?.name)
-  const producerName = textValue(producer?.professional?.fullName || producer?.professional?.name)
-  const directorBio = getProfessionalBio(director)
-  const producerBio = getProfessionalBio(producer)
+  const directorRoleEs = firstSlot?.roleEs || "Director/a"
+  const directorRoleEn = firstSlot?.roleEn || "Direction"
+  const producerRoleEs = secondSlot?.roleEs || "Productor/a"
+  const producerRoleEn = secondSlot?.roleEn || "Production"
+
+  const directorName = textValue(firstSlot?.entry?.professional?.fullName || firstSlot?.entry?.professional?.name)
+  const producerName = textValue(secondSlot?.entry?.professional?.fullName || secondSlot?.entry?.professional?.name)
+  const directorBio = getProfessionalBio(firstSlot?.entry)
+  const producerBio = getProfessionalBio(secondSlot?.entry)
   const directorBioText = truncate(directorBio, 400)
   const producerBioText = truncate(producerBio, 400)
   const durationText = movie.durationMinutes ? `${movie.durationMinutes} min` : ""
@@ -857,12 +974,12 @@ export function MovieInfoSheetSection({
                   <div className={styles.page2Header}>
                     <div className={styles.page2HeaderText}>
                       <div className={styles.page2RoleLabel}>
-                        <span className={styles.page2RoleLabelEs}>Director/a</span>
-                        <span className={styles.page2RoleLabelEn}>Direction</span>
+                        <span className={styles.page2RoleLabelEs}>{directorRoleEs}</span>
+                        <span className={styles.page2RoleLabelEn}>{directorRoleEn}</span>
                       </div>
                       <p className={styles.page2Name}>{directorName}</p>
                     </div>
-                    {previewData.directorPhotoSrc
+                    {firstSlot && previewData.directorPhotoSrc
                       ? <div className={styles.page2PhotoFrame}><img className={styles.page2Photo} src={previewData.directorPhotoSrc} alt="Director" crossOrigin="anonymous" /></div>
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
@@ -877,12 +994,12 @@ export function MovieInfoSheetSection({
                   <div className={styles.page2Header}>
                     <div className={styles.page2HeaderText}>
                       <div className={styles.page2RoleLabel}>
-                        <span className={styles.page2RoleLabelEs}>Productor/a</span>
-                        <span className={styles.page2RoleLabelEn}>Production</span>
+                        <span className={styles.page2RoleLabelEs}>{producerRoleEs}</span>
+                        <span className={styles.page2RoleLabelEn}>{producerRoleEn}</span>
                       </div>
                       <p className={styles.page2Name}>{producerName}</p>
                     </div>
-                    {previewData.producerPhotoSrc
+                    {secondSlot && previewData.producerPhotoSrc
                       ? <div className={styles.page2PhotoFrame}><img className={styles.page2Photo} src={previewData.producerPhotoSrc} alt="Productor" crossOrigin="anonymous" /></div>
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
