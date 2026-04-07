@@ -178,6 +178,42 @@ const toRenderableImageUrl = (value?: string | null): string | null => {
   return absolutizeUrl(normalizeExternalImageUrl(value))
 }
 
+const getImageElementFromDom = (elementId?: string): HTMLImageElement | null => {
+  if (!elementId) return null
+  const node = document.getElementById(elementId)
+  return node instanceof HTMLImageElement ? node : null
+}
+
+const toAbsoluteDomUri = (value?: string | null): string | null => {
+  const raw = String(value || "").trim()
+  if (!raw) return null
+  try {
+    return new URL(raw, window.location.origin).toString()
+  } catch {
+    return raw
+  }
+}
+
+const waitForRenderedImageUri = async (elementId?: string): Promise<string | null> => {
+  const image = getImageElementFromDom(elementId)
+  if (!image) return null
+
+  const getUri = () => toAbsoluteDomUri(image.currentSrc || image.src)
+  if (image.complete) return getUri()
+
+  await new Promise<void>((resolve) => {
+    const onDone = () => {
+      image.removeEventListener("load", onDone)
+      image.removeEventListener("error", onDone)
+      resolve()
+    }
+    image.addEventListener("load", onDone)
+    image.addEventListener("error", onDone)
+  })
+
+  return getUri()
+}
+
 const roleIdOf = (entry?: { cinematicRoleId?: number; cinematicRole?: BasicEntity }): number | undefined => {
   return entry?.cinematicRoleId ?? entry?.cinematicRole?.id
 }
@@ -456,8 +492,8 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
             </div>
             <div class="page2-bio">${nlToBr(directorBioText)}</div>
             <div class="page2-row3">
-              <div class="page2-row3-label">Necesidades · Project Needs</div>
-              <div class="page2-row3-text">${nlToBr(needsText)}</div>
+              <div class="page2-row3-label">Fondos y Premios · Funds &amp; Awards</div>
+              <div class="page2-row3-text">${nlToBr(awardsText)}</div>
             </div>
           </div>
           <div class="page2-column">
@@ -473,8 +509,8 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
             </div>
             <div class="page2-bio">${nlToBr(producerBioText)}</div>
             <div class="page2-row3">
-              <div class="page2-row3-label">Fondos y Premios · Funds &amp; Awards</div>
-              <div class="page2-row3-text">${nlToBr(awardsText)}</div>
+              <div class="page2-row3-label">Necesidades · Project Needs</div>
+              <div class="page2-row3-text">${nlToBr(needsText)}</div>
             </div>
           </div>
         </div>
@@ -495,6 +531,9 @@ void buildPrintHtml
 
 export function MovieInfoSheetSection({
   movie,
+  posterElementId = "public-movie-poster",
+  directorPhotoElementId = "public-director-photo",
+  producerPhotoElementId = "public-producer-photo",
 }: Props) {
   const [isPreparing, setIsPreparing] = useState(false)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
@@ -523,9 +562,17 @@ export function MovieInfoSheetSection({
       const director = findProfessionalEntry(movie.professionals, "director")
       const producer = findProfessionalEntry(movie.professionals, "producer")
 
-      const resolvedDirectorPhoto = toRenderableImageUrl(await resolveProfessionalPhotoSrc(director))
-      const resolvedProducerPhoto = toRenderableImageUrl(await resolveProfessionalPhotoSrc(producer))
-      const posterSrc = toRenderableImageUrl(movie.posterAsset?.url)
+      const [domPosterSrc, domDirectorPhoto, domProducerPhoto] = await Promise.all([
+        waitForRenderedImageUri(posterElementId),
+        waitForRenderedImageUri(directorPhotoElementId),
+        waitForRenderedImageUri(producerPhotoElementId),
+      ])
+
+      const resolvedDirectorPhoto =
+        toRenderableImageUrl(domDirectorPhoto) || toRenderableImageUrl(await resolveProfessionalPhotoSrc(director))
+      const resolvedProducerPhoto =
+        toRenderableImageUrl(domProducerPhoto) || toRenderableImageUrl(await resolveProfessionalPhotoSrc(producer))
+      const posterSrc = toRenderableImageUrl(domPosterSrc) || toRenderableImageUrl(movie.posterAsset?.url)
 
       setPreviewData({
         movieUrl,
@@ -817,8 +864,8 @@ export function MovieInfoSheetSection({
                   </div>
                   <p className={styles.page2Bio}>{directorBioText}</p>
                   <div className={styles.page2Row3}>
-                    <p className={styles.page2Row3Label}>Necesidades · Project Needs</p>
-                    <p className={styles.page2Row3Text}>{needsText}</p>
+                    <p className={styles.page2Row3Label}>Fondos y Premios · Funds &amp; Awards</p>
+                    <p className={styles.page2Row3Text}>{awardsText}</p>
                   </div>
                 </div>
 
@@ -837,8 +884,8 @@ export function MovieInfoSheetSection({
                   </div>
                   <p className={styles.page2Bio}>{producerBioText}</p>
                   <div className={styles.page2Row3}>
-                    <p className={styles.page2Row3Label}>Fondos y Premios · Funds &amp; Awards</p>
-                    <p className={styles.page2Row3Text}>{awardsText}</p>
+                    <p className={styles.page2Row3Label}>Necesidades · Project Needs</p>
+                    <p className={styles.page2Row3Text}>{needsText}</p>
                   </div>
                 </div>
               </div>

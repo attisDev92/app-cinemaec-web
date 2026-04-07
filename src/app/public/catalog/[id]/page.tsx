@@ -736,7 +736,6 @@ export default function PublicCatalogMoviePage() {
 
                 {directorPhotoUrl && (
                   <img
-                    id={directorImageId}
                     data-director-photo="true"
                     src={directorPhotoUrl}
                     alt=""
@@ -747,7 +746,6 @@ export default function PublicCatalogMoviePage() {
 
                 {producerPhotoUrl && (
                   <img
-                    id={producerImageId}
                     data-producer-photo="true"
                     src={producerPhotoUrl}
                     alt=""
@@ -909,10 +907,12 @@ export default function PublicCatalogMoviePage() {
                       const photoUrl = professionalPhotoUrl(entry)
                       const bio = professionalBio(entry)
                       const name = textValue(entry?.professional?.fullName || entry?.professional?.name)
+                      const photoElementId = roleEn === "Direction" ? directorImageId : producerImageId
                       return (
                         <div key={roleEs} className={styles.professionalCard}>
                           {photoUrl ? (
                             <Image
+                              id={photoElementId}
                               src={photoUrl}
                               alt={name}
                               width={100}
