@@ -205,6 +205,39 @@
   color: var(--color-error-dark);
 }
 
+.toggleBtn {
+  border: none;
+  border-radius: var(--border-radius-full);
+  padding: 6px 12px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.toggleBtn.active {
+  background: #ecfdf3;
+  color: var(--color-success-dark);
+}
+
+.toggleBtn.active:hover:not(:disabled) {
+  background: #d1fadf;
+}
+
+.toggleBtn.inactive {
+  background: #fef3f2;
+  color: var(--color-error-dark);
+}
+
+.toggleBtn.inactive:hover:not(:disabled) {
+  background: #fee4e2;
+}
+
+.toggleBtn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
 .emptyState {
   text-align: center;
   padding: var(--spacing-xl) !important;
@@ -226,6 +259,12 @@
   background: #fef3f2;
   color: var(--color-error-dark);
   border: 1px solid var(--color-error);
+}
+
+.alert[data-type="success"] {
+  background: #ecfdf3;
+  color: var(--color-success-dark);
+  border: 1px solid #6ce9a6;
 }
 
 .alertIcon {

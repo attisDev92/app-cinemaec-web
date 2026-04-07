@@ -1,11 +1,65 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { assetService } from "@/features/assets/services/asset.service"
+import { professionalsService, type Professional } from "@/features/professionals"
 import { Navbar } from "@/shared/components/Navbar"
 import { PublicMenu } from "@/shared/components/PublicMenu"
 import styles from "./page.module.css"
 
+const getInitials = (fullName: string) =>
+  fullName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("") || "PR"
+
+const getPhotoUrl = (professional: Professional) => {
+  const photo = professional.profilePhotoAsset
+
+  if (!photo?.url) {
+    return null
+  }
+
+  return assetService.getPublicAssetUrl({
+    id: photo.id ?? 0,
+    url: photo.url,
+  } as Parameters<typeof assetService.getPublicAssetUrl>[0])
+}
+
 export default function ProfessionalsPage() {
+  const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadProfessionals = async () => {
+      try {
+        setIsLoading(true)
+        const data = await professionalsService.getPublic()
+        setProfessionals(data)
+        setError(null)
+      } catch (err) {
+        setError(
+          (err as { message?: string })?.message ||
+            "No se pudo cargar el directorio de profesionales",
+        )
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadProfessionals()
+  }, [])
+
+  const publicProfessionals = useMemo(
+    () => professionals.filter((professional) => professional.isPublic),
+    [professionals],
+  )
+
   return (
     <div className={styles.container}>
       <Navbar />
@@ -22,25 +76,62 @@ export default function ProfessionalsPage() {
           </p>
         </div>
 
-        <div className={styles.developmentBox}>
-          <div className={styles.iconBox}>👥</div>
-          <h2 className={styles.developmentTitle}>Página en Desarrollo</h2>
-          <p className={styles.developmentText}>
-            Esta sección estará disponible muy pronto. Aquí podrás conocer a los
-            profesionales del sector audiovisual ecuatoriano y conectar con ellos.
-          </p>
-          <div className={styles.features}>
-            <h3 className={styles.featuresTitle}>Próximas Funcionalidades:</h3>
-            <ul className={styles.featuresList}>
-              <li>Directorio de profesionales del audiovisual</li>
-              <li>Filtrar por especialidad y experiencia</li>
-              <li>Búsqueda por nombre y área de trabajo</li>
-              <li>Perfiles detallados con portafolio</li>
-              <li>Información de contacto</li>
-              <li>Sistema de recomendaciones</li>
-            </ul>
+        {error && (
+          <div className={styles.alert} data-type="error">
+            <span>{error}</span>
           </div>
-        </div>
+        )}
+
+        {isLoading ? (
+          <div className={styles.loadingBox}>
+            <div className={styles.spinner}></div>
+            <p>Cargando profesionales públicos...</p>
+          </div>
+        ) : publicProfessionals.length === 0 ? (
+          <div className={styles.emptyBox}>
+            <div className={styles.iconBox}>👥</div>
+            <h2 className={styles.emptyTitle}>Aún no hay perfiles públicos</h2>
+            <p className={styles.emptyText}>
+              Cuando existan perfiles marcados como públicos, aparecerán aquí.
+            </p>
+          </div>
+        ) : (
+          <section className={styles.grid}>
+            {publicProfessionals.map((professional) => {
+              const photoUrl = getPhotoUrl(professional)
+
+              return (
+                <Link
+                  key={professional.id}
+                  href={`/public/professionals/${professional.id}`}
+                  className={styles.cardLink}
+                >
+                  <article className={styles.card}>
+                    <div className={styles.cardMedia}>
+                      {photoUrl ? (
+                        <img
+                          src={photoUrl}
+                          alt={professional.name}
+                          className={styles.cardImage}
+                        />
+                      ) : (
+                        <div className={styles.placeholder}>
+                          <span>{getInitials(professional.name)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={styles.cardBody}>
+                      <h3 className={styles.cardTitle}>{professional.name}</h3>
+
+                      {professional.bio && <p className={styles.bio}>{professional.bio}</p>}
+                    </div>
+                  </article>
+                </Link>
+              )
+            })}
+          </section>
+        )}
 
         <div className={styles.infoBox}>
           <h3 className={styles.infoTitle}>Información</h3>

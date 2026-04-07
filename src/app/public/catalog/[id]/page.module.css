@@ -770,6 +770,30 @@
   margin: 0.15rem 0 0;
 }
 
+.professionalNameLink {
+  text-decoration: none;
+  display: block;
+  transition: color 0.2s ease;
+}
+
+.professionalNameLink:hover {
+  color: #ff8c7a;
+}
+
+.creditedNameLink {
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.creditedNameLink strong {
+  color: #fff;
+  transition: color 0.2s ease;
+}
+
+.creditedNameLink:hover strong {
+  color: #ff8c7a;
+}
+
 .professionalBio {
   margin: 0.35rem 0 0;
   font-size: 0.85rem;

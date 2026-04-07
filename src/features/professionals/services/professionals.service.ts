@@ -9,6 +9,14 @@ import type {
 } from "../types"
 
 export const professionalsService = {
+  async getPublic(): Promise<Professional[]> {
+    return apiClient.get<Professional[]>("/public/professionals", false)
+  },
+
+  async getPublicById(id: number): Promise<Professional> {
+    return apiClient.get<Professional>(`/public/professionals/${id}`, false)
+  },
+
   async getAll(): Promise<Professional[]> {
     return apiClient.get<Professional[]>("/professionals")
   },

@@ -921,7 +921,13 @@ export default function PublicCatalogMoviePage() {
                           <div className={styles.professionalInfo}>
                             <p className={styles.professionalRole}>{roleEs}</p>
                             <p className={styles.professionalRoleEn}>{roleEn}</p>
-                            <p className={styles.professionalName}>{name}</p>
+                            {entry?.professional?.id ? (
+                              <Link href={`/public/professionals/${entry.professional.id}`} className={`${styles.professionalName} ${styles.professionalNameLink}`}>
+                                {name}
+                              </Link>
+                            ) : (
+                              <p className={styles.professionalName}>{name}</p>
+                            )}
                             {bio && <p className={styles.professionalBio}>{bio}</p>}
                           </div>
                         </div>
@@ -1025,7 +1031,13 @@ export default function PublicCatalogMoviePage() {
 
                     return (
                       <li key={`${entry.professional?.id || "p"}-${index}`} className={styles.creditedItem}>
-                        <strong>{textValue(entry.professional?.fullName || entry.professional?.name)}</strong>
+                        {entry.professional?.id ? (
+                          <Link href={`/public/professionals/${entry.professional.id}`} className={styles.creditedNameLink}>
+                            <strong>{textValue(entry.professional?.fullName || entry.professional?.name)}</strong>
+                          </Link>
+                        ) : (
+                          <strong>{textValue(entry.professional?.fullName || entry.professional?.name)}</strong>
+                        )}
                         <span>
                           {roleName}
                           {roleNameEn !== EMPTY_LABEL && roleNameEn !== roleName && (

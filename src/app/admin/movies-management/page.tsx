@@ -37,6 +37,8 @@ export default function MoviesAdminPage() {
   const [filters, setFilters] = useState({
     title: "",
     type: "",
+    active: "all",
+    published: "all",
   })
 
   const hasMoviesAdminPermission = hasPermission(PermissionEnum.ADMIN_MOVIES)
@@ -123,14 +125,22 @@ export default function MoviesAdminPage() {
   )
 
   const filteredMovies = useMemo(() => {
-    const { title, type } = filters
+    const { title, type, active, published } = filters
 
     return movies.filter((movie) => {
       const matchesTitle =
         !title.trim() || includesNormalized(movie.title || "", title.trim())
       const matchesType = !type || movie.type === type
+      const matchesActive =
+        active === "all" ||
+        (active === "active" ? movie.isActive : !movie.isActive)
+      const matchesPublished =
+        published === "all" ||
+        (published === "published"
+          ? movie.isPublishedToCatalog
+          : !movie.isPublishedToCatalog)
 
-      return matchesTitle && matchesType
+      return matchesTitle && matchesType && matchesActive && matchesPublished
     })
   }, [filters, movies])
 
@@ -228,11 +238,46 @@ export default function MoviesAdminPage() {
                   </select>
                 </div>
 
+                <div className={styles.filterField}>
+                  <label htmlFor="movie-active-filter">Activo</label>
+                  <select
+                    id="movie-active-filter"
+                    value={filters.active}
+                    onChange={(event) =>
+                      setFilters((prev) => ({ ...prev, active: event.target.value }))
+                    }
+                  >
+                    <option value="all">Todos</option>
+                    <option value="active">Activos</option>
+                    <option value="inactive">Inactivos</option>
+                  </select>
+                </div>
+
+                <div className={styles.filterField}>
+                  <label htmlFor="movie-published-filter">Publicado en catálogo</label>
+                  <select
+                    id="movie-published-filter"
+                    value={filters.published}
+                    onChange={(event) =>
+                      setFilters((prev) => ({ ...prev, published: event.target.value }))
+                    }
+                  >
+                    <option value="all">Todos</option>
+                    <option value="published">Publicados</option>
+                    <option value="unpublished">No publicados</option>
+                  </select>
+                </div>
+
                 <button
                   type="button"
                   className={styles.clearFiltersBtn}
                   onClick={() =>
-                    setFilters({ title: "", type: "" })
+                    setFilters({
+                      title: "",
+                      type: "",
+                      active: "all",
+                      published: "all",
+                    })
                   }
                 >
                   Limpiar filtros

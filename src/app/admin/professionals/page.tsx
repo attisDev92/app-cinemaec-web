@@ -16,6 +16,8 @@ export default function AdminProfessionalsPage() {
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set())
   const [filters, setFilters] = useState({
     name: "",
     dniNumber: "",
@@ -72,6 +74,40 @@ export default function AdminProfessionalsPage() {
     })
   }, [professionals, filters])
 
+  const handleTogglePublic = async (professional: Professional) => {
+    setError(null)
+    setMessage(null)
+    setTogglingIds((prev) => new Set(prev).add(professional.id))
+
+    try {
+      const updatedProfessional = await professionalsService.update(professional.id, {
+        isPublic: !professional.isPublic,
+      })
+
+      setProfessionals((prev) =>
+        prev.map((item) =>
+          item.id === updatedProfessional.id ? updatedProfessional : item,
+        ),
+      )
+      setMessage(
+        updatedProfessional.isPublic
+          ? `El perfil de ${updatedProfessional.name} ahora es publico.`
+          : `El perfil de ${updatedProfessional.name} ahora es privado.`,
+      )
+    } catch (err) {
+      setError(
+        (err as { message?: string })?.message ||
+          "No se pudo actualizar la visibilidad del perfil",
+      )
+    } finally {
+      setTogglingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(professional.id)
+        return next
+      })
+    }
+  }
+
   if (authLoading) {
     return (
       <>
@@ -123,6 +159,13 @@ export default function AdminProfessionalsPage() {
           </div>
         )}
 
+        {message && (
+          <div className={styles.alert} data-type="success">
+            <span className={styles.alertIcon}>✓</span>
+            <span>{message}</span>
+          </div>
+        )}
+
         {isLoading ? (
           <div className={styles.loading}>
             <div className={styles.spinner}></div>
@@ -146,6 +189,12 @@ export default function AdminProfessionalsPage() {
                   {filteredProfessionals.filter((item) => !item.ownerId).length}
                 </span>
                 <span className={styles.statLabel}>Sin reclamar</span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statValue}>
+                  {filteredProfessionals.filter((item) => item.isPublic).length}
+                </span>
+                <span className={styles.statLabel}>Públicos</span>
               </div>
             </div>
 
@@ -215,12 +264,13 @@ export default function AdminProfessionalsPage() {
                     <th>Cédula</th>
                     <th>Contacto</th>
                     <th>Vinculado</th>
+                    <th>Perfil público</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredProfessionals.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className={styles.emptyState}>
+                      <td colSpan={6} className={styles.emptyState}>
                         No hay profesionales que coincidan con los filtros
                       </td>
                     </tr>
@@ -246,6 +296,22 @@ export default function AdminProfessionalsPage() {
                                 ? `Sí (Usuario #${professional.ownerId})`
                                 : "No"}
                             </span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePublic(professional)}
+                              disabled={togglingIds.has(professional.id)}
+                              className={`${styles.toggleBtn} ${
+                                professional.isPublic ? styles.active : styles.inactive
+                              }`}
+                            >
+                              {togglingIds.has(professional.id)
+                                ? "..."
+                                : professional.isPublic
+                                  ? "Público"
+                                  : "Privado"}
+                            </button>
                           </td>
                         </tr>
                       ))
