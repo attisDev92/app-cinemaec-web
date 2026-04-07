@@ -379,8 +379,9 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .page2-role-label-es { font-size: 14pt; font-weight: 700; text-transform: uppercase; color: #fff; line-height: 1; letter-spacing: 0.04em; }
     .page2-role-label-en { font-size: 8.5pt; font-weight: 400; font-style: italic; color: rgba(255,255,255,0.6); line-height: 1; }
     .page2-name { font-size: 10.5pt; font-weight: 600; color: #fff; line-height: 1.15; white-space: pre-wrap; margin: 0; }
-    .page2-photo { grid-column: 2; align-self: stretch; width: 100%; height: 100%; border-radius: 2.3%; min-height: 0; display: block; z-index: 1; background-size: cover; background-position: center; background-repeat: no-repeat; }
-    .page2-photo-placeholder { grid-column: 2; min-height: 0; }
+    .page2-photo-frame { grid-column: 2; align-self: stretch; justify-self: end; width: auto; height: 100%; aspect-ratio: 1 / 1; max-width: 100%; max-height: 100%; border-radius: 2.3%; min-height: 0; overflow: hidden; display: block; z-index: 1; }
+    .page2-photo { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+    .page2-photo-placeholder { grid-column: 2; justify-self: end; width: auto; height: 100%; aspect-ratio: 1 / 1; max-width: 100%; max-height: 100%; min-height: 0; }
     .page2-bio { grid-row: 2; font-size: 8pt; color: #fff; line-height: 1; white-space: pre-wrap; overflow: hidden; align-self: start; min-height: 0; margin: 0; }
     .page2-row3 { grid-row: 3; overflow: hidden; min-height: 0; display: flex; flex-direction: column; gap: 0.18em; }
     .page2-row3-label { font-size: 8.5pt; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.55); letter-spacing: 0.06em; line-height: 1; margin: 0 0 0.25em; }
@@ -460,7 +461,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(directorName)}</div>
               </div>
-              ${data.directorPhotoSrc ? `<div class="page2-photo" style="background-image:url('${htmlEscape(toAbsolute(data.directorPhotoSrc))}')"></div>` : `<div class="page2-photo-placeholder"></div>`}
+              ${data.directorPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.directorPhotoSrc))}" alt="Director" /></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(directorBioText)}</div>
             <div class="page2-row3">
@@ -477,7 +478,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(producerName)}</div>
               </div>
-              ${data.producerPhotoSrc ? `<div class="page2-photo" style="background-image:url('${htmlEscape(toAbsolute(data.producerPhotoSrc))}')"></div>` : `<div class="page2-photo-placeholder"></div>`}
+              ${data.producerPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.producerPhotoSrc))}" alt="Productor" /></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(producerBioText)}</div>
             <div class="page2-row3">
@@ -602,16 +603,40 @@ export function MovieInfoSheetSection({
               node.style.letterSpacing = "0.03em"
             }
 
-            const photoNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='page2Photo']")
-            for (const node of photoNodes) {
-              node.style.backgroundSize = "cover"
-              node.style.backgroundPosition = "center"
-              node.style.backgroundRepeat = "no-repeat"
-              node.style.width = "100%"
+            const photoFrameNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='page2PhotoFrame']")
+            for (const node of photoFrameNodes) {
+              node.style.width = "auto"
               node.style.height = "100%"
+              node.style.aspectRatio = "1 / 1"
               node.style.maxWidth = "100%"
+              node.style.maxHeight = "100%"
               node.style.minWidth = "0"
               node.style.display = "block"
+              node.style.overflow = "hidden"
+              node.style.justifySelf = "end"
+            }
+
+            const photoImageNodes = clonedDoc.querySelectorAll<HTMLImageElement>("img[class*='page2Photo']")
+            for (const node of photoImageNodes) {
+              node.style.width = "100%"
+              node.style.height = "100%"
+              node.style.display = "block"
+              node.style.objectFit = "cover"
+              node.style.objectPosition = "center"
+              node.style.maxWidth = "100%"
+              node.style.minWidth = "0"
+            }
+
+            const photoPlaceholderNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='page2PhotoPlaceholder']")
+            for (const node of photoPlaceholderNodes) {
+              node.style.width = "auto"
+              node.style.height = "100%"
+              node.style.aspectRatio = "1 / 1"
+              node.style.maxWidth = "100%"
+              node.style.maxHeight = "100%"
+              node.style.minWidth = "0"
+              node.style.display = "block"
+              node.style.justifySelf = "end"
             }
           },
         })
@@ -796,7 +821,7 @@ export function MovieInfoSheetSection({
                       <p className={styles.page2Name}>{directorName}</p>
                     </div>
                     {previewData.directorPhotoSrc
-                      ? <div className={styles.page2Photo} style={{ backgroundImage: `url(${previewData.directorPhotoSrc})` }} aria-label="Director" role="img" />
+                      ? <div className={styles.page2PhotoFrame}><img className={styles.page2Photo} src={previewData.directorPhotoSrc} alt="Director" /></div>
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
                   <p className={styles.page2Bio}>{directorBioText}</p>
@@ -816,7 +841,7 @@ export function MovieInfoSheetSection({
                       <p className={styles.page2Name}>{producerName}</p>
                     </div>
                     {previewData.producerPhotoSrc
-                      ? <div className={styles.page2Photo} style={{ backgroundImage: `url(${previewData.producerPhotoSrc})` }} aria-label="Productor" role="img" />
+                      ? <div className={styles.page2PhotoFrame}><img className={styles.page2Photo} src={previewData.producerPhotoSrc} alt="Productor" /></div>
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
                   <p className={styles.page2Bio}>{producerBioText}</p>
