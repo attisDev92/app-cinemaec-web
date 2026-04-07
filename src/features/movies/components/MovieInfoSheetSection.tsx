@@ -560,7 +560,7 @@ export function MovieInfoSheetSection({
       for (let index = 0; index < pageElements.length; index += 1) {
         const page = pageElements[index]
         const canvas = await html2canvas(page, {
-          scale: 3,
+          scale: 4,
           useCORS: true,
           allowTaint: false,
           backgroundColor: null,
@@ -585,23 +585,25 @@ export function MovieInfoSheetSection({
               const src = imageNode.currentSrc || imageNode.src
               if (!src) continue
 
-              const replacement = clonedDoc.createElement("div")
-              replacement.className = imageNode.className
-              replacement.style.backgroundImage = `url("${src}")`
-              replacement.style.backgroundSize = "cover"
-              replacement.style.backgroundPosition = "center"
-              replacement.style.backgroundRepeat = "no-repeat"
+              // Keep img tag but improve rendering
+              imageNode.style.position = "absolute"
+              imageNode.style.inset = "0"
+              imageNode.style.width = "100%"
+              imageNode.style.height = "100%"
+              imageNode.style.objectFit = "cover"
+              imageNode.style.objectPosition = "center"
+              imageNode.style.display = "block"
               
-              // Preserve computed styles for positioning and sizing
-              const computedStyle = window.getComputedStyle(imageNode)
-              replacement.style.position = computedStyle.position || "absolute"
-              replacement.style.inset = computedStyle.inset || "0"
-              replacement.style.width = computedStyle.width || "100%"
-              replacement.style.height = computedStyle.height || "100%"
-              replacement.style.display = computedStyle.display || "block"
-              replacement.style.borderRadius = computedStyle.borderRadius || "0"
-
-              imageNode.replaceWith(replacement)
+              // Force high-quality rendering
+              imageNode.style.imageRendering = "high-quality"
+              imageNode.crossOrigin = "anonymous"
+              
+              // Ensure src is absolute
+              if (!src.startsWith("http")) {
+                imageNode.src = src.startsWith("/") 
+                  ? `${window.location.origin}${src}` 
+                  : `${window.location.origin}/${src}`
+              }
             }
           },
         })

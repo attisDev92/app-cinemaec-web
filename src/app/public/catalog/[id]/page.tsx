@@ -917,6 +917,8 @@ export default function PublicCatalogMoviePage() {
                               alt={name}
                               width={300}
                               height={400}
+                              priority
+                              unoptimized
                               className={styles.professionalPhoto}
                             />
                           ) : (
