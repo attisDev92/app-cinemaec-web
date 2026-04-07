@@ -161,11 +161,39 @@ const toAbsoluteDomUri = (value?: string | null): string | null => {
   }
 }
 
+const toHighResImageUri = (value?: string | null): string | null => {
+  const absolute = toAbsoluteDomUri(value)
+  if (!absolute) return null
+
+  try {
+    const url = new URL(absolute, window.location.origin)
+
+    // Next.js optimizer URL: /_next/image?url=...&w=...&q=...
+    if (url.pathname === "/_next/image") {
+      const currentWidth = Number(url.searchParams.get("w") || "0")
+      if (!Number.isFinite(currentWidth) || currentWidth < 1200) {
+        url.searchParams.set("w", "1200")
+      }
+
+      const currentQuality = Number(url.searchParams.get("q") || "0")
+      if (!Number.isFinite(currentQuality) || currentQuality < 95) {
+        url.searchParams.set("q", "100")
+      }
+
+      return url.toString()
+    }
+
+    return absolute
+  } catch {
+    return absolute
+  }
+}
+
 const waitForRenderedImageUri = async (elementId?: string): Promise<string | null> => {
   const image = getImageElementFromDom(elementId)
   if (!image) return null
 
-  const getUri = () => toAbsoluteDomUri(image.currentSrc || image.src)
+  const getUri = () => toHighResImageUri(image.currentSrc || image.src)
   if (image.complete) return getUri()
 
   await new Promise<void>((resolve) => {
@@ -583,7 +611,7 @@ export function MovieInfoSheetSection({
 
             for (const imageNode of fitImages) {
               try {
-                const src = imageNode.currentSrc || imageNode.src
+                const src = toHighResImageUri(imageNode.currentSrc || imageNode.src)
                 if (!src) {
                   imageNode.style.display = "none"
                   continue
@@ -618,7 +646,7 @@ export function MovieInfoSheetSection({
         }
 
         const imageData = canvas.toDataURL("image/png")
-        pdf.addImage(imageData, "PNG", 0, 0, 150, 100, undefined, "FAST")
+        pdf.addImage(imageData, "PNG", 0, 0, 150, 100, undefined, "SLOW")
       }
 
       const safeTitle = textValue(movie.title, `pelicula-${movie.id}`)
