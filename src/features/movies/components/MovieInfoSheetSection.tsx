@@ -108,12 +108,6 @@ const truncate = (value: string, max = 300): string => {
   return `${value.slice(0, max - 1)}...`
 }
 
-const getLoadedImageFromDom = (elementId: string): HTMLImageElement | null => {
-  const byId = document.getElementById(elementId)
-  if (byId instanceof HTMLImageElement && byId.complete) return byId
-  return null
-}
-
 const pxToX = (value: number): string => `${(value / DESIGN_WIDTH) * 100}%`
 const pxToY = (value: number): string => `${(value / DESIGN_HEIGHT) * 100}%`
 
@@ -146,12 +140,6 @@ const normalizeExternalImageUrl = (value?: string | null): string | null => {
   }
 
   return normalizeLocalAssetPath(raw)
-}
-
-const getImageSrc = (elementId: string): string | null => {
-  const image = getLoadedImageFromDom(elementId)
-  if (!image) return null
-  return normalizeExternalImageUrl(image.currentSrc || image.src)
 }
 
 const toAbsolute = (value: string): string => {
@@ -189,6 +177,14 @@ const absolutizeUrl = (value?: string | null): string | null => {
   const base = typeof window !== "undefined" ? window.location.origin : ""
   const normalized = raw.startsWith("/") ? raw : `/${raw}`
   return base ? `${base}${normalized}` : normalized
+}
+
+const toRenderableImageUrl = (value?: string | null): string | null => {
+  const absolute = absolutizeUrl(normalizeExternalImageUrl(value))
+  if (!absolute || typeof window === "undefined") return absolute
+
+  const isExternal = /^https?:\/\//i.test(absolute) && !absolute.startsWith(window.location.origin)
+  return isExternal ? toPdfProxyUrl(absolute) : absolute
 }
 
 const roleIdOf = (entry?: { cinematicRoleId?: number; cinematicRole?: BasicEntity }): number | undefined => {
@@ -383,7 +379,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .page2-role-label-es { font-size: 14pt; font-weight: 700; text-transform: uppercase; color: #fff; line-height: 1; letter-spacing: 0.04em; }
     .page2-role-label-en { font-size: 8.5pt; font-weight: 400; font-style: italic; color: rgba(255,255,255,0.6); line-height: 1; }
     .page2-name { font-size: 10.5pt; font-weight: 600; color: #fff; line-height: 1.15; white-space: pre-wrap; margin: 0; }
-    .page2-photo { grid-column: 2; align-self: stretch; width: 100%; height: 100%; object-fit: cover; border-radius: 2.3%; min-height: 0; display: block; z-index: 1; }
+    .page2-photo { grid-column: 2; align-self: stretch; width: 100%; height: 100%; border-radius: 2.3%; min-height: 0; display: block; z-index: 1; background-size: cover; background-position: center; background-repeat: no-repeat; }
     .page2-photo-placeholder { grid-column: 2; min-height: 0; }
     .page2-bio { grid-row: 2; font-size: 8pt; color: #fff; line-height: 1; white-space: pre-wrap; overflow: hidden; align-self: start; min-height: 0; margin: 0; }
     .page2-row3 { grid-row: 3; overflow: hidden; min-height: 0; display: flex; flex-direction: column; gap: 0.18em; }
@@ -464,7 +460,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(directorName)}</div>
               </div>
-              ${data.directorPhotoSrc ? `<img class="page2-photo" src="${toAbsolute(data.directorPhotoSrc)}" alt="Director" />` : `<div class="page2-photo-placeholder"></div>`}
+              ${data.directorPhotoSrc ? `<div class="page2-photo" style="background-image:url('${htmlEscape(toAbsolute(data.directorPhotoSrc))}')"></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(directorBioText)}</div>
             <div class="page2-row3">
@@ -481,7 +477,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(producerName)}</div>
               </div>
-              ${data.producerPhotoSrc ? `<img class="page2-photo" src="${toAbsolute(data.producerPhotoSrc)}" alt="Productor" />` : `<div class="page2-photo-placeholder"></div>`}
+              ${data.producerPhotoSrc ? `<div class="page2-photo" style="background-image:url('${htmlEscape(toAbsolute(data.producerPhotoSrc))}')"></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(producerBioText)}</div>
             <div class="page2-row3">
@@ -503,11 +499,10 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
   </html>`
 }
 
+void buildPrintHtml
+
 export function MovieInfoSheetSection({
   movie,
-  posterElementId = "public-movie-poster",
-  directorPhotoElementId = "public-director-photo",
-  producerPhotoElementId = "public-producer-photo",
 }: Props) {
   const [isPreparing, setIsPreparing] = useState(false)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
@@ -536,16 +531,9 @@ export function MovieInfoSheetSection({
       const director = findProfessionalEntry(movie.professionals, "director")
       const producer = findProfessionalEntry(movie.professionals, "producer")
 
-      const domDirectorPhoto = getImageSrc(directorPhotoElementId)
-      const domProducerPhoto = getImageSrc(producerPhotoElementId)
-      const resolvedDirectorPhoto =
-        absolutizeUrl(domDirectorPhoto) || (await resolveProfessionalPhotoSrc(director))
-      const resolvedProducerPhoto =
-        absolutizeUrl(domProducerPhoto) || (await resolveProfessionalPhotoSrc(producer))
-
-      const posterFromDom = getImageSrc(posterElementId)
-      const posterFromMovie = absolutizeUrl(normalizeExternalImageUrl(movie.posterAsset?.url))
-      const posterSrc = posterFromDom || posterFromMovie
+      const resolvedDirectorPhoto = toRenderableImageUrl(await resolveProfessionalPhotoSrc(director))
+      const resolvedProducerPhoto = toRenderableImageUrl(await resolveProfessionalPhotoSrc(producer))
+      const posterSrc = toRenderableImageUrl(movie.posterAsset?.url)
 
       setPreviewData({
         movieUrl,
@@ -570,8 +558,6 @@ export function MovieInfoSheetSection({
       return
     }
 
-    const imagesToRestore: Array<{ element: HTMLImageElement; src: string }> = []
-
     try {
       setIsDownloadingPdf(true)
 
@@ -589,39 +575,6 @@ export function MovieInfoSheetSection({
       if (!pageElements.length) {
         throw new Error("No se encontraron páginas para exportar")
       }
-
-      const pageImages = Array.from(previewPagesRef.current.querySelectorAll<HTMLImageElement>("[data-pdf-page='true'] img"))
-
-      for (const image of pageImages) {
-        const currentSrc = image.currentSrc || image.src
-        if (!currentSrc) continue
-
-        const isExternal = /^https?:\/\//i.test(currentSrc) && !currentSrc.startsWith(window.location.origin)
-        if (!isExternal) continue
-
-        imagesToRestore.push({ element: image, src: image.src })
-        image.crossOrigin = "anonymous"
-        image.src = toPdfProxyUrl(currentSrc)
-      }
-
-      await Promise.all(
-        imagesToRestore.map(
-          ({ element }) =>
-            new Promise<void>((resolve) => {
-              if (element.complete) {
-                resolve()
-                return
-              }
-              const onDone = () => {
-                element.removeEventListener("load", onDone)
-                element.removeEventListener("error", onDone)
-                resolve()
-              }
-              element.addEventListener("load", onDone)
-              element.addEventListener("error", onDone)
-            }),
-        ),
-      )
 
       const pdf = new jsPDF({
         orientation: "landscape",
@@ -651,11 +604,11 @@ export function MovieInfoSheetSection({
 
             const photoNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='page2Photo']")
             for (const node of photoNodes) {
-              node.style.objectFit = "cover"
-              node.style.objectPosition = "center"
+              node.style.backgroundSize = "cover"
+              node.style.backgroundPosition = "center"
+              node.style.backgroundRepeat = "no-repeat"
               node.style.width = "100%"
               node.style.height = "100%"
-              node.style.aspectRatio = "auto"
               node.style.maxWidth = "100%"
               node.style.minWidth = "0"
               node.style.display = "block"
@@ -685,9 +638,6 @@ export function MovieInfoSheetSection({
       console.error("Error descargando ficha en PDF:", error)
       alert("No se pudo descargar la ficha en PDF. Intenta nuevamente.")
     } finally {
-      for (const { element, src } of imagesToRestore) {
-        element.src = src
-      }
       setIsDownloadingPdf(false)
     }
   }
@@ -846,7 +796,7 @@ export function MovieInfoSheetSection({
                       <p className={styles.page2Name}>{directorName}</p>
                     </div>
                     {previewData.directorPhotoSrc
-                      ? <img className={styles.page2Photo} src={previewData.directorPhotoSrc} alt="Director" />
+                      ? <div className={styles.page2Photo} style={{ backgroundImage: `url(${previewData.directorPhotoSrc})` }} aria-label="Director" role="img" />
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
                   <p className={styles.page2Bio}>{directorBioText}</p>
@@ -866,7 +816,7 @@ export function MovieInfoSheetSection({
                       <p className={styles.page2Name}>{producerName}</p>
                     </div>
                     {previewData.producerPhotoSrc
-                      ? <img className={styles.page2Photo} src={previewData.producerPhotoSrc} alt="Productor" />
+                      ? <div className={styles.page2Photo} style={{ backgroundImage: `url(${previewData.producerPhotoSrc})` }} aria-label="Productor" role="img" />
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
                   <p className={styles.page2Bio}>{producerBioText}</p>
