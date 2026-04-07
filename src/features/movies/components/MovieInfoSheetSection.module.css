@@ -31,6 +31,12 @@
   cursor: wait;
 }
 
+@media (max-width: 768px) {
+  .sheetSection {
+    display: none;
+  }
+}
+
 .previewWrap {
   position: relative;
   z-index: 2;

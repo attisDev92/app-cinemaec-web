@@ -547,13 +547,22 @@
 
   .posterColumn {
     position: static;
-    max-width: 250px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
   }
 
   .posterImage {
-    width: 100%;
+    display: block;
+    width: min(86vw, 360px);
     height: auto;
+    margin: 0 auto;
+  }
+
+  .posterLoglines {
+    width: 100%;
+    max-width: none;
+    margin: 0.9rem 0 0;
   }
 
   .creditsRow {
@@ -591,8 +600,21 @@
   }
 
   .posterColumn {
-    max-width: 220px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .posterImage {
+    width: min(90vw, 380px);
     margin: 0 auto;
+  }
+
+  .posterLoglines {
+    width: calc(100vw - 1.5rem);
+    margin-left: calc(50% - 50vw + 0.75rem);
+    margin-right: 0;
+    border-radius: 10px;
   }
 
   .movieTitle {
