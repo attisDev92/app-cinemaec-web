@@ -1,7 +1,7 @@
 "use client"
 /* eslint-disable @next/next/no-img-element */
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import QRCode from "qrcode"
 import html2canvas from "html2canvas"
 import { jsPDF } from "jspdf"
@@ -56,6 +56,7 @@ type SheetMovie = {
     professional?: ProfessionalData
   }>
   internationalCoproductions?: Array<{ country?: BasicEntity }>
+  posterAsset?: { url?: string | null } | null
 }
 
 type Props = {
@@ -107,14 +108,9 @@ const truncate = (value: string, max = 300): string => {
   return `${value.slice(0, max - 1)}...`
 }
 
-const getLoadedImageFromDom = (elementId: string, fallbackSelector?: string): HTMLImageElement | null => {
+const getLoadedImageFromDom = (elementId: string): HTMLImageElement | null => {
   const byId = document.getElementById(elementId)
   if (byId instanceof HTMLImageElement && byId.complete) return byId
-
-  if (!fallbackSelector) return null
-  const fallback = document.querySelector(fallbackSelector)
-  if (fallback instanceof HTMLImageElement && fallback.complete) return fallback
-
   return null
 }
 
@@ -152,8 +148,8 @@ const normalizeExternalImageUrl = (value?: string | null): string | null => {
   return normalizeLocalAssetPath(raw)
 }
 
-const getImageSrc = (elementId: string, fallbackSelector: string): string | null => {
-  const image = getLoadedImageFromDom(elementId, fallbackSelector)
+const getImageSrc = (elementId: string): string | null => {
+  const image = getLoadedImageFromDom(elementId)
   if (!image) return null
   return normalizeExternalImageUrl(image.currentSrc || image.src)
 }
@@ -519,6 +515,11 @@ export function MovieInfoSheetSection({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const previewPagesRef = useRef<HTMLDivElement | null>(null)
 
+  useEffect(() => {
+    setPreviewData(null)
+    setIsPreviewOpen(false)
+  }, [movie.id])
+
   const handlePreview = async () => {
     try {
       setIsPreparing(true)
@@ -535,14 +536,16 @@ export function MovieInfoSheetSection({
       const director = findProfessionalEntry(movie.professionals, "director")
       const producer = findProfessionalEntry(movie.professionals, "producer")
 
-      const domDirectorPhoto = getImageSrc(directorPhotoElementId, "[data-director-photo='true']")
-      const domProducerPhoto = getImageSrc(producerPhotoElementId, "[data-producer-photo='true']")
+      const domDirectorPhoto = getImageSrc(directorPhotoElementId)
+      const domProducerPhoto = getImageSrc(producerPhotoElementId)
       const resolvedDirectorPhoto =
         absolutizeUrl(domDirectorPhoto) || (await resolveProfessionalPhotoSrc(director))
       const resolvedProducerPhoto =
         absolutizeUrl(domProducerPhoto) || (await resolveProfessionalPhotoSrc(producer))
 
-      const posterSrc = getImageSrc(posterElementId, "[data-poster-image='true']")
+      const posterFromDom = getImageSrc(posterElementId)
+      const posterFromMovie = absolutizeUrl(normalizeExternalImageUrl(movie.posterAsset?.url))
+      const posterSrc = posterFromDom || posterFromMovie
 
       setPreviewData({
         movieUrl,
@@ -650,10 +653,12 @@ export function MovieInfoSheetSection({
             for (const node of photoNodes) {
               node.style.objectFit = "cover"
               node.style.objectPosition = "center"
-              node.style.width = "auto"
+              node.style.width = "100%"
               node.style.height = "100%"
-              node.style.aspectRatio = "1 / 1"
+              node.style.aspectRatio = "auto"
               node.style.maxWidth = "100%"
+              node.style.minWidth = "0"
+              node.style.display = "block"
             }
           },
         })

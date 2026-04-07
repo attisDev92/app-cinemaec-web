@@ -603,6 +603,10 @@ export default function PublicCatalogMoviePage() {
     return listValue((movie?.subtitles || []).map((subtitle) => translateLanguageEntity(subtitle?.language)))
   }, [movie])
 
+  const posterImageId = movie ? `public-movie-poster-${movie.id}` : "public-movie-poster"
+  const directorImageId = movie ? `public-director-photo-${movie.id}` : "public-director-photo"
+  const producerImageId = movie ? `public-producer-photo-${movie.id}` : "public-producer-photo"
+
   return (
     <div className={styles.container}>
       <Navbar />
@@ -635,7 +639,7 @@ export default function PublicCatalogMoviePage() {
               <div className={styles.posterColumn}>
                 {movie.posterAsset?.url ? (
                   <Image
-                    id="public-movie-poster"
+                    id={posterImageId}
                     data-poster-image="true"
                     src={movie.posterAsset.url}
                     alt={textValue(movie.title)}
@@ -662,9 +666,9 @@ export default function PublicCatalogMoviePage() {
 
                 <MovieInfoSheetSection
                   movie={movie}
-                  posterElementId="public-movie-poster"
-                  directorPhotoElementId="public-director-photo"
-                  producerPhotoElementId="public-producer-photo"
+                  posterElementId={posterImageId}
+                  directorPhotoElementId={directorImageId}
+                  producerPhotoElementId={producerImageId}
                 />
               </div>
 
@@ -732,7 +736,7 @@ export default function PublicCatalogMoviePage() {
 
                 {directorPhotoUrl && (
                   <img
-                    id="public-director-photo"
+                    id={directorImageId}
                     data-director-photo="true"
                     src={directorPhotoUrl}
                     alt=""
@@ -743,7 +747,7 @@ export default function PublicCatalogMoviePage() {
 
                 {producerPhotoUrl && (
                   <img
-                    id="public-producer-photo"
+                    id={producerImageId}
                     data-producer-photo="true"
                     src={producerPhotoUrl}
                     alt=""
