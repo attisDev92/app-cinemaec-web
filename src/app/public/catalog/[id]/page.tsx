@@ -169,6 +169,137 @@ const professionalBio = (entry?: ProfessionalEntry): string | null => {
   return text || null
 }
 
+const roleIdOf = (entry?: ProfessionalEntry): number | undefined => {
+  return entry?.cinematicRoleId ?? entry?.cinematicRole?.id
+}
+
+const isDirectorEntry = (entry?: ProfessionalEntry): boolean => {
+  if (!entry) return false
+  const roleId = roleIdOf(entry)
+  if (roleId === 1) return true
+
+  const roleName = normalizeForMap(entry.cinematicRole?.name)
+  return roleName.includes("director") || roleName.includes("direccion")
+}
+
+const isProducerEntry = (entry?: ProfessionalEntry): boolean => {
+  if (!entry) return false
+  const roleId = roleIdOf(entry)
+  if (roleId === 2) return true
+
+  const roleName = normalizeForMap(entry.cinematicRole?.name)
+  return roleName.includes("productor") || roleName.includes("produccion") || roleName.includes("producer")
+}
+
+const professionalIdentityKey = (entry?: ProfessionalEntry): string => {
+  const professional = entry?.professional
+  if (professional?.id) return `id:${professional.id}`
+
+  const normalizedName = normalizeForMap(professional?.fullName || professional?.name)
+  if (normalizedName) return `name:${normalizedName}`
+
+  const normalizedEmail = normalizeForMap(professional?.email)
+  if (normalizedEmail) return `email:${normalizedEmail}`
+
+  const normalizedPhone = normalizeForMap(professional?.phone || professional?.mobile)
+  if (normalizedPhone) return `phone:${normalizedPhone}`
+
+  return `role:${roleIdOf(entry) || "unknown"}`
+}
+
+type ProfessionalSlot = {
+  entry: ProfessionalEntry
+  roleEs: string
+  roleEn: string
+}
+
+const buildDirectorProducerSlots = (entries?: ProfessionalEntry[]): ProfessionalSlot[] => {
+  const relevant = (entries || []).filter((entry) => isDirectorEntry(entry) || isProducerEntry(entry))
+  if (!relevant.length) return []
+
+  type Group = {
+    key: string
+    entry: ProfessionalEntry
+    hasDirector: boolean
+    hasProducer: boolean
+    firstIndex: number
+  }
+
+  const grouped = new Map<string, Group>()
+
+  for (let index = 0; index < relevant.length; index += 1) {
+    const entry = relevant[index]
+    const key = professionalIdentityKey(entry)
+    const hasDirector = isDirectorEntry(entry)
+    const hasProducer = isProducerEntry(entry)
+    const existing = grouped.get(key)
+
+    if (!existing) {
+      grouped.set(key, {
+        key,
+        entry,
+        hasDirector,
+        hasProducer,
+        firstIndex: index,
+      })
+      continue
+    }
+
+    existing.hasDirector = existing.hasDirector || hasDirector
+    existing.hasProducer = existing.hasProducer || hasProducer
+
+    // Prefer an entry with profile photo when merging same person roles.
+    if (!professionalPhotoUrl(existing.entry) && professionalPhotoUrl(entry)) {
+      existing.entry = entry
+    }
+  }
+
+  const groups = Array.from(grouped.values()).sort((a, b) => a.firstIndex - b.firstIndex)
+  const slots: Group[] = []
+
+  const mergedRolePerson = groups.find((group) => group.hasDirector && group.hasProducer)
+  if (mergedRolePerson) {
+    slots.push(mergedRolePerson)
+    const nextDifferent = groups.find((group) => group.key !== mergedRolePerson.key)
+    if (nextDifferent) slots.push(nextDifferent)
+  } else {
+    const firstDirector = groups.find((group) => group.hasDirector)
+    if (firstDirector) slots.push(firstDirector)
+
+    const firstProducer = groups.find((group) => group.hasProducer && group.key !== slots[0]?.key)
+    if (firstProducer) slots.push(firstProducer)
+
+    if (slots.length < 2) {
+      const fallback = groups.find((group) => group.key !== slots[0]?.key)
+      if (fallback) slots.push(fallback)
+    }
+  }
+
+  return slots.slice(0, 2).map((group) => {
+    if (group.hasDirector && group.hasProducer) {
+      return {
+        entry: group.entry,
+        roleEs: "Dirección / Producción",
+        roleEn: "Direction / Production",
+      }
+    }
+
+    if (group.hasDirector) {
+      return {
+        entry: group.entry,
+        roleEs: "Dirección",
+        roleEn: "Direction",
+      }
+    }
+
+    return {
+      entry: group.entry,
+      roleEs: "Producción",
+      roleEn: "Production",
+    }
+  })
+}
+
 const normalizeForMap = (value: unknown): string =>
   String(value || "")
     .toLowerCase()
@@ -523,11 +654,15 @@ export default function PublicCatalogMoviePage() {
   }, [movie])
 
   const directorEntry = useMemo(() => {
-    return (movie?.professionals || []).find((entry) => entry?.cinematicRole?.id === 1 || entry?.cinematicRoleId === 1)
+    return (movie?.professionals || []).find((entry) => isDirectorEntry(entry))
   }, [movie])
 
   const producerEntry = useMemo(() => {
-    return (movie?.professionals || []).find((entry) => entry?.cinematicRole?.id === 2 || entry?.cinematicRoleId === 2)
+    return (movie?.professionals || []).find((entry) => isProducerEntry(entry))
+  }, [movie])
+
+  const professionalSlots = useMemo(() => {
+    return buildDirectorProducerSlots(movie?.professionals)
   }, [movie])
 
   const directorPhotoUrl = useMemo(() => professionalPhotoUrl(directorEntry), [directorEntry])
@@ -891,25 +1026,20 @@ export default function PublicCatalogMoviePage() {
             </section>
 
             {/* DIRECTOR / PRODUCER SECTION */}
-            {(directorEntry || producerEntry) && (
+            {professionalSlots.length > 0 && (
               <section className={styles.professionalsSection}>
                 <h3 className={styles.sectionTitle}>
                   Dirección y Producción
                   <span className={styles.sectionTitleSecondary}>Direction &amp; Production</span>
                 </h3>
                 <div className={styles.professionalsGrid}>
-                  {[
-                    { entry: directorEntry, roleEs: "Dirección", roleEn: "Direction" },
-                    { entry: producerEntry, roleEs: "Producción", roleEn: "Production" },
-                  ]
-                    .filter(({ entry }) => Boolean(entry))
-                    .map(({ entry, roleEs, roleEn }) => {
+                  {professionalSlots.map(({ entry, roleEs, roleEn }, index) => {
                       const photoUrl = professionalPhotoUrl(entry)
                       const bio = professionalBio(entry)
                       const name = textValue(entry?.professional?.fullName || entry?.professional?.name)
-                      const photoElementId = roleEn === "Direction" ? directorImageId : producerImageId
+                      const photoElementId = index === 0 ? directorImageId : producerImageId
                       return (
-                        <div key={roleEs} className={styles.professionalCard}>
+                        <div key={`${professionalIdentityKey(entry)}-${roleEs}`} className={styles.professionalCard}>
                           {photoUrl ? (
                             <Image
                               id={photoElementId}
