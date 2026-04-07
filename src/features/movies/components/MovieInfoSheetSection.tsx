@@ -560,7 +560,7 @@ export function MovieInfoSheetSection({
       for (let index = 0; index < pageElements.length; index += 1) {
         const page = pageElements[index]
         const canvas = await html2canvas(page, {
-          scale: Math.max(2, window.devicePixelRatio || 1),
+          scale: 3,
           useCORS: true,
           allowTaint: false,
           backgroundColor: null,
@@ -575,6 +575,33 @@ export function MovieInfoSheetSection({
               node.style.left = "calc(-14px - var(--left-content-gap))"
               node.style.bottom = "0"
               node.style.letterSpacing = "0.03em"
+            }
+
+            const fitImages = clonedDoc.querySelectorAll<HTMLImageElement>(
+              "img[class*='coverImage'], img[class*='page2Photo']",
+            )
+
+            for (const imageNode of fitImages) {
+              const src = imageNode.currentSrc || imageNode.src
+              if (!src) continue
+
+              const replacement = clonedDoc.createElement("div")
+              replacement.className = imageNode.className
+              replacement.style.backgroundImage = `url("${src}")`
+              replacement.style.backgroundSize = "cover"
+              replacement.style.backgroundPosition = "center"
+              replacement.style.backgroundRepeat = "no-repeat"
+              
+              // Preserve computed styles for positioning and sizing
+              const computedStyle = window.getComputedStyle(imageNode)
+              replacement.style.position = computedStyle.position || "absolute"
+              replacement.style.inset = computedStyle.inset || "0"
+              replacement.style.width = computedStyle.width || "100%"
+              replacement.style.height = computedStyle.height || "100%"
+              replacement.style.display = computedStyle.display || "block"
+              replacement.style.borderRadius = computedStyle.borderRadius || "0"
+
+              imageNode.replaceWith(replacement)
             }
           },
         })
