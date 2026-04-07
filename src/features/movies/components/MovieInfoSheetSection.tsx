@@ -6,7 +6,6 @@ import QRCode from "qrcode"
 import html2canvas from "html2canvas"
 import { jsPDF } from "jspdf"
 import { Barlow_Condensed } from "next/font/google"
-import { assetService } from "@/features/assets/services/asset.service"
 import styles from "./MovieInfoSheetSection.module.css"
 
 const barlowCondensed = Barlow_Condensed({
@@ -122,26 +121,6 @@ const normalizeLocalAssetPath = (value: string): string => {
     .join("/")
 }
 
-const normalizeExternalImageUrl = (value?: string | null): string | null => {
-  const raw = String(value || "").trim()
-  if (!raw) return null
-
-  if (/^https?:\/\//i.test(raw)) {
-    try {
-      const parsed = new URL(raw)
-      parsed.pathname = parsed.pathname
-        .split("/")
-        .map((segment) => (segment ? encodeURIComponent(decodeURIComponent(segment)) : segment))
-        .join("/")
-      return parsed.toString()
-    } catch {
-      return raw
-    }
-  }
-
-  return normalizeLocalAssetPath(raw)
-}
-
 const toAbsolute = (value: string): string => {
   if (/^https?:\/\//i.test(value)) return value
   return `${window.location.origin}${value.startsWith("/") ? value : `/${value}`}`
@@ -165,23 +144,11 @@ const normalizeForMatch = (value: unknown): string =>
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
 
-const absolutizeUrl = (value?: string | null): string | null => {
-  const raw = String(value || "").trim()
-  if (!raw) return null
-  if (/^https?:\/\//i.test(raw)) return raw
-  const base = typeof window !== "undefined" ? window.location.origin : ""
-  const normalized = raw.startsWith("/") ? raw : `/${raw}`
-  return base ? `${base}${normalized}` : normalized
-}
-
-const toRenderableImageUrl = (value?: string | null): string | null => {
-  return absolutizeUrl(normalizeExternalImageUrl(value))
-}
-
 const getImageElementFromDom = (elementId?: string): HTMLImageElement | null => {
   if (!elementId) return null
   const node = document.getElementById(elementId)
-  return node instanceof HTMLImageElement ? node : null
+  if (node instanceof HTMLImageElement) return node
+  return node?.querySelector("img") ?? null
 }
 
 const toAbsoluteDomUri = (value?: string | null): string | null => {
@@ -243,35 +210,9 @@ const findProfessionalEntry = (
   return (entries || []).find((entry) => isRoleMatch(entry, role))
 }
 
-const getProfessionalPhotoSrc = (
-  entry?: { professional?: ProfessionalData },
-): string | null => {
-  const url = entry?.professional?.profilePhotoAsset?.url
-  return absolutizeUrl(normalizeExternalImageUrl(url))
-}
-
 const getProfessionalBio = (entry?: { professional?: ProfessionalData }): string => {
   const professional = entry?.professional
   return textValue(professional?.bio || professional?.bioEn)
-}
-
-const resolveProfessionalPhotoSrc = async (
-  entry?: { professional?: ProfessionalData },
-): Promise<string | null> => {
-  // Primary: use the eagerly-loaded asset relation
-  const fromFields = getProfessionalPhotoSrc(entry)
-  if (fromFields) return fromFields
-
-  // Fallback: fetch via API if the asset wasn't loaded (shouldn't happen after backend fix)
-  const assetId = entry?.professional?.profilePhotoAssetId
-  if (!assetId) return null
-
-  try {
-    const asset = await assetService.getAsset(assetId)
-    return absolutizeUrl(assetService.getPublicAssetUrl(asset))
-  } catch {
-    return null
-  }
 }
 
 const buildContactBlock = (contacts?: Array<{ name?: string | null; role?: string | null; phone?: string | null; email?: string | null }>): string => {
@@ -407,7 +348,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .page2-role-label-en { font-size: 8.5pt; font-weight: 400; font-style: italic; color: rgba(255,255,255,0.6); line-height: 1; }
     .page2-name { font-size: 10.5pt; font-weight: 600; color: #fff; line-height: 1.15; white-space: pre-wrap; margin: 0; }
     .page2-photo-frame { grid-column: 2; position: relative; align-self: stretch; justify-self: end; width: auto; height: 100%; aspect-ratio: 1 / 1; max-width: 100%; max-height: 100%; border-radius: 2.3%; min-height: 0; overflow: hidden; display: block; z-index: 1; }
-    .page2-photo { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+    .page2-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
     .page2-photo-placeholder { grid-column: 2; justify-self: end; width: auto; height: 100%; aspect-ratio: 1 / 1; max-width: 100%; max-height: 100%; min-height: 0; }
     .page2-bio { grid-row: 2; font-size: 8pt; color: #fff; line-height: 1; white-space: pre-wrap; overflow: hidden; align-self: start; min-height: 0; margin: 0; }
     .page2-row3 { grid-row: 3; overflow: hidden; min-height: 0; display: flex; flex-direction: column; gap: 0.18em; }
@@ -559,20 +500,15 @@ export function MovieInfoSheetSection({
         color: { dark: "#ffffff", light: "#0000" },
       })
 
-      const director = findProfessionalEntry(movie.professionals, "director")
-      const producer = findProfessionalEntry(movie.professionals, "producer")
-
       const [domPosterSrc, domDirectorPhoto, domProducerPhoto] = await Promise.all([
         waitForRenderedImageUri(posterElementId),
         waitForRenderedImageUri(directorPhotoElementId),
         waitForRenderedImageUri(producerPhotoElementId),
       ])
 
-      const resolvedDirectorPhoto =
-        toRenderableImageUrl(domDirectorPhoto) || toRenderableImageUrl(await resolveProfessionalPhotoSrc(director))
-      const resolvedProducerPhoto =
-        toRenderableImageUrl(domProducerPhoto) || toRenderableImageUrl(await resolveProfessionalPhotoSrc(producer))
-      const posterSrc = toRenderableImageUrl(domPosterSrc) || toRenderableImageUrl(movie.posterAsset?.url)
+      const posterSrc = toAbsoluteDomUri(domPosterSrc)
+      const resolvedDirectorPhoto = toAbsoluteDomUri(domDirectorPhoto)
+      const resolvedProducerPhoto = toAbsoluteDomUri(domProducerPhoto)
 
       setPreviewData({
         movieUrl,
@@ -639,63 +575,6 @@ export function MovieInfoSheetSection({
               node.style.left = "calc(-14px - var(--left-content-gap))"
               node.style.bottom = "0"
               node.style.letterSpacing = "0.03em"
-            }
-
-            const photoFrameNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='page2PhotoFrame']")
-            for (const node of photoFrameNodes) {
-              node.style.width = "auto"
-              node.style.height = "100%"
-              node.style.aspectRatio = "1 / 1"
-              node.style.maxWidth = "100%"
-              node.style.maxHeight = "100%"
-              node.style.minWidth = "0"
-              node.style.minHeight = "0"
-              node.style.position = "relative"
-              node.style.display = "block"
-              node.style.overflow = "hidden"
-              node.style.justifySelf = "end"
-              node.style.alignSelf = "stretch"
-            }
-
-            const photoImageNodes = clonedDoc.querySelectorAll<HTMLImageElement>("img[class*='page2Photo']")
-            for (const node of photoImageNodes) {
-              node.style.position = "static"
-              node.style.width = "100%"
-              node.style.height = "100%"
-              node.style.objectFit = "cover"
-              node.style.objectPosition = "center"
-              node.style.display = "block"
-            }
-
-            const posterFrameNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='posterBox']")
-            for (const node of posterFrameNodes) {
-              node.style.position = "relative"
-              node.style.overflow = "hidden"
-            }
-
-            const posterImageNodes = clonedDoc.querySelectorAll<HTMLImageElement>("img[class*='coverImage']")
-            for (const node of posterImageNodes) {
-              node.style.position = "absolute"
-              node.style.top = "0"
-              node.style.left = "0"
-              node.style.width = "100%"
-              node.style.height = "100%"
-              node.style.objectFit = "cover"
-              node.style.objectPosition = "center"
-              node.style.display = "block"
-            }
-
-            const photoPlaceholderNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='page2PhotoPlaceholder']")
-            for (const node of photoPlaceholderNodes) {
-              node.style.width = "auto"
-              node.style.height = "100%"
-              node.style.aspectRatio = "1 / 1"
-              node.style.maxWidth = "100%"
-              node.style.maxHeight = "100%"
-              node.style.minWidth = "0"
-              node.style.minHeight = "0"
-              node.style.display = "block"
-              node.style.justifySelf = "end"
             }
           },
         })
