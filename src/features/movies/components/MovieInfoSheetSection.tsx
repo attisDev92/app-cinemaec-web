@@ -147,11 +147,6 @@ const toAbsolute = (value: string): string => {
   return `${window.location.origin}${value.startsWith("/") ? value : `/${value}`}`
 }
 
-const toPdfProxyUrl = (value: string): string => {
-  if (typeof window === "undefined") return value
-  return `${window.location.origin}/api/image-proxy?url=${encodeURIComponent(value)}`
-}
-
 const htmlEscape = (value: string): string => {
   return value
     .replaceAll("&", "&amp;")
@@ -180,11 +175,7 @@ const absolutizeUrl = (value?: string | null): string | null => {
 }
 
 const toRenderableImageUrl = (value?: string | null): string | null => {
-  const absolute = absolutizeUrl(normalizeExternalImageUrl(value))
-  if (!absolute || typeof window === "undefined") return absolute
-
-  const isExternal = /^https?:\/\//i.test(absolute) && !absolute.startsWith(window.location.origin)
-  return isExternal ? toPdfProxyUrl(absolute) : absolute
+  return absolutizeUrl(normalizeExternalImageUrl(value))
 }
 
 const roleIdOf = (entry?: { cinematicRoleId?: number; cinematicRole?: BasicEntity }): number | undefined => {
@@ -461,7 +452,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(directorName)}</div>
               </div>
-              ${data.directorPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.directorPhotoSrc))}" alt="Director" /></div>` : `<div class="page2-photo-placeholder"></div>`}
+              ${data.directorPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.directorPhotoSrc))}" alt="Director" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(directorBioText)}</div>
             <div class="page2-row3">
@@ -478,7 +469,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(producerName)}</div>
               </div>
-              ${data.producerPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.producerPhotoSrc))}" alt="Productor" /></div>` : `<div class="page2-photo-placeholder"></div>`}
+              ${data.producerPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.producerPhotoSrc))}" alt="Productor" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(producerBioText)}</div>
             <div class="page2-row3">
@@ -800,7 +791,7 @@ export function MovieInfoSheetSection({
 
                   <div className={styles.page1Main}>
                     <div className={styles.posterBox}>
-                      {previewData.posterSrc && <img className={styles.coverImage} src={previewData.posterSrc} alt="Afiche" />}
+                      {previewData.posterSrc && <img className={styles.coverImage} src={previewData.posterSrc} alt="Afiche" crossOrigin="anonymous" />}
                     </div>
                   </div>
                 </div>
@@ -821,7 +812,7 @@ export function MovieInfoSheetSection({
                       <p className={styles.page2Name}>{directorName}</p>
                     </div>
                     {previewData.directorPhotoSrc
-                      ? <div className={styles.page2PhotoFrame}><img className={styles.page2Photo} src={previewData.directorPhotoSrc} alt="Director" /></div>
+                      ? <div className={styles.page2PhotoFrame}><img className={styles.page2Photo} src={previewData.directorPhotoSrc} alt="Director" crossOrigin="anonymous" /></div>
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
                   <p className={styles.page2Bio}>{directorBioText}</p>
@@ -841,7 +832,7 @@ export function MovieInfoSheetSection({
                       <p className={styles.page2Name}>{producerName}</p>
                     </div>
                     {previewData.producerPhotoSrc
-                      ? <div className={styles.page2PhotoFrame}><img className={styles.page2Photo} src={previewData.producerPhotoSrc} alt="Productor" /></div>
+                      ? <div className={styles.page2PhotoFrame}><img className={styles.page2Photo} src={previewData.producerPhotoSrc} alt="Productor" crossOrigin="anonymous" /></div>
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
                   <p className={styles.page2Bio}>{producerBioText}</p>
