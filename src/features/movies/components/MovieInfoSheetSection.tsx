@@ -290,6 +290,8 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
   const producerName = textValue(producer?.professional?.fullName || producer?.professional?.name)
   const directorBio = getProfessionalBio(director)
   const producerBio = getProfessionalBio(producer)
+  const directorBioText = truncate(directorBio, 400)
+  const producerBioText = truncate(producerBio, 400)
   const durationText = movie.durationMinutes ? `${movie.durationMinutes} min` : ""
   const locationText = [textValue(movie.country?.name), coproductionCountries].filter(Boolean).join(" y ")
   const technicalInfoText = [textValue(movie.type), textValue(movie.genre), subgenres, durationText, locationText]
@@ -342,7 +344,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .page1-column-right { --poster-width: calc(100% - var(--logo-h) - ${pxToX(14)}); min-width: 0; row-gap: 0; }
     .page1-top-left { display: grid; grid-template-columns: 90px ${pxToX(22)} minmax(0, 1fr); align-items: end; column-gap: ${pxToX(14)}; min-width: 0; min-height: 0; }
     .page1-top-left .qr-container { grid-column: 1; }
-    .page1-top-left .title-box { grid-column: 3; width: 100%; align-self: end; justify-content: end; }
+    .page1-top-left .title-box { grid-column: 3; width: 100%; align-self: end; justify-content: start; }
     .qr-container { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%; height: 100%; gap: 0; }
     .qr-wrap { align-self: start; justify-self: center; width: 100%; height: 100%; margin-top: 0; max-width: 100%; max-height: 100%; overflow: hidden; }
     .qr-url { position: absolute; top: calc(100% + 2px); left: 50%; transform: translateX(-50%); font-size: 5.5pt; line-height: 1; font-weight: 600; color: #fff; text-align: center; width: fit-content; letter-spacing: 0.3px; white-space: nowrap; }
@@ -468,7 +470,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
               </div>
               ${data.directorPhotoSrc ? `<img class="page2-photo" src="${toAbsolute(data.directorPhotoSrc)}" alt="Director" />` : `<div class="page2-photo-placeholder"></div>`}
             </div>
-            <div class="page2-bio">${nlToBr(directorBio)}</div>
+            <div class="page2-bio">${nlToBr(directorBioText)}</div>
             <div class="page2-row3">
               <div class="page2-row3-label">Necesidades · Project Needs</div>
               <div class="page2-row3-text">${nlToBr(needsText)}</div>
@@ -485,7 +487,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
               </div>
               ${data.producerPhotoSrc ? `<img class="page2-photo" src="${toAbsolute(data.producerPhotoSrc)}" alt="Productor" />` : `<div class="page2-photo-placeholder"></div>`}
             </div>
-            <div class="page2-bio">${nlToBr(producerBio)}</div>
+            <div class="page2-bio">${nlToBr(producerBioText)}</div>
             <div class="page2-row3">
               <div class="page2-row3-label">Fondos y Premios · Funds &amp; Awards</div>
               <div class="page2-row3-text">${nlToBr(awardsText)}</div>
@@ -703,6 +705,8 @@ export function MovieInfoSheetSection({
   const producerName = textValue(producer?.professional?.fullName || producer?.professional?.name)
   const directorBio = getProfessionalBio(director)
   const producerBio = getProfessionalBio(producer)
+  const directorBioText = truncate(directorBio, 400)
+  const producerBioText = truncate(producerBio, 400)
   const durationText = movie.durationMinutes ? `${movie.durationMinutes} min` : ""
   const locationText = [textValue(movie.country?.name), coproductionCountries].filter(Boolean).join(" y ")
   const technicalInfoText = [textValue(movie.type), textValue(movie.genre), subgenres, durationText, locationText]
@@ -840,7 +844,7 @@ export function MovieInfoSheetSection({
                       ? <img className={styles.page2Photo} src={previewData.directorPhotoSrc} alt="Director" />
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
-                  <p className={styles.page2Bio}>{directorBio}</p>
+                  <p className={styles.page2Bio}>{directorBioText}</p>
                   <div className={styles.page2Row3}>
                     <p className={styles.page2Row3Label}>Necesidades · Project Needs</p>
                     <p className={styles.page2Row3Text}>{needsText}</p>
@@ -860,7 +864,7 @@ export function MovieInfoSheetSection({
                       ? <img className={styles.page2Photo} src={previewData.producerPhotoSrc} alt="Productor" />
                       : <div className={styles.page2PhotoPlaceholder} />}
                   </div>
-                  <p className={styles.page2Bio}>{producerBio}</p>
+                  <p className={styles.page2Bio}>{producerBioText}</p>
                   <div className={styles.page2Row3}>
                     <p className={styles.page2Row3Label}>Fondos y Premios · Funds &amp; Awards</p>
                     <p className={styles.page2Row3Text}>{awardsText}</p>

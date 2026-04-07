@@ -162,7 +162,7 @@
   grid-column: 3;
   width: 100%;
   align-self: end;
-  justify-content: end;
+  justify-content: start;
 }
 
 .qrContainer {
