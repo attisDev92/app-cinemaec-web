@@ -501,7 +501,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .technical-field, .contact-field { overflow: visible; overflow-wrap: anywhere; word-break: break-word; }
     .synopsis-field { height: auto; overflow: visible; align-self: start; margin-left: 0; width: 100%; }
     .left-col .synopsis-field { font-size: 8pt; line-height: 1; }
-    .poster-box { justify-self: center; align-self: start; position: relative; width: var(--poster-width); max-width: 100%; max-height: 100%; aspect-ratio: 2 / 3; border-radius: 0; overflow: hidden; height: auto; }
+    .poster-box { justify-self: center; align-self: start; position: relative; width: 180px; height: 270px; max-width: 180px; max-height: 270px; aspect-ratio: 2 / 3; border-radius: 0; overflow: hidden; }
     .cover-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
     .line-h { height: 1px; background: rgba(255,255,255,0.5); margin-left: 0; width: 100%; }
     .line-v { width: 2px; background: rgba(255,255,255,0.95); justify-self: start; }
@@ -519,7 +519,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .page2-role-label-es { font-size: 14pt; font-weight: 700; text-transform: uppercase; color: #fff; line-height: 1; letter-spacing: 0.04em; }
     .page2-role-label-en { font-size: 8.5pt; font-weight: 400; font-style: italic; color: rgba(255,255,255,0.6); line-height: 1; }
     .page2-name { font-size: 10.5pt; font-weight: 600; color: #fff; line-height: 1.15; white-space: pre-wrap; margin: 0; }
-    .page2-photo-frame { grid-column: 2; position: relative; align-self: stretch; justify-self: end; width: auto; height: 100%; aspect-ratio: 1 / 1; max-width: 100%; max-height: 100%; border-radius: 2.3%; min-height: 0; overflow: hidden; display: block; z-index: 1; }
+    .page2-photo-frame { grid-column: 2; position: relative; align-self: stretch; justify-self: end; width: 120px; height: 120px; aspect-ratio: 1 / 1; max-width: 120px; max-height: 120px; border-radius: 2.3%; min-height: 0; overflow: hidden; display: block; z-index: 1; }
     .page2-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
     .page2-photo-placeholder { grid-column: 2; justify-self: end; width: auto; height: 100%; aspect-ratio: 1 / 1; max-width: 100%; max-height: 100%; min-height: 0; }
     .page2-bio { grid-row: 2; font-size: 8pt; color: #fff; line-height: 1; white-space: pre-wrap; overflow: hidden; align-self: start; min-height: 0; margin: 0; }
