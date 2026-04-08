@@ -4,6 +4,33 @@
 import { useEffect, useRef, useState } from "react"
 import QRCode from "qrcode"
 import html2canvas from "html2canvas"
+// Utilidad: genera un DataURL PNG de una imagen DOM, recortada tipo cover
+function getCoverImageDataUrlFromDom(elementId: string, size: number = 300): string | null {
+  const img = getImageElementFromDom(elementId)
+  if (!img || !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) return null
+  const canvas = document.createElement("canvas")
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext("2d")
+  if (!ctx) return null
+  // cover logic
+  const imgRatio = img.naturalWidth / img.naturalHeight
+  const canvasRatio = 1 // cuadrado
+  let drawWidth = size, drawHeight = size, dx = 0, dy = 0
+  if (imgRatio > canvasRatio) {
+    // Imagen más ancha que canvas
+    drawHeight = size
+    drawWidth = img.naturalWidth * (size / img.naturalHeight)
+    dx = (size - drawWidth) / 2
+  } else {
+    // Imagen más alta que canvas
+    drawWidth = size
+    drawHeight = img.naturalHeight * (size / img.naturalWidth)
+    dy = (size - drawHeight) / 2
+  }
+  ctx.drawImage(img, dx, dy, drawWidth, drawHeight)
+  return canvas.toDataURL("image/png")
+}
 import { jsPDF } from "jspdf"
 import { Barlow_Condensed } from "next/font/google"
 import styles from "./MovieInfoSheetSection.module.css"
@@ -742,6 +769,19 @@ export function MovieInfoSheetSection({
 
       for (let index = 0; index < pageElements.length; index += 1) {
         const page = pageElements[index]
+
+        // --- NUEVO: Render cover para imágenes principales ---
+        // IDs de los elementos img en la previsualización
+        const posterId = "movie-sheet-poster"
+        const directorId = "movie-sheet-director-photo"
+        const producerId = "movie-sheet-producer-photo"
+
+        // Renderizar imágenes como cover PNG
+        const posterDataUrl = getCoverImageDataUrlFromDom(posterId, 320)
+        const directorDataUrl = getCoverImageDataUrlFromDom(directorId, 120)
+        const producerDataUrl = getCoverImageDataUrlFromDom(producerId, 120)
+
+        // Renderizar el resto de la página con html2canvas
         const canvas = await html2canvas(page, {
           scale: pdfScale,
           useCORS: true,
@@ -749,6 +789,20 @@ export function MovieInfoSheetSection({
           backgroundColor: null,
           logging: false,
           onclone: (clonedDoc) => {
+            // Opcional: ocultar las imágenes originales para que no salgan duplicadas
+            if (posterDataUrl) {
+              const el = clonedDoc.getElementById(posterId)
+              if (el) el.style.visibility = "hidden"
+            }
+            if (directorDataUrl) {
+              const el = clonedDoc.getElementById(directorId)
+              if (el) el.style.visibility = "hidden"
+            }
+            if (producerDataUrl) {
+              const el = clonedDoc.getElementById(producerId)
+              if (el) el.style.visibility = "hidden"
+            }
+            // Resto de transformaciones
             const statusNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='projectStatusVertical']")
             for (const node of statusNodes) {
               node.style.writingMode = "horizontal-tb"
@@ -766,8 +820,21 @@ export function MovieInfoSheetSection({
           pdf.addPage([150, 100], "landscape")
         }
 
+        // Fondo general
         const imageData = canvas.toDataURL("image/png", 1.0)
         pdf.addImage(imageData, "PNG", 0, 0, 150, 100, undefined, "NONE")
+
+        // Superponer imágenes cover en las posiciones correctas
+        // (Ajusta las posiciones y tamaños según el diseño)
+        if (posterDataUrl) {
+          pdf.addImage(posterDataUrl, "PNG", 110, 10, 32, 32, undefined, "NONE")
+        }
+        if (directorDataUrl) {
+          pdf.addImage(directorDataUrl, "PNG", 10, 10, 12, 12, undefined, "NONE")
+        }
+        if (producerDataUrl) {
+          pdf.addImage(producerDataUrl, "PNG", 10, 25, 12, 12, undefined, "NONE")
+        }
       }
 
       const safeTitle = textValue(movie.title, `pelicula-${movie.id}`)
