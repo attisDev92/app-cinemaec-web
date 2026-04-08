@@ -105,22 +105,48 @@ export default function MovieProjectProfilePage() {
 
               <Card>
                 <h2 className={styles.sectionTitle}>Dirección y Producción</h2>
-                <p className={styles.text}>
-                  <strong>Director(es):</strong>{" "}
-                  {movie?.professionals
-                    ?.filter((entry) => entry?.cinematicRole?.id === 1)
-                    ?.map((entry) => entry?.professional?.name)
-                    ?.filter(Boolean)
-                    ?.join(", ") || "-"}
-                </p>
-                <p className={styles.text}>
-                  <strong>Productor(es):</strong>{" "}
-                  {movie?.professionals
-                    ?.filter((entry) => entry?.cinematicRole?.id === 2)
-                    ?.map((entry) => entry?.professional?.name)
-                    ?.filter(Boolean)
-                    ?.join(", ") || "-"}
-                </p>
+                <div className={styles.proList}>
+                  <strong>Director(es):</strong>
+                  {movie?.professionals?.filter((entry) => entry?.cinematicRole?.id === 1).length ? (
+                    movie.professionals
+                      .filter((entry) => entry?.cinematicRole?.id === 1)
+                      .map((entry, idx) => (
+                        <span key={idx} className={styles.proItem}>
+                          {entry.professional?.profilePhotoAsset?.url && (
+                            <img
+                              src={entry.professional.profilePhotoAsset.url}
+                              alt={entry.professional?.name || "Director"}
+                              className={styles.proPhoto}
+                            />
+                          )}
+                          {entry.professional?.name}
+                        </span>
+                      ))
+                  ) : (
+                    <span>-</span>
+                  )}
+                </div>
+                <div className={styles.proList}>
+                  <strong>Productor(es):</strong>
+                  {movie?.professionals?.filter((entry) => entry?.cinematicRole?.id === 2).length ? (
+                    movie.professionals
+                      .filter((entry) => entry?.cinematicRole?.id === 2)
+                      .map((entry, idx) => (
+                        <span key={idx} className={styles.proItem}>
+                          {entry.professional?.profilePhotoAsset?.url && (
+                            <img
+                              src={entry.professional.profilePhotoAsset.url}
+                              alt={entry.professional?.name || "Productor"}
+                              className={styles.proPhoto}
+                            />
+                          )}
+                          {entry.professional?.name}
+                        </span>
+                      ))
+                  ) : (
+                    <span>-</span>
+                  )}
+                </div>
               </Card>
 
               <Card>

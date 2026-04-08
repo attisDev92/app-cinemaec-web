@@ -396,6 +396,7 @@ export default function MoviesManagementPage() {
         summaryY += Math.max(6, wrapped.length * 4.5)
       }
 
+      // Extraer directores y productores con foto
       const directors =
         movie.professionals
           ?.filter((entry) => {
@@ -406,8 +407,11 @@ export default function MoviesManagementPage() {
               roleName.includes('director')
             )
           })
-          .map((entry) => entry.professional?.fullName)
-          .filter(Boolean) || []
+          .map((entry) => ({
+            name: entry.professional?.fullName,
+            photo: entry.professional?.profilePhotoAsset?.url || null,
+          }))
+          .filter((entry) => !!entry.name) || []
 
       const producers =
         movie.professionals
@@ -419,8 +423,11 @@ export default function MoviesManagementPage() {
               roleName.includes('productor') || roleName.includes('producer')
             )
           })
-          .map((entry) => entry.professional?.fullName)
-          .filter(Boolean) || []
+          .map((entry) => ({
+            name: entry.professional?.fullName,
+            photo: entry.professional?.profilePhotoAsset?.url || null,
+          }))
+          .filter((entry) => !!entry.name) || []
 
       const contactDirectors =
         (movie as unknown as { contacts?: Array<{ name?: string; role?: string }> })
@@ -462,8 +469,35 @@ export default function MoviesManagementPage() {
           .filter(Boolean)
       ).join(", ")
 
-      addSummaryLine("Director", mergedDirectors.join(", ") || "-")
-      addSummaryLine("Productor", mergedProducers.join(", ") || "-")
+      // Mostrar foto y nombre en PDF (solo 1era foto por rol, si existe)
+      const drawProfileWithPhoto = async (label: string, list: Array<{ name: string; photo: string | null }>, y: number) => {
+        const x = summaryX
+        let offsetX = x
+        let maxH = 16
+        let photoDrawn = false
+        if (list.length && list[0].photo) {
+          const img = await loadImageWithSize(list[0].photo)
+          if (img) {
+            // Limitar solo el alto
+            let drawH = maxH
+            let drawW = img.width * (drawH / img.height)
+            pdf.addImage(img.dataUrl, "PNG", offsetX, y, drawW, drawH)
+            offsetX += drawW + 3
+            photoDrawn = true
+          }
+        }
+        pdf.setFont("helvetica", "bold")
+        pdf.setFontSize(10)
+        pdf.setTextColor(17, 24, 39)
+        pdf.text(`${label}:`, offsetX, y + 10)
+        pdf.setFont("helvetica", "normal")
+        pdf.setTextColor(55, 65, 81)
+        pdf.text(list.map((d) => d.name).join(", ") || "-", offsetX + 38, y + 10)
+        return y + maxH + 2
+      }
+
+      summaryY = await drawProfileWithPhoto("Director", directors, summaryY)
+      summaryY = await drawProfileWithPhoto("Productor", producers, summaryY)
       addSummaryLine("Empresa productora", companies.join(", ") || "-")
       addSummaryLine("Duración", `${movie.durationMinutes || "-"} min`)
       addSummaryLine("Tipo", movie.type)
