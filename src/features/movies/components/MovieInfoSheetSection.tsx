@@ -162,27 +162,6 @@ const toAbsoluteDomUri = (value?: string | null): string | null => {
   }
 }
 
-const fetchAsDataUrl = (src: string): Promise<string | null> =>
-  new Promise((resolve) => {
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-    img.onload = () => {
-      try {
-        const c = document.createElement("canvas")
-        c.width = img.naturalWidth
-        c.height = img.naturalHeight
-        const ctx = c.getContext("2d")
-        if (!ctx) { resolve(null); return }
-        ctx.drawImage(img, 0, 0)
-        resolve(c.toDataURL("image/png", 1.0))
-      } catch {
-        resolve(null)
-      }
-    }
-    img.onerror = () => resolve(null)
-    img.src = src
-  })
-
 const pickBestImageUri = (image: HTMLImageElement): string | null => {
   const srcset = String(image.getAttribute("srcset") || "").trim()
   if (!srcset) {
@@ -234,6 +213,34 @@ const waitForRenderedImageUri = async (elementId?: string): Promise<string | nul
   })
 
   return getUri()
+}
+
+const canLoadImageUri = (uri?: string | null): Promise<boolean> =>
+  new Promise((resolve) => {
+    const src = String(uri || "").trim()
+    if (!src) {
+      resolve(false)
+      return
+    }
+
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = src
+  })
+
+const resolveFirstLoadableImageUri = async (...candidates: Array<string | null | undefined>): Promise<string | null> => {
+  const normalized = candidates
+    .map((candidate) => toAbsoluteDomUri(candidate))
+    .filter((candidate, index, array): candidate is string => Boolean(candidate) && array.indexOf(candidate) === index)
+
+  for (const candidate of normalized) {
+    const isLoadable = await canLoadImageUri(candidate)
+    if (isLoadable) return candidate
+  }
+
+  return normalized[0] || null
 }
 
 const roleIdOf = (entry?: { cinematicRoleId?: number; cinematicRole?: BasicEntity }): number | undefined => {
@@ -665,15 +672,23 @@ export function MovieInfoSheetSection({
         color: { dark: "#ffffff", light: "#0000" },
       })
 
+      const slots = buildDirectorProducerSlots(movie.professionals)
+      const firstPreviewSlot = slots[0]
+      const secondPreviewSlot = slots[1]
+
+      const posterOriginal = toAbsoluteDomUri(movie.posterAsset?.url)
+      const directorOriginal = toAbsoluteDomUri(firstPreviewSlot?.entry?.professional?.profilePhotoAsset?.url)
+      const producerOriginal = toAbsoluteDomUri(secondPreviewSlot?.entry?.professional?.profilePhotoAsset?.url)
+
       const [domPosterSrc, domDirectorPhoto, domProducerPhoto] = await Promise.all([
         waitForRenderedImageUri(posterElementId),
         waitForRenderedImageUri(directorPhotoElementId),
         waitForRenderedImageUri(producerPhotoElementId),
       ])
 
-      const posterSrc = toAbsoluteDomUri(domPosterSrc)
-      const resolvedDirectorPhoto = toAbsoluteDomUri(domDirectorPhoto)
-      const resolvedProducerPhoto = toAbsoluteDomUri(domProducerPhoto)
+      const posterSrc = await resolveFirstLoadableImageUri(domPosterSrc, posterOriginal)
+      const resolvedDirectorPhoto = await resolveFirstLoadableImageUri(domDirectorPhoto, directorOriginal)
+      const resolvedProducerPhoto = await resolveFirstLoadableImageUri(domProducerPhoto, producerOriginal)
 
       setPreviewData({
         movieUrl,
@@ -716,48 +731,6 @@ export function MovieInfoSheetSection({
         throw new Error("No se encontraron páginas para exportar")
       }
 
-      // Pre-fetch all sheet images as crisp data URLs so html2canvas gets true high-res pixels
-      const allSheetImages = Array.from(
-        previewPagesRef.current.querySelectorAll<HTMLImageElement>(
-          "img[class*='coverImage'], img[class*='page2Photo']",
-        ),
-      )
-      const dataUrlBySrc = new Map<string, string>()
-      for (const imgEl of allSheetImages) {
-        const src = pickBestImageUri(imgEl)
-        if (src && !dataUrlBySrc.has(src)) {
-          const dataUrl = await fetchAsDataUrl(src)
-          if (dataUrl) dataUrlBySrc.set(src, dataUrl)
-        }
-      }
-
-      const overlayPosterOnPdf = (pageElement: HTMLElement) => {
-        const pageRect = pageElement.getBoundingClientRect()
-        if (!pageRect.width || !pageRect.height) return
-
-        const posterFrame = pageElement.querySelector<HTMLElement>("[class*='posterBox']")
-        if (!posterFrame) return
-
-        const posterImage = posterFrame.querySelector<HTMLImageElement>("img[class*='coverImage']")
-        if (!posterImage) return
-
-        const src = pickBestImageUri(posterImage)
-        if (!src) return
-
-        const highResDataUrl = dataUrlBySrc.get(src)
-        if (!highResDataUrl) return
-
-        const rect = posterFrame.getBoundingClientRect()
-        if (!rect.width || !rect.height) return
-
-        const x = ((rect.left - pageRect.left) / pageRect.width) * 150
-        const y = ((rect.top - pageRect.top) / pageRect.height) * 100
-        const w = (rect.width / pageRect.width) * 150
-        const h = (rect.height / pageRect.height) * 100
-
-        pdf.addImage(highResDataUrl, "PNG", x, y, w, h, undefined, "NONE")
-      }
-
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "mm",
@@ -765,7 +738,7 @@ export function MovieInfoSheetSection({
         compress: false,
       })
 
-      const pdfScale = Math.max(4, Math.ceil(window.devicePixelRatio || 1) * 2)
+      const pdfScale = 4
 
       for (let index = 0; index < pageElements.length; index += 1) {
         const page = pageElements[index]
@@ -786,38 +759,6 @@ export function MovieInfoSheetSection({
               node.style.bottom = "0"
               node.style.letterSpacing = "0.03em"
             }
-
-            const fitImages = clonedDoc.querySelectorAll<HTMLImageElement>(
-              "img[class*='coverImage'], img[class*='page2Photo']",
-            )
-
-            for (const imageNode of fitImages) {
-              try {
-                const src = pickBestImageUri(imageNode)
-                // Prefer pre-fetched data URL for maximum quality
-                const finalSrc = (src ? dataUrlBySrc.get(src) : null) || src
-                if (!finalSrc) {
-                  imageNode.style.display = "none"
-                  continue
-                }
-
-                const div = clonedDoc.createElement("div")
-                div.className = imageNode.className
-                div.style.backgroundImage = `url("${finalSrc}")`
-                div.style.backgroundSize = "cover"
-                div.style.backgroundPosition = "center"
-                div.style.backgroundRepeat = "no-repeat"
-                div.style.position = "absolute"
-                div.style.inset = "0"
-                div.style.width = "100%"
-                div.style.height = "100%"
-                div.style.display = "block"
-
-                imageNode.replaceWith(div)
-              } catch (err) {
-                console.warn("Image replacement failed:", err)
-              }
-            }
           },
         })
 
@@ -827,9 +768,6 @@ export function MovieInfoSheetSection({
 
         const imageData = canvas.toDataURL("image/png", 1.0)
         pdf.addImage(imageData, "PNG", 0, 0, 150, 100, undefined, "NONE")
-
-        // Re-draw poster directly from high-res source to avoid raster blur.
-        overlayPosterOnPdf(page)
       }
 
       const safeTitle = textValue(movie.title, `pelicula-${movie.id}`)
