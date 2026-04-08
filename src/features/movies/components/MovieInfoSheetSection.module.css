@@ -318,11 +318,14 @@
 
 .projectStatusVertical {
   position: absolute;
-  left: calc(-34px - var(--left-content-gap));
+  /* Align the vertical label edge with the divider under the QR */
+  left: calc(0px - var(--left-content-gap));
   bottom: 0;
-  transform: rotate(180deg);
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
+  /* Preview: keep letters horizontal but rotate the whole word bottom-to-top */
+  writing-mode: horizontal-tb;
+  text-orientation: initial;
+  transform-origin: left bottom;
+  transform: rotate(-90deg);
   font-size: clamp(28px, 4.4cqw, 48px);
   font-style: italic;
   font-weight: 300;
@@ -339,11 +342,11 @@
 }
 
 .pdfCaptureMode .projectStatusVertical {
-  writing-mode: horizontal-tb;
-  text-orientation: initial;
-  transform-origin: left bottom;
-  transform: rotate(-90deg);
-  left: calc(-14px - var(--left-content-gap));
+  /* PDF export: render vertical upright letters (one letter per line) */
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  transform: none;
+  left: calc(-34px - var(--left-content-gap));
   bottom: 0;
   letter-spacing: 0.03em;
 }

@@ -4,33 +4,6 @@
 import { useEffect, useRef, useState } from "react"
 import QRCode from "qrcode"
 import html2canvas from "html2canvas"
-// Utilidad: genera un DataURL PNG de una imagen DOM, recortada tipo cover
-function getCoverImageDataUrlFromDom(elementId: string, size: number = 300): string | null {
-  const img = getImageElementFromDom(elementId)
-  if (!img || !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) return null
-  const canvas = document.createElement("canvas")
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext("2d")
-  if (!ctx) return null
-  // cover logic
-  const imgRatio = img.naturalWidth / img.naturalHeight
-  const canvasRatio = 1 // cuadrado
-  let drawWidth = size, drawHeight = size, dx = 0, dy = 0
-  if (imgRatio > canvasRatio) {
-    // Imagen más ancha que canvas
-    drawHeight = size
-    drawWidth = img.naturalWidth * (size / img.naturalHeight)
-    dx = (size - drawWidth) / 2
-  } else {
-    // Imagen más alta que canvas
-    drawWidth = size
-    drawHeight = img.naturalHeight * (size / img.naturalWidth)
-    dy = (size - drawHeight) / 2
-  }
-  ctx.drawImage(img, dx, dy, drawWidth, drawHeight)
-  return canvas.toDataURL("image/png")
-}
 import { jsPDF } from "jspdf"
 import { Barlow_Condensed } from "next/font/google"
 import styles from "./MovieInfoSheetSection.module.css"
@@ -520,7 +493,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
     .left-col { --left-divider-x: -68px; --left-content-gap: 6px; --left-status-divider-height: 170px; position: relative; align-self: stretch; display: grid; grid-template-rows: auto auto 1px auto; align-content: end; row-gap: ${pxToY(18)}; min-height: 100%; height: 100%; margin-left: calc(102px + var(--left-divider-x) + var(--left-content-gap)); margin-top: 0; margin-bottom: 4pt; padding-left: 0; }
     .left-col.dense { row-gap: ${pxToY(10)}; margin-bottom: 8pt; }
     .left-col::before { content: ""; position: absolute; left: calc(0px - var(--left-content-gap)); top: auto; bottom: 0; height: var(--left-status-divider-height); width: 1px; background: rgba(255,255,255,0.5); }
-    .project-status-vertical { position: absolute; left: calc(-34px - var(--left-content-gap)); bottom: 0; transform: rotate(180deg); writing-mode: vertical-rl; text-orientation: mixed; font-size: 32pt; font-style: italic; font-weight: 300; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.78); line-height: 1; white-space: nowrap; pointer-events: none; }
+    .project-status-vertical { position: absolute; left: calc(-34px - var(--left-content-gap)); bottom: 0; writing-mode: vertical-rl; text-orientation: upright; transform: none; font-size: 32pt; font-style: italic; font-weight: 300; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.78); line-height: 1; white-space: nowrap; pointer-events: none; }
     .project-status-vertical::after { content: none; }
     .left-col .field { font-size: 9.02pt; }
     .left-col .field.small { font-size: 8.14pt; margin-left: 0; width: 100%; overflow: visible; }
@@ -609,7 +582,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
 
             <div class="page1-main">
               <div class="poster-box">
-                ${data.posterSrc ? `<img id="movie-poster-image" class="cover-image" src="${data.posterSrc}" alt="Afiche" />` : ""}
+                ${data.posterSrc ? `<img class="cover-image" src="${data.posterSrc}" alt="Afiche" />` : ""}
               </div>
             </div>
           </div>
@@ -628,7 +601,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(directorName)}</div>
               </div>
-              ${firstSlot && data.directorPhotoSrc ? `<div class="page2-photo-frame"><img id="movie-director-image" class="page2-photo" src="${htmlEscape(toAbsolute(data.directorPhotoSrc))}" alt="Director" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
+              ${firstSlot && data.directorPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.directorPhotoSrc))}" alt="Director" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(directorBioText)}</div>
             <div class="page2-row3">
@@ -645,7 +618,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(producerName)}</div>
               </div>
-              ${secondSlot && data.producerPhotoSrc ? `<div class="page2-photo-frame"><img id="movie-producer-image" class="page2-photo" src="${htmlEscape(toAbsolute(data.producerPhotoSrc))}" alt="Productor" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
+              ${secondSlot && data.producerPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.producerPhotoSrc))}" alt="Productor" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(producerBioText)}</div>
             <div class="page2-row3">
@@ -686,6 +659,39 @@ export function MovieInfoSheetSection({
     setIsPreviewOpen(false)
   }, [movie.id])
 
+    // PDF download handler
+    const handleDownloadPdf = async () => {
+      if (!previewPagesRef.current) return
+      setIsDownloadingPdf(true)
+      try {
+        // Wait for fonts to load
+        await document.fonts.load(`500 10pt ${barlowCondensed.style.fontFamily}`)
+
+        // Get all pages marked for PDF
+        const pages = Array.from(previewPagesRef.current.querySelectorAll('[data-pdf-page="true"]'))
+        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: [150, 100] })
+
+        for (let i = 0; i < pages.length; i++) {
+          const page = pages[i]
+          const canvas = await html2canvas(page as HTMLElement, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: null,
+            logging: false,
+          })
+          const imgData = canvas.toDataURL("image/png")
+          if (i > 0) pdf.addPage()
+          pdf.addImage(imgData, "PNG", 0, 0, 150, 100)
+        }
+
+        pdf.save(`${movie.title || "ficha"}.pdf`)
+      } catch (err) {
+        alert("No se pudo generar el PDF. Intenta nuevamente.")
+        console.error(err)
+      } finally {
+        setIsDownloadingPdf(false)
+      }
+    }
   const handlePreview = async () => {
     try {
       setIsPreparing(true)
@@ -733,127 +739,7 @@ export function MovieInfoSheetSection({
     }
   }
 
-  const handleDownloadPdf = async () => {
-    if (!previewData) return
-    if (!previewPagesRef.current) {
-      alert("No se pudo acceder a la previsualización para exportar PDF.")
-      return
-    }
-
-    try {
-      setIsDownloadingPdf(true)
-
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => resolve())
-        })
-      })
-
-      if ("fonts" in document) {
-        await document.fonts.ready
-      }
-
-      const pageElements = Array.from(previewPagesRef.current.querySelectorAll<HTMLElement>("[data-pdf-page='true']"))
-      if (!pageElements.length) {
-        throw new Error("No se encontraron páginas para exportar")
-      }
-
-      const pdf = new jsPDF({
-        orientation: "landscape",
-        unit: "mm",
-        format: [150, 100],
-        compress: false,
-      })
-
-      const pdfScale = 4
-
-      for (let index = 0; index < pageElements.length; index += 1) {
-        const page = pageElements[index]
-
-        // --- NUEVO: Render cover para imágenes principales ---
-        // IDs de los elementos img en la previsualización
-        const posterId = "movie-sheet-poster"
-        const directorId = "movie-sheet-director-photo"
-        const producerId = "movie-sheet-producer-photo"
-
-        // Renderizar imágenes como cover PNG
-        const posterDataUrl = getCoverImageDataUrlFromDom(posterId, 320)
-        const directorDataUrl = getCoverImageDataUrlFromDom(directorId, 120)
-        const producerDataUrl = getCoverImageDataUrlFromDom(producerId, 120)
-
-        // Renderizar el resto de la página con html2canvas
-        const canvas = await html2canvas(page, {
-          scale: pdfScale,
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: null,
-          logging: false,
-          onclone: (clonedDoc) => {
-            // Opcional: ocultar las imágenes originales para que no salgan duplicadas
-            if (posterDataUrl) {
-              const el = clonedDoc.getElementById(posterId)
-              if (el) el.style.visibility = "hidden"
-            }
-            if (directorDataUrl) {
-              const el = clonedDoc.getElementById(directorId)
-              if (el) el.style.visibility = "hidden"
-            }
-            if (producerDataUrl) {
-              const el = clonedDoc.getElementById(producerId)
-              if (el) el.style.visibility = "hidden"
-            }
-            // Resto de transformaciones
-            const statusNodes = clonedDoc.querySelectorAll<HTMLElement>("[class*='projectStatusVertical']")
-            for (const node of statusNodes) {
-              node.style.writingMode = "horizontal-tb"
-              node.style.textOrientation = "mixed"
-              node.style.transformOrigin = "left bottom"
-              node.style.transform = "rotate(-90deg)"
-              node.style.left = "calc(-14px - var(--left-content-gap))"
-              node.style.bottom = "0"
-              node.style.letterSpacing = "0.03em"
-            }
-          },
-        })
-
-        if (index > 0) {
-          pdf.addPage([150, 100], "landscape")
-        }
-
-        // Fondo general
-        const imageData = canvas.toDataURL("image/png", 1.0)
-        pdf.addImage(imageData, "PNG", 0, 0, 150, 100, undefined, "NONE")
-
-        // Superponer imágenes cover en las posiciones correctas
-        // (Ajusta las posiciones y tamaños según el diseño)
-        if (posterDataUrl) {
-          pdf.addImage(posterDataUrl, "PNG", 110, 10, 32, 32, undefined, "NONE")
-        }
-        if (directorDataUrl) {
-          pdf.addImage(directorDataUrl, "PNG", 10, 10, 12, 12, undefined, "NONE")
-        }
-        if (producerDataUrl) {
-          pdf.addImage(producerDataUrl, "PNG", 10, 25, 12, 12, undefined, "NONE")
-        }
-      }
-
-      const safeTitle = textValue(movie.title, `pelicula-${movie.id}`)
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9-_ ]/g, "")
-        .trim()
-        .replace(/\s+/g, "-")
-        .toLowerCase()
-
-      pdf.save(`${safeTitle || `pelicula-${movie.id}`}.pdf`)
-
-    } catch (error) {
-      console.error("Error descargando ficha en PDF:", error)
-      alert("No se pudo descargar la ficha en PDF. Intenta nuevamente.")
-    } finally {
-      setIsDownloadingPdf(false)
-    }
-  }
+  // ...existing code...
 
   const professionalSlots = buildDirectorProducerSlots(movie.professionals)
   const firstSlot = professionalSlots[0]
