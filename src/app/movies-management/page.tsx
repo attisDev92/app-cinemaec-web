@@ -338,44 +338,11 @@ export default function MoviesManagementPage() {
 
       await addHeader()
 
-      const posterUrl = await resolvePosterProxyUrl()
-      const posterImage = posterUrl ? await loadImageWithSize(posterUrl) : null
 
-      const posterX = marginX
-      const posterY = cursorY
-      const posterW = 48
-      const posterH = 62
-
-      pdf.setDrawColor(209, 213, 219)
-      pdf.roundedRect(posterX, posterY, posterW, posterH, 2, 2, "S")
-      if (posterImage) {
-        const ratio = posterImage.width / posterImage.height
-          let drawW = posterW - 2
-          let drawH = drawW / ratio
-          if (drawH > posterH - 2) {
-            drawH = posterH - 2
-            drawW = drawH * ratio
-          }
-        pdf.addImage(
-          posterImage.dataUrl,
-          "PNG",
-          posterX + (posterW - drawW) / 2,
-          posterY + (posterH - drawH) / 2,
-          drawW,
-          drawH,
-        )
-      } else {
-        pdf.setFont("helvetica", "bold")
-        pdf.setFontSize(9)
-        pdf.setTextColor(107, 114, 128)
-        pdf.text("SIN AFICHE", posterX + posterW / 2, posterY + posterH / 2, {
-          align: "center",
-        })
-      }
-
-      const summaryX = posterX + posterW + 8
-      const summaryW = pageWidth - marginX - summaryX
-      let summaryY = posterY + 3
+      // Eliminar afiche: el resumen inicia alineado al margen
+      const summaryX = marginX
+      const summaryW = pageWidth - marginX * 2
+      let summaryY = cursorY
 
       const addSummaryLine = (label: string, value?: string | number | null) => {
         const printable =
@@ -506,6 +473,7 @@ export default function MoviesManagementPage() {
         return y + maxH + 2
       }
 
+
       summaryY = await drawProfileWithPhoto("Director", directors, summaryY)
       summaryY = await drawProfileWithPhoto("Productor", producers, summaryY)
       addSummaryLine("Empresa productora", companies.join(", ") || "-")
@@ -514,7 +482,7 @@ export default function MoviesManagementPage() {
       addSummaryLine("Género", movie.genre)
       addSummaryLine("Año", movie.releaseYear)
 
-      cursorY = Math.max(posterY + posterH + 8, summaryY + 2)
+      cursorY = summaryY + 2
 
       addCard("Proyecto", () => {
         addField("Clasificación", movie.classification)
