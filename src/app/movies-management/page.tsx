@@ -406,7 +406,7 @@ export default function MoviesManagementPage() {
               roleName.includes('director')
             )
           })
-          .map((entry) => entry.professional?.fullName || entry.professional?.name)
+          .map((entry) => entry.professional?.fullName)
           .filter(Boolean) || []
 
       const producers =
@@ -419,7 +419,7 @@ export default function MoviesManagementPage() {
               roleName.includes('productor') || roleName.includes('producer')
             )
           })
-          .map((entry) => entry.professional?.fullName || entry.professional?.name)
+          .map((entry) => entry.professional?.fullName)
           .filter(Boolean) || []
 
       const contactDirectors =
