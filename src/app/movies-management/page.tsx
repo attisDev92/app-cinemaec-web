@@ -397,6 +397,10 @@ export default function MoviesManagementPage() {
       }
 
       // Extraer directores y productores con foto
+      // Acceso seguro a profilePhotoAsset (puede no existir en el tipo base)
+      const getProfilePhotoUrl = (prof: any) =>
+        prof?.profilePhotoAsset?.url || null
+
       const directors =
         movie.professionals
           ?.filter((entry) => {
@@ -409,7 +413,7 @@ export default function MoviesManagementPage() {
           })
           .map((entry) => ({
             name: entry.professional?.fullName,
-            photo: entry.professional?.profilePhotoAsset?.url || null,
+            photo: getProfilePhotoUrl(entry.professional),
           }))
           .filter((entry) => !!entry.name) || []
 
@@ -425,7 +429,7 @@ export default function MoviesManagementPage() {
           })
           .map((entry) => ({
             name: entry.professional?.fullName,
-            photo: entry.professional?.profilePhotoAsset?.url || null,
+            photo: getProfilePhotoUrl(entry.professional),
           }))
           .filter((entry) => !!entry.name) || []
 
