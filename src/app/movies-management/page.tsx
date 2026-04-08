@@ -401,7 +401,7 @@ export default function MoviesManagementPage() {
       const getProfilePhotoUrl = (prof: any) =>
         prof?.profilePhotoAsset?.url || null
 
-      const directors =
+      const directors: { name: string; photo: string | null }[] =
         movie.professionals
           ?.filter((entry) => {
             const roleId = entry.cinematicRole?.id
@@ -412,12 +412,12 @@ export default function MoviesManagementPage() {
             )
           })
           .map((entry) => ({
-            name: entry.professional?.fullName,
-            photo: getProfilePhotoUrl(entry.professional),
+            name: typeof entry.professional?.fullName === 'string' ? entry.professional.fullName : '',
+            photo: typeof getProfilePhotoUrl(entry.professional) === 'string' ? getProfilePhotoUrl(entry.professional) : null,
           }))
-          .filter((entry) => !!entry.name) || []
+          .filter((entry) => entry.name !== "") || []
 
-      const producers =
+      const producers: { name: string; photo: string | null }[] =
         movie.professionals
           ?.filter((entry) => {
             const roleId = entry.cinematicRole?.id
@@ -428,10 +428,10 @@ export default function MoviesManagementPage() {
             )
           })
           .map((entry) => ({
-            name: entry.professional?.fullName,
-            photo: getProfilePhotoUrl(entry.professional),
+            name: typeof entry.professional?.fullName === 'string' ? entry.professional.fullName : '',
+            photo: typeof getProfilePhotoUrl(entry.professional) === 'string' ? getProfilePhotoUrl(entry.professional) : null,
           }))
-          .filter((entry) => !!entry.name) || []
+          .filter((entry) => entry.name !== "") || []
 
       const contactDirectors =
         (movie as unknown as { contacts?: Array<{ name?: string; role?: string }> })
