@@ -9,7 +9,10 @@ import styles from "./page.module.css"
 
 type MovieProfessionalRelation = {
   cinematicRole?: { id?: number }
-  professional?: { name?: string }
+  professional?: {
+    name?: string
+    profilePhotoAsset?: { url?: string | null }
+  }
 }
 
 type MovieCompanyRelation = {
