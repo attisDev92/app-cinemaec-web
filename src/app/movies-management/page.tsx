@@ -398,14 +398,28 @@ export default function MoviesManagementPage() {
 
       const directors =
         movie.professionals
-          ?.filter((entry) => entry.cinematicRole?.id === 1)
-          .map((entry) => entry.professional?.fullName)
+          ?.filter((entry) => {
+            const roleId = entry.cinematicRole?.id
+            const roleName = (entry.cinematicRole?.name || '').toLowerCase()
+            return (
+              roleId === 1 ||
+              roleName.includes('director')
+            )
+          })
+          .map((entry) => entry.professional?.fullName || entry.professional?.name)
           .filter(Boolean) || []
 
       const producers =
         movie.professionals
-          ?.filter((entry) => entry.cinematicRole?.id === 2)
-          .map((entry) => entry.professional?.fullName)
+          ?.filter((entry) => {
+            const roleId = entry.cinematicRole?.id
+            const roleName = (entry.cinematicRole?.name || '').toLowerCase()
+            return (
+              roleId === 2 ||
+              roleName.includes('productor') || roleName.includes('producer')
+            )
+          })
+          .map((entry) => entry.professional?.fullName || entry.professional?.name)
           .filter(Boolean) || []
 
       const contactDirectors =

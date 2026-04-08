@@ -2579,6 +2579,7 @@ export function MovieForm({
                     onBlur={formik.handleBlur}
                     placeholder="Describe brevemente la trama principal"
                     error={getFieldError("synopsis")}
+                    className={styles.synopsisClamp}
                   />
 
                   <Textarea
