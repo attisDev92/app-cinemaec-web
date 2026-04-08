@@ -20,11 +20,12 @@
   max-height: 2.2em;
   width: auto;
   border-radius: 0.5em;
-  object-fit: contain;
+  object-fit: contain !important;
   aspect-ratio: auto;
   margin-right: 0.3em;
   background: #eee;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  display: block;
 }
 .container {
   min-height: 100vh;

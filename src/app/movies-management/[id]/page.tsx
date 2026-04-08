@@ -120,6 +120,7 @@ export default function MovieProjectProfilePage() {
                               src={entry.professional.profilePhotoAsset.url}
                               alt={entry.professional?.name || "Director"}
                               className={styles.proPhoto}
+                              style={{ objectFit: "contain" }}
                             />
                           )}
                           {entry.professional?.name}
@@ -141,6 +142,7 @@ export default function MovieProjectProfilePage() {
                               src={entry.professional.profilePhotoAsset.url}
                               alt={entry.professional?.name || "Productor"}
                               className={styles.proPhoto}
+                              style={{ objectFit: "contain" }}
                             />
                           )}
                           {entry.professional?.name}
