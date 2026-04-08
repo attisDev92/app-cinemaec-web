@@ -609,7 +609,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
 
             <div class="page1-main">
               <div class="poster-box">
-                ${data.posterSrc ? `<img class="cover-image" src="${data.posterSrc}" alt="Afiche" />` : ""}
+                ${data.posterSrc ? `<img id="movie-poster-image" class="cover-image" src="${data.posterSrc}" alt="Afiche" />` : ""}
               </div>
             </div>
           </div>
@@ -628,7 +628,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(directorName)}</div>
               </div>
-              ${firstSlot && data.directorPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.directorPhotoSrc))}" alt="Director" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
+              ${firstSlot && data.directorPhotoSrc ? `<div class="page2-photo-frame"><img id="movie-director-image" class="page2-photo" src="${htmlEscape(toAbsolute(data.directorPhotoSrc))}" alt="Director" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(directorBioText)}</div>
             <div class="page2-row3">
@@ -645,7 +645,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(producerName)}</div>
               </div>
-              ${secondSlot && data.producerPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.producerPhotoSrc))}" alt="Productor" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
+              ${secondSlot && data.producerPhotoSrc ? `<div class="page2-photo-frame"><img id="movie-producer-image" class="page2-photo" src="${htmlEscape(toAbsolute(data.producerPhotoSrc))}" alt="Productor" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
             </div>
             <div class="page2-bio">${nlToBr(producerBioText)}</div>
             <div class="page2-row3">
