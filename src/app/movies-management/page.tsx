@@ -482,9 +482,15 @@ export default function MoviesManagementPage() {
         if (list.length && list[0].photo) {
           const img = await loadImageWithSize(list[0].photo)
           if (img) {
-            // Limitar solo el alto
+            // Limitar solo el alto, mantener aspect ratio, mostrar imagen completa
             let drawH = maxH
             let drawW = img.width * (drawH / img.height)
+            // Si la imagen es muy ancha, limitar el ancho y ajustar el alto
+            const maxW = 32
+            if (drawW > maxW) {
+              drawW = maxW
+              drawH = img.height * (drawW / img.width)
+            }
             pdf.addImage(img.dataUrl, "PNG", offsetX, y, drawW, drawH)
             offsetX += drawW + 3
             photoDrawn = true
