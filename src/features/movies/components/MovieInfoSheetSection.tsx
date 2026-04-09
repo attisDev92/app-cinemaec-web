@@ -574,19 +574,24 @@ export function MovieInfoSheetSection({ movie, posterElementId, directorPhotoEle
 
         // Get all pages marked for PDF
         const pages = Array.from(previewPagesRef.current.querySelectorAll('[data-pdf-page="true"]'))
-        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: [150, 100] })
+        // Usar tamaño A4 para impresión profesional
+        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
 
         for (let i = 0; i < pages.length; i++) {
           const page = pages[i]
+          // Usar escala 4 para máxima nitidez
           const canvas = await html2canvas(page as HTMLElement, {
-            scale: 2,
+            scale: 4,
             useCORS: true,
             backgroundColor: null,
             logging: false,
           })
           const imgData = canvas.toDataURL("image/png")
           if (i > 0) pdf.addPage()
-          pdf.addImage(imgData, "PNG", 0, 0, 150, 100)
+          // Calcular tamaño proporcional al canvas para A4
+          const pageWidth = pdf.internal.pageSize.getWidth()
+          const pageHeight = pdf.internal.pageSize.getHeight()
+          pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight)
         }
 
         pdf.save(`${movie.title || "ficha"}.pdf`)
@@ -635,16 +640,21 @@ export function MovieInfoSheetSection({ movie, posterElementId, directorPhotoEle
   const secondSlot = professionalSlots[1]
 
   // Helper to get DataURL from an image element by id
+  // Mejora de calidad: renderiza el canvas al doble de resolución
   const getImageDataUrl = (elementId?: string): string | undefined => {
     if (!elementId) return undefined
     const img = typeof window !== "undefined" ? document.getElementById(elementId) as HTMLImageElement : undefined
     if (img && img.complete && img.naturalWidth > 0) {
       try {
+        const scale = 2 // Densidad x2 para mejor calidad
         const canvas = document.createElement("canvas")
-        canvas.width = img.naturalWidth
-        canvas.height = img.naturalHeight
+        canvas.width = img.naturalWidth * scale
+        canvas.height = img.naturalHeight * scale
         const ctx = canvas.getContext("2d")
         if (ctx) {
+          ctx.setTransform(scale, 0, 0, scale, 0, 0)
+          ctx.imageSmoothingEnabled = true
+          ctx.imageSmoothingQuality = "high"
           ctx.drawImage(img, 0, 0)
           return canvas.toDataURL("image/png")
         }
