@@ -200,6 +200,19 @@
   transform: translateX(-50%);
   font-size: 8px;
   font-weight: 600;
+/* El afiche debe comportarse como la foto del director: centrado, sin object-fit, solo max-width y max-height */
+.posterBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  min-width: 80px;
+  max-width: 220px;
+  max-height: 320px;
+  margin: 0 auto;
+}
   color: #fff;
   text-align: center;
   width: max-content;
@@ -370,15 +383,17 @@
 
 .posterBox {
   justify-self: center;
-  align-self: start;
+  align-self: center;
   position: relative;
   width: var(--poster-width);
   max-width: 100%;
   max-height: 100%;
-  aspect-ratio: 2 / 3;
   border-radius: 0;
-  overflow: hidden;
-  height: auto;
+  overflow: visible;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── PAGE 2 ── */
@@ -458,24 +473,27 @@
   justify-self: end;
   width: auto;
   height: 100%;
-  aspect-ratio: 1 / 1;
   max-width: 100%;
   max-height: 100%;
   border-radius: 2.3%;
-  overflow: hidden;
-  display: block;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1;
   min-height: 0;
 }
 
 .page2Photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  position: static;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
   object-position: center;
   display: block;
+  border-radius: 2.3%;
 }
 
 .page2PhotoPlaceholder {
@@ -636,14 +654,27 @@
 }
 
 .coverImage {
-  position: absolute;
-  inset: 0;
+  position: static;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
   object-position: center;
   display: block;
+  margin: 0 auto;
   z-index: 2;
+}
+/* Para el afiche en PDF: sin object-fit, solo max-width y max-height, centrado */
+.coverImage {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: unset;
+  object-position: center;
+  display: block;
+  margin: 0 auto;
 }
 
 .faceImage {

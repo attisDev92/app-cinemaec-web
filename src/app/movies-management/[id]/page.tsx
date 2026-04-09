@@ -115,14 +115,6 @@ export default function MovieProjectProfilePage() {
                       .filter((entry) => entry?.cinematicRole?.id === 1)
                       .map((entry, idx) => (
                         <span key={idx} className={styles.proItem}>
-                          {entry.professional?.profilePhotoAsset?.url && (
-                            <img
-                              src={entry.professional.profilePhotoAsset.url}
-                              alt={entry.professional?.name || "Director"}
-                              className={styles.proPhoto}
-                              style={{ objectFit: "contain" }}
-                            />
-                          )}
                           {entry.professional?.name}
                         </span>
                       ))
@@ -137,14 +129,6 @@ export default function MovieProjectProfilePage() {
                       .filter((entry) => entry?.cinematicRole?.id === 2)
                       .map((entry, idx) => (
                         <span key={idx} className={styles.proItem}>
-                          {entry.professional?.profilePhotoAsset?.url && (
-                            <img
-                              src={entry.professional.profilePhotoAsset.url}
-                              alt={entry.professional?.name || "Productor"}
-                              className={styles.proPhoto}
-                              style={{ objectFit: "contain" }}
-                            />
-                          )}
                           {entry.professional?.name}
                         </span>
                       ))

@@ -72,9 +72,6 @@ const DESIGN_HEIGHT = 1181
 type PreviewData = {
   movieUrl: string
   qrDataUrl: string
-  posterSrc: string | null
-  directorPhotoSrc: string | null
-  producerPhotoSrc: string | null
 }
 
 const statusLabel = (value?: string | null): string => {
@@ -145,103 +142,8 @@ const normalizeForMatch = (value: unknown): string =>
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
 
-const getImageElementFromDom = (elementId?: string): HTMLImageElement | null => {
-  if (!elementId) return null
-  const node = document.getElementById(elementId)
-  if (node instanceof HTMLImageElement) return node
-  return node?.querySelector("img") ?? null
-}
 
-const toAbsoluteDomUri = (value?: string | null): string | null => {
-  const raw = String(value || "").trim()
-  if (!raw) return null
-  try {
-    return new URL(raw, window.location.origin).toString()
-  } catch {
-    return raw
-  }
-}
 
-const pickBestImageUri = (image: HTMLImageElement): string | null => {
-  const srcset = String(image.getAttribute("srcset") || "").trim()
-  if (!srcset) {
-    return toAbsoluteDomUri(image.currentSrc || image.src)
-  }
-
-  const candidates = srcset
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .map((item) => {
-      const [url = "", descriptor = ""] = item.split(/\s+/)
-      const widthMatch = descriptor.match(/^(\d+)w$/i)
-      const densityMatch = descriptor.match(/^(\d+(?:\.\d+)?)x$/i)
-      return {
-        url,
-        width: widthMatch ? Number(widthMatch[1]) : 0,
-        density: densityMatch ? Number(densityMatch[1]) : 0,
-      }
-    })
-    .filter((entry) => entry.url)
-
-  if (!candidates.length) {
-    return toAbsoluteDomUri(image.currentSrc || image.src)
-  }
-
-  candidates.sort((a, b) => {
-    if (b.width !== a.width) return b.width - a.width
-    return b.density - a.density
-  })
-  return toAbsoluteDomUri(candidates[0].url || image.currentSrc || image.src)
-}
-
-const waitForRenderedImageUri = async (elementId?: string): Promise<string | null> => {
-  const image = getImageElementFromDom(elementId)
-  if (!image) return null
-
-  const getUri = () => pickBestImageUri(image)
-  if (image.complete) return getUri()
-
-  await new Promise<void>((resolve) => {
-    const onDone = () => {
-      image.removeEventListener("load", onDone)
-      image.removeEventListener("error", onDone)
-      resolve()
-    }
-    image.addEventListener("load", onDone)
-    image.addEventListener("error", onDone)
-  })
-
-  return getUri()
-}
-
-const canLoadImageUri = (uri?: string | null): Promise<boolean> =>
-  new Promise((resolve) => {
-    const src = String(uri || "").trim()
-    if (!src) {
-      resolve(false)
-      return
-    }
-
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-    img.onload = () => resolve(true)
-    img.onerror = () => resolve(false)
-    img.src = src
-  })
-
-const resolveFirstLoadableImageUri = async (...candidates: Array<string | null | undefined>): Promise<string | null> => {
-  const normalized = candidates
-    .map((candidate) => toAbsoluteDomUri(candidate))
-    .filter((candidate, index, array): candidate is string => Boolean(candidate) && array.indexOf(candidate) === index)
-
-  for (const candidate of normalized) {
-    const isLoadable = await canLoadImageUri(candidate)
-    if (isLoadable) return candidate
-  }
-
-  return normalized[0] || null
-}
 
 const roleIdOf = (entry?: { cinematicRoleId?: number; cinematicRole?: BasicEntity }): number | undefined => {
   return entry?.cinematicRoleId ?? entry?.cinematicRole?.id
@@ -265,12 +167,6 @@ const isRoleMatch = (
   return roleName.includes("productor") || roleName.includes("produccion") || roleName.includes("producer")
 }
 
-const findProfessionalEntry = (
-  entries: Array<{ cinematicRoleId?: number; cinematicRole?: BasicEntity; professional?: ProfessionalData }> | undefined,
-  role: "director" | "producer",
-) => {
-  return (entries || []).find((entry) => isRoleMatch(entry, role))
-}
 
 type SheetProfessionalEntry = NonNullable<SheetMovie["professionals"]>[number]
 
@@ -401,6 +297,14 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
   const professionalSlots = buildDirectorProducerSlots(movie.professionals)
   const firstSlot = professionalSlots[0]
   const secondSlot = professionalSlots[1]
+
+  // Get director and producer photo URLs
+    const directorPhotoUrl = typeof firstSlot?.entry?.professional?.profilePhotoAsset?.url === "string"
+      ? firstSlot.entry.professional.profilePhotoAsset.url || ""
+      : ""
+    const producerPhotoUrl = typeof secondSlot?.entry?.professional?.profilePhotoAsset?.url === "string"
+      ? secondSlot.entry.professional.profilePhotoAsset.url || ""
+      : ""
 
   const subgenres = (movie.subgenres || [])
     .map((item) => textValue(item?.name, ""))
@@ -581,9 +485,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
             </div>
 
             <div class="page1-main">
-              <div class="poster-box">
-                ${data.posterSrc ? `<img class="cover-image" src="${data.posterSrc}" alt="Afiche" />` : ""}
-              </div>
+              <!-- Poster image removed -->
             </div>
           </div>
         </div>
@@ -601,7 +503,11 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(directorName)}</div>
               </div>
-              ${firstSlot && data.directorPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.directorPhotoSrc))}" alt="Director" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
+              {directorPhotoUrl ? (
+                <div class="page2-photo-frame">
+                  <img class="page2-photo" src="${htmlEscape(toAbsolute(directorPhotoUrl))}" alt="Director" crossorigin="anonymous" />
+                </div>
+              ) : ""}
             </div>
             <div class="page2-bio">${nlToBr(directorBioText)}</div>
             <div class="page2-row3">
@@ -618,7 +524,11 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
                 </div>
                 <div class="page2-name">${nlToBr(producerName)}</div>
               </div>
-              ${secondSlot && data.producerPhotoSrc ? `<div class="page2-photo-frame"><img class="page2-photo" src="${htmlEscape(toAbsolute(data.producerPhotoSrc))}" alt="Productor" crossorigin="anonymous" /></div>` : `<div class="page2-photo-placeholder"></div>`}
+              {producerPhotoUrl ? (
+                <div class="page2-photo-frame">
+                  <img class="page2-photo" src="${htmlEscape(toAbsolute(producerPhotoUrl))}" alt="Productor" crossorigin="anonymous" />
+                </div>
+              ) : ""}
             </div>
             <div class="page2-bio">${nlToBr(producerBioText)}</div>
             <div class="page2-row3">
@@ -642,12 +552,7 @@ const buildPrintHtml = (movie: SheetMovie, data: PreviewData, autoPrint = true):
 
 void buildPrintHtml
 
-export function MovieInfoSheetSection({
-  movie,
-  posterElementId = "public-movie-poster",
-  directorPhotoElementId = "public-director-photo",
-  producerPhotoElementId = "public-producer-photo",
-}: Props) {
+export function MovieInfoSheetSection({ movie, posterElementId, directorPhotoElementId, producerPhotoElementId }: Props) {
   const [isPreparing, setIsPreparing] = useState(false)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
   const [previewData, setPreviewData] = useState<PreviewData | null>(null)
@@ -705,30 +610,11 @@ export function MovieInfoSheetSection({
         color: { dark: "#ffffff", light: "#0000" },
       })
 
-      const slots = buildDirectorProducerSlots(movie.professionals)
-      const firstPreviewSlot = slots[0]
-      const secondPreviewSlot = slots[1]
-
-      const posterOriginal = toAbsoluteDomUri(movie.posterAsset?.url)
-      const directorOriginal = toAbsoluteDomUri(firstPreviewSlot?.entry?.professional?.profilePhotoAsset?.url)
-      const producerOriginal = toAbsoluteDomUri(secondPreviewSlot?.entry?.professional?.profilePhotoAsset?.url)
-
-      const [domPosterSrc, domDirectorPhoto, domProducerPhoto] = await Promise.all([
-        waitForRenderedImageUri(posterElementId),
-        waitForRenderedImageUri(directorPhotoElementId),
-        waitForRenderedImageUri(producerPhotoElementId),
-      ])
-
-      const posterSrc = await resolveFirstLoadableImageUri(domPosterSrc, posterOriginal)
-      const resolvedDirectorPhoto = await resolveFirstLoadableImageUri(domDirectorPhoto, directorOriginal)
-      const resolvedProducerPhoto = await resolveFirstLoadableImageUri(domProducerPhoto, producerOriginal)
+      // No preview slots needed (images removed)
 
       setPreviewData({
         movieUrl,
         qrDataUrl,
-        posterSrc,
-        directorPhotoSrc: resolvedDirectorPhoto,
-        producerPhotoSrc: resolvedProducerPhoto,
       })
       setIsPreviewOpen(true)
     } catch (error) {
@@ -741,9 +627,38 @@ export function MovieInfoSheetSection({
 
   // ...existing code...
 
+
+
+  // Professional slots and photo URLs for modal preview
   const professionalSlots = buildDirectorProducerSlots(movie.professionals)
   const firstSlot = professionalSlots[0]
   const secondSlot = professionalSlots[1]
+
+  // Helper to get DataURL from an image element by id
+  const getImageDataUrl = (elementId?: string): string | undefined => {
+    if (!elementId) return undefined
+    const img = typeof window !== "undefined" ? document.getElementById(elementId) as HTMLImageElement : undefined
+    if (img && img.complete && img.naturalWidth > 0) {
+      try {
+        const canvas = document.createElement("canvas")
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+          ctx.drawImage(img, 0, 0)
+          return canvas.toDataURL("image/png")
+        }
+      } catch {}
+    }
+    return undefined
+  }
+
+  // Poster DataURL (prefer DOM, fallback to URL)
+  const posterUrl: string | undefined = getImageDataUrl(posterElementId) || movie.posterAsset?.url || undefined
+
+  // Prefer DataURL from DOM image if possible, fallback to URL
+  const directorPhotoUrl: string | undefined = getImageDataUrl(directorPhotoElementId) || firstSlot?.entry?.professional?.profilePhotoAsset?.url || undefined
+  const producerPhotoUrl: string | undefined = getImageDataUrl(producerPhotoElementId) || secondSlot?.entry?.professional?.profilePhotoAsset?.url || undefined
 
   const subgenres = (movie.subgenres || [])
     .map((item) => textValue(item?.name, ""))
@@ -879,9 +794,26 @@ export function MovieInfoSheetSection({
                   </div>
 
                   <div className={styles.page1Main}>
-                    <div className={styles.posterBox}>
-                      {previewData.posterSrc && <img className={styles.coverImage} src={previewData.posterSrc} alt="Afiche" crossOrigin="anonymous" />}
-                    </div>
+                    {posterUrl && (
+                      <div className={styles.posterBox}>
+                        <img
+                          className={styles.coverImage}
+                          src={posterUrl}
+                          alt="Afiche"
+                          style={{
+                            width: 'auto',
+                            height: 'auto',
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            objectFit: 'unset',
+                            objectPosition: 'center',
+                            position: 'static',
+                            display: 'block',
+                            margin: '0 auto',
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -900,9 +832,11 @@ export function MovieInfoSheetSection({
                       </div>
                       <p className={styles.page2Name}>{directorName}</p>
                     </div>
-                    {firstSlot && previewData.directorPhotoSrc
-                      ? <div className={styles.page2PhotoFrame}><img className={styles.page2Photo} src={previewData.directorPhotoSrc} alt="Director" crossOrigin="anonymous" /></div>
-                      : <div className={styles.page2PhotoPlaceholder} />}
+                    {typeof directorPhotoUrl === "string" && directorPhotoUrl ? (
+                      <div className={styles.page2PhotoFrame}>
+                        <img className={styles.page2Photo} src={directorPhotoUrl} alt="Director" crossOrigin="anonymous" />
+                      </div>
+                    ) : null}
                   </div>
                   <p className={styles.page2Bio}>{directorBioText}</p>
                   <div className={styles.page2Row3}>
@@ -920,9 +854,11 @@ export function MovieInfoSheetSection({
                       </div>
                       <p className={styles.page2Name}>{producerName}</p>
                     </div>
-                    {secondSlot && previewData.producerPhotoSrc
-                      ? <div className={styles.page2PhotoFrame}><img className={styles.page2Photo} src={previewData.producerPhotoSrc} alt="Productor" crossOrigin="anonymous" /></div>
-                      : <div className={styles.page2PhotoPlaceholder} />}
+                    {typeof producerPhotoUrl === "string" && producerPhotoUrl ? (
+                      <div className={styles.page2PhotoFrame}>
+                        <img className={styles.page2Photo} src={producerPhotoUrl} alt="Productor" crossOrigin="anonymous" />
+                      </div>
+                    ) : null}
                   </div>
                   <p className={styles.page2Bio}>{producerBioText}</p>
                   <div className={styles.page2Row3}>

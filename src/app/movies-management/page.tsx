@@ -9,7 +9,7 @@ import {
   movieService,
   type MovieClaimRequestUserItem,
 } from "@/features/movies/services/movie.service"
-import { assetService } from "@/features/assets/services/asset.service"
+// import { assetService } from "@/features/assets/services/asset.service"
 import type { Movie } from "@/features/movies/types"
 import styles from "./page.module.css"
 
@@ -31,17 +31,11 @@ type MovieCountryRelation = {
   name?: string
 }
 
-type MoviePosterAsset = {
-  id?: number
-  url?: string | null
-}
-
 type MovieWithRelations = Movie & {
   professionals?: MovieProfessionalRelation[]
   companies?: MovieCompanyRelation[]
   languages?: Array<MovieLanguageRelation | string>
   country?: MovieCountryRelation
-  posterAsset?: MoviePosterAsset | null
 }
 
 export default function MoviesManagementPage() {
@@ -148,65 +142,7 @@ export default function MoviesManagementPage() {
 
       paintPageBackground()
 
-      const loadImageWithSize = async (
-        src: string,
-      ): Promise<{ dataUrl: string; width: number; height: number } | null> => {
-        try {
-          return await new Promise((resolve) => {
-            const image = new window.Image()
-            image.onload = () => {
-              const canvas = document.createElement("canvas")
-              canvas.width = image.width
-              canvas.height = image.height
-              const context = canvas.getContext("2d")
 
-              if (!context) {
-                resolve(null)
-                return
-              }
-
-              context.drawImage(image, 0, 0)
-              resolve({
-                dataUrl: canvas.toDataURL("image/png"),
-                width: image.width,
-                height: image.height,
-              })
-            }
-            image.onerror = () => resolve(null)
-            image.src = src
-          })
-        } catch {
-          return null
-        }
-      }
-
-      const toProxyImageUrl = (url: string) =>
-        `/api/image-proxy?url=${encodeURIComponent(url)}`
-
-      const toPublicAssetUrl = (url: string) =>
-        assetService.getPublicAssetUrl(
-          { url } as Parameters<typeof assetService.getPublicAssetUrl>[0],
-        )
-
-      const resolvePosterProxyUrl = async (): Promise<string | null> => {
-        const directPosterUrl = movie.posterAsset?.url?.trim()
-
-        if (directPosterUrl) {
-          return toProxyImageUrl(toPublicAssetUrl(directPosterUrl))
-        }
-
-        const posterAssetId = movie.posterAsset?.id ?? movie.posterAssetId
-        if (!posterAssetId) {
-          return null
-        }
-
-        try {
-          const posterAsset = await assetService.getAsset(posterAssetId)
-          return toProxyImageUrl(assetService.getPublicAssetUrl(posterAsset))
-        } catch {
-          return null
-        }
-      }
 
       const ensureSpace = (neededHeight: number) => {
         if (cursorY + neededHeight > pageHeight - 16) {
@@ -227,43 +163,7 @@ export default function MoviesManagementPage() {
         pdf.setFillColor(hazVioletR, hazVioletG, hazVioletB)
         pdf.rect(0, 33, pageWidth, 7, "F")
 
-        const iccaLogo = await loadImageWithSize("/images/logos/logo icca.png")
-        const hazLogo = await loadImageWithSize(
-          "/images/logos/hazcine-horizontal-oscuro1.png",
-        )
-
-        if (iccaLogo) {
-          const maxW = 52
-          const maxH = 20
-          const ratio = iccaLogo.width / iccaLogo.height
-          let w = maxW
-          let h = w / ratio
-          if (h > maxH) {
-            h = maxH
-            w = h * ratio
-          }
-          pdf.addImage(iccaLogo.dataUrl, "PNG", marginX, 10 + (maxH - h) / 2, w, h)
-        }
-
-        if (hazLogo) {
-          const maxW = 54
-          const maxH = 22
-          const ratio = hazLogo.width / hazLogo.height
-          let w = maxW
-          let h = w / ratio
-          if (h > maxH) {
-            h = maxH
-            w = h * ratio
-          }
-          pdf.addImage(
-            hazLogo.dataUrl,
-            "PNG",
-            pageWidth - marginX - w,
-            9 + (maxH - h) / 2,
-            w,
-            h,
-          )
-        }
+        // Logo images removed
 
         pdf.setTextColor(hazBlueR, hazBlueG, hazBlueB)
         pdf.setFont("helvetica", "bold")
@@ -363,12 +263,9 @@ export default function MoviesManagementPage() {
         summaryY += Math.max(6, wrapped.length * 4.5)
       }
 
-      // Extraer directores y productores con foto
-      // Acceso seguro a profilePhotoAsset (puede no existir en el tipo base)
-      const getProfilePhotoUrl = (prof: any) =>
-        prof?.profilePhotoAsset?.url || null
 
-      const directors: { name: string; photo: string | null }[] =
+      // Extraer directores y productores solo nombres (sin fotos)
+      const directors: string[] =
         movie.professionals
           ?.filter((entry) => {
             const roleId = entry.cinematicRole?.id
@@ -378,13 +275,12 @@ export default function MoviesManagementPage() {
               roleName.includes('director')
             )
           })
-          .map((entry) => ({
-            name: typeof entry.professional?.fullName === 'string' ? entry.professional.fullName : '',
-            photo: typeof getProfilePhotoUrl(entry.professional) === 'string' ? getProfilePhotoUrl(entry.professional) : null,
-          }))
-          .filter((entry) => entry.name !== "") || []
+          .map((entry) =>
+            typeof entry.professional?.fullName === 'string' ? entry.professional.fullName : ''
+          )
+          .filter((name) => name !== "") || []
 
-      const producers: { name: string; photo: string | null }[] =
+      const producers: string[] =
         movie.professionals
           ?.filter((entry) => {
             const roleId = entry.cinematicRole?.id
@@ -394,11 +290,10 @@ export default function MoviesManagementPage() {
               roleName.includes('productor') || roleName.includes('producer')
             )
           })
-          .map((entry) => ({
-            name: typeof entry.professional?.fullName === 'string' ? entry.professional.fullName : '',
-            photo: typeof getProfilePhotoUrl(entry.professional) === 'string' ? getProfilePhotoUrl(entry.professional) : null,
-          }))
-          .filter((entry) => entry.name !== "") || []
+          .map((entry) =>
+            typeof entry.professional?.fullName === 'string' ? entry.professional.fullName : ''
+          )
+          .filter((name) => name !== "") || []
 
       const contactDirectors =
         (movie as unknown as { contacts?: Array<{ name?: string; role?: string }> })
@@ -418,8 +313,8 @@ export default function MoviesManagementPage() {
           .map((contact) => contact.name)
           .filter(Boolean) || []
 
-      const mergedDirectors = Array.from(new Set([...directors, ...contactDirectors]))
-      const mergedProducers = Array.from(new Set([...producers, ...contactProducers]))
+      const mergedDirectors: string[] = Array.from(new Set([...(directors || []), ...(contactDirectors || [])])).filter((x): x is string => typeof x === 'string')
+      const mergedProducers: string[] = Array.from(new Set([...(producers || []), ...(contactProducers || [])])).filter((x): x is string => typeof x === 'string')
 
       const companies =
         movie.companies
@@ -440,42 +335,20 @@ export default function MoviesManagementPage() {
           .filter(Boolean)
       ).join(", ")
 
-      // Mostrar foto y nombre en PDF (solo 1era foto por rol, si existe)
-      const drawProfileWithPhoto = async (label: string, list: Array<{ name: string; photo: string | null }>, y: number) => {
-        const x = summaryX
-        let offsetX = x
-        let maxH = 16
-        let photoDrawn = false
-        if (list.length && list[0].photo) {
-          const img = await loadImageWithSize(list[0].photo)
-          if (img) {
-            // Limitar solo el alto, mantener aspect ratio, mostrar imagen completa
-            let drawH = maxH
-            let drawW = img.width * (drawH / img.height)
-            const maxW = 32
-            if (drawW > maxW) {
-              drawW = maxW
-              drawH = img.height * (drawW / img.width)
-            }
-            // pdf.addImage con "contain" no existe, pero este cálculo ya asegura aspect ratio y no recorta
-            pdf.addImage(img.dataUrl, "PNG", offsetX, y, drawW, drawH)
-            offsetX += drawW + 3
-            photoDrawn = true
-          }
-        }
+      // Mostrar solo nombres (sin fotos)
+      const addSummaryNamesLine = (label: string, names: string[], y: number) => {
         pdf.setFont("helvetica", "bold")
         pdf.setFontSize(10)
         pdf.setTextColor(17, 24, 39)
-        pdf.text(`${label}:`, offsetX, y + 10)
+        pdf.text(`${label}:`, summaryX, y)
         pdf.setFont("helvetica", "normal")
         pdf.setTextColor(55, 65, 81)
-        pdf.text(list.map((d) => d.name).join(", ") || "-", offsetX + 38, y + 10)
-        return y + maxH + 2
+        pdf.text(names.length ? names.join(", ") : "-", summaryX + 38, y)
+        return y + 12
       }
 
-
-      summaryY = await drawProfileWithPhoto("Director", directors, summaryY)
-      summaryY = await drawProfileWithPhoto("Productor", producers, summaryY)
+      summaryY = addSummaryNamesLine("Director", mergedDirectors, summaryY)
+      summaryY = addSummaryNamesLine("Productor", mergedProducers, summaryY)
       addSummaryLine("Empresa productora", companies.join(", ") || "-")
       addSummaryLine("Duración", `${movie.durationMinutes || "-"} min`)
       addSummaryLine("Tipo", movie.type)
