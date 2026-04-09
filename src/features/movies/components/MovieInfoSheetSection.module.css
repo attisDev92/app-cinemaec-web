@@ -62,6 +62,18 @@
 
 .previewBackdrop {
   position: absolute;
+.coverImage {
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: unset !important;
+  object-position: center !important;
+  display: block;
+  margin: 0 auto;
+  clip-path: none !important;
+  overflow: visible !important;
+}
   inset: 0;
   border: 0;
   background: rgba(0, 0, 0, 0.6);
@@ -99,6 +111,19 @@
 
 .previewPages {
   display: grid;
+.page2Photo {
+  position: static;
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: unset !important;
+  object-position: center !important;
+  display: block;
+  border-radius: 2.3%;
+  clip-path: none !important;
+  overflow: visible !important;
+}
   grid-template-columns: 1fr;
   width: max-content;
   gap: 0.95rem;
