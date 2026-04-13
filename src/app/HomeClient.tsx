@@ -90,6 +90,8 @@ export default function HomeClient() {
           </article>
         </div>
 
+        <CatalogBanner />
+
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
             ¿Por qué ser parte de CinemaEC?
@@ -106,8 +108,6 @@ export default function HomeClient() {
             </p>
           </div>
         </div>
-
-        <CatalogBanner />
       </main>
     </div>
   )

@@ -1,7 +1,8 @@
+/* FONDO FIJO, sin variables de modo */
 .banner {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #d70037 100%);
-  padding: var(--spacing-3xl) var(--spacing-md);
-  margin: var(--spacing-2xl) 0;
+  background: linear-gradient(135deg, #eb0045 0%, #d70037 100%);
+  padding: 4rem 1rem;
+  margin: 3rem 0;
 }
 
 .bannerContent {
@@ -10,18 +11,15 @@
 }
 
 .bannerTitle {
-  font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-bold);
-  color: white;
-  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
   text-align: center;
 }
 
 .bannerSubtitle {
-  font-size: var(--font-size-lg);
-  color: rgba(255, 255, 255, 0.9);
-  text-align: center;
-  margin: 0 0 var(--spacing-2xl) 0;
+  display: none;
 }
 
 .optionsGrid {
@@ -32,12 +30,12 @@
 }
 
 .optionCard {
-  background: white;
-  border-radius: var(--border-radius-xl);
-  padding: var(--spacing-xl);
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 2rem;
   text-decoration: none;
   transition: all 0.3s ease-in-out;
-  box-shadow: var(--shadow-base);
+  box-shadow: 0 1px 3px 0 #0001a, 0 1px 2px 0 #0000f;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -79,28 +77,28 @@
 }
 
 .optionTitle {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 0.5rem;
 }
 
 .optionDescription {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  color: #6b7280;
   margin: 0;
   flex-grow: 1;
-  line-height: var(--line-height-relaxed);
+  line-height: 1.75;
 }
 
 .arrowIcon {
-  margin-top: var(--spacing-md);
-  font-size: var(--font-size-xl);
-  color: var(--color-primary);
-  font-weight: var(--font-weight-bold);
+  margin-top: 1rem;
+  font-size: 1.25rem;
+  color: #eb0045;
+  font-weight: 700;
   transition: transform 0.3s ease-in-out;
 }
 

@@ -19,15 +19,9 @@ const catalogOptions: CatalogOption[] = [
   },
   {
     title: "Profesionales",
-    description: "Red de profesionales del sector audiovisual ecuatoriano",
+    description: "Conoce a los profesionales que están detrás de los proyectos",
     href: "/public/professionals",
     icon: "👥",
-  },
-  {
-    title: "Películas Ecuatorianas",
-    description: "Contenido audiovisual de realizadores ecuatorianos",
-    href: "/public/ecuatorian-movies",
-    icon: "🎬",
   },
 ]
 
@@ -35,11 +29,7 @@ export function CatalogBanner() {
   return (
     <section className={styles.banner}>
       <div className={styles.bannerContent}>
-        <h2 className={styles.bannerTitle}>Accede a Contenido Público</h2>
-        <p className={styles.bannerSubtitle}>
-          Explora nuestras colecciones sin necesidad de crear una cuenta
-        </p>
-
+        <h2 className={styles.bannerTitle}>ECUADOR EN FESTIVAL INTERNACIONAL DE CINE DE CARTAGENA DE INDIAS - FICCI</h2>
         <div className={styles.optionsGrid}>
           {catalogOptions.map((option) => (
             <Link
