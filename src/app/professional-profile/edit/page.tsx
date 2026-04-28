@@ -55,6 +55,8 @@ export default function EditProfessionalProfilePage() {
   const [companyNameCEO, setCompanyNameCEO] = useState("")
   const [bio, setBio] = useState("")
   const [bioEn, setBioEn] = useState("")
+  const [bioError, setBioError] = useState("")
+  const [bioEnError, setBioEnError] = useState("")
   const [profilePhotoAssetId, setProfilePhotoAssetId] = useState<number | null>(
     null,
   )
@@ -288,14 +290,27 @@ export default function EditProfessionalProfilePage() {
   }
 
   const handleSave = async () => {
+    setBioError("");
+    setBioEnError("");
     if (!professionalId) {
-      return
+      return;
     }
-
+    let hasError = false;
+    if (bio.length > 300) {
+      setBioError("Máximo 300 caracteres");
+      hasError = true;
+    }
+    if (bioEn.length > 300) {
+      setBioEnError("Máximo 300 caracteres");
+      hasError = true;
+    }
+    if (hasError) {
+      setError("La biofilmografía no puede superar los 300 caracteres.");
+      return;
+    }
     try {
-      setIsSaving(true)
-      setError("")
-
+      setIsSaving(true);
+      setError("");
       await Promise.all([
         professionalsService.update(professionalId, {
           name,
@@ -327,18 +342,17 @@ export default function EditProfessionalProfilePage() {
             cinematicRoleId: entry.cinematicRoleId,
           })),
         ),
-      ])
-
-      setMessage("Perfil actualizado correctamente")
-      setTimeout(() => setMessage(""), 2500)
+      ]);
+      setMessage("Perfil actualizado correctamente");
+      setTimeout(() => setMessage(""), 2500);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "No se pudo guardar el perfil",
-      )
+        err instanceof Error ? err.message : "No se pudo guardar el perfil"
+      );
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  }  
 
   if (authLoading || isLoading) {
     return (
@@ -616,16 +630,38 @@ export default function EditProfessionalProfilePage() {
                 <Textarea
                   label="Biofilmografía (español)"
                   value={bio}
-                  onChange={(event) => setBio(event.target.value)}
+                  onChange={(event) => {
+                    if (event.target.value.length <= 300) {
+                      setBio(event.target.value);
+                      setBioError("");
+                    } else {
+                      setBio(event.target.value.slice(0, 300));
+                      setBioError("Máximo 300 caracteres");
+                    }
+                  }}
                   rows={4}
+                  maxLength={300}
+                  error={bioError}
+                  helper={`${bio.length}/300 caracteres`}
                 />
               </div>
               <div className={styles.fullWidthField}>
                 <Textarea
                   label="Biofilmografía (inglés)"
                   value={bioEn}
-                  onChange={(event) => setBioEn(event.target.value)}
+                  onChange={(event) => {
+                    if (event.target.value.length <= 300) {
+                      setBioEn(event.target.value);
+                      setBioEnError("");
+                    } else {
+                      setBioEn(event.target.value.slice(0, 300));
+                      setBioEnError("Máximo 300 caracteres");
+                    }
+                  }}
                   rows={4}
+                  maxLength={300}
+                  error={bioEnError}
+                  helper={`${bioEn.length}/300 caracteres`}
                 />
               </div>
             </div>
