@@ -25,6 +25,7 @@ export interface PublicProfessionalMovieParticipation {
   cinematicRoleId: number
   cinematicRole?: ProfessionalRoleSummary | null
   posterAsset?: ProfessionalAsset | null
+  accredited?: boolean
 }
 
 export interface Professional {
@@ -40,6 +41,8 @@ export interface Professional {
   rrss?: string | null
   bio?: string | null
   bioEn?: string | null
+  extendedBiofilmography: string
+  imdbProfile?: string | null
   profilePhotoAssetId?: number | null
   profilePhotoAsset?: ProfessionalAsset | null
   reelLink?: string | null
@@ -68,6 +71,8 @@ export interface CreateProfessionalPayload {
   rrss?: string | null
   bio?: string | null
   bioEn?: string | null
+  extendedBiofilmography: string
+  imdbProfile?: string | null
   profilePhotoAssetId?: number | null
   reelLink?: string | null
   companyNameCEO?: string | null

@@ -42,7 +42,7 @@ export function MovieCard({ movie }: MovieCardProps) {
   const hasPoster = Boolean(movie.posterAsset?.url) && !posterError
 
   return (
-    <Link href={`/public/catalog/${movie.id}`} className={styles.cardLink}>
+    <Link href={`/public/movies/${movie.id}`} className={styles.cardLink}>
       <div className={styles.card}>
         {/* Poster */}
         <div className={styles.posterContainer}>

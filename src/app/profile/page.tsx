@@ -134,6 +134,7 @@ export default function ProfilePage() {
 
       await updateProfile(updateData)
       setIsEditing(false)
+      loadProfile() // Refresca los datos locales tras guardar
       setStatus({ success: "Perfil actualizado correctamente" })
     } catch (err) {
       setStatus({
@@ -330,7 +331,6 @@ export default function ProfilePage() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder="0987654321"
-                    required
                   />
 
                   <div className={styles.buttonGroup}>

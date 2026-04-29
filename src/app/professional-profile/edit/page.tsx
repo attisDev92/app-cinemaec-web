@@ -57,6 +57,8 @@ export default function EditProfessionalProfilePage() {
   const [bioEn, setBioEn] = useState("")
   const [bioError, setBioError] = useState("")
   const [bioEnError, setBioEnError] = useState("")
+  const [extendedBiofilmography, setExtendedBiofilmography] = useState("")
+  const [extendedBioError, setExtendedBioError] = useState("")
   const [profilePhotoAssetId, setProfilePhotoAssetId] = useState<number | null>(
     null,
   )
@@ -84,6 +86,8 @@ export default function EditProfessionalProfilePage() {
   const [participationEntries, setParticipationEntries] = useState<
     LocalParticipation[]
   >([])
+
+  const [imdbProfile, setImdbProfile] = useState("")
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -150,6 +154,8 @@ export default function EditProfessionalProfilePage() {
         setCompanyNameCEO(professional.companyNameCEO || "")
         setBio(professional.bio || "")
         setBioEn(professional.bioEn || "")
+        setExtendedBiofilmography(professional.extendedBiofilmography || "")
+        setImdbProfile(professional.imdbProfile || "")
         setPrimaryRole1(
           professional.primaryActivityRoleId1
             ? String(professional.primaryActivityRoleId1)
@@ -304,8 +310,17 @@ export default function EditProfessionalProfilePage() {
       setBioEnError("Máximo 300 caracteres");
       hasError = true;
     }
+    if (extendedBiofilmography.length === 0) {
+      setExtendedBioError("Este campo es obligatorio");
+      hasError = true;
+    } else if (extendedBiofilmography.length > 1000) {
+      setExtendedBioError("Máximo 1000 caracteres");
+      hasError = true;
+    } else {
+      setExtendedBioError("");
+    }
     if (hasError) {
-      setError("La biofilmografía no puede superar los 300 caracteres.");
+      setError("Revisa los campos obligatorios y los límites de caracteres.");
       return;
     }
     try {
@@ -334,6 +349,8 @@ export default function EditProfessionalProfilePage() {
           companyNameCEO: companyNameCEO || null,
           bio: bio || null,
           bioEn: bioEn || null,
+          extendedBiofilmography,
+          imdbProfile: imdbProfile || null,
         }),
         professionalsService.updateMovieParticipations(
           professionalId,
@@ -432,6 +449,12 @@ export default function EditProfessionalProfilePage() {
                 value={rrss}
                 onChange={(event) => setRrss(event.target.value)}
                 placeholder="https://..."
+              />
+              <Input
+                label="Perfil de IMDB"
+                value={imdbProfile}
+                onChange={(event) => setImdbProfile(event.target.value)}
+                placeholder="https://www.imdb.com/name/nm0000000/"
               />
               <Input
                 label="Reel"
@@ -662,6 +685,21 @@ export default function EditProfessionalProfilePage() {
                   maxLength={300}
                   error={bioEnError}
                   helper={`${bioEn.length}/300 caracteres`}
+                />
+              </div>
+              <div className={styles.fullWidthField}>
+                <Textarea
+                  label="Biofilmografía extendida (español) *"
+                  value={extendedBiofilmography}
+                  onChange={(event) => {
+                    setExtendedBiofilmography(event.target.value.slice(0, 1000));
+                    setExtendedBioError("");
+                  }}
+                  rows={6}
+                  maxLength={1000}
+                  error={extendedBioError}
+                  helper={`${extendedBiofilmography.length}/1000 caracteres`}
+                  required
                 />
               </div>
             </div>

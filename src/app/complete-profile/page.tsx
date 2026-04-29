@@ -315,7 +315,6 @@ export default function CompleteProfilePage() {
                   onBlur={handleBlur}
                   placeholder="0987654321"
                   error={touched.phone ? errors.phone : undefined}
-                  required
                 />
 
                 <Button

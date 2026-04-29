@@ -265,6 +265,7 @@ export default function AdminProfessionalsPage() {
                     <th>Contacto</th>
                     <th>Vinculado</th>
                     <th>Perfil público</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -312,6 +313,16 @@ export default function AdminProfessionalsPage() {
                                   ? "Público"
                                   : "Privado"}
                             </button>
+                          </td>
+                          <td>
+                            <a
+                              href={`/public/professionals/${professional.id}`}
+                              className={styles.viewBtn}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Ver
+                            </a>
                           </td>
                         </tr>
                       ))

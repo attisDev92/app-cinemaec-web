@@ -489,10 +489,16 @@ const validationSchema = Yup.object().shape({
     ),
   synopsis: Yup.string()
     .required("La sinopsis es obligatoria")
-    .min(10, "La sinopsis debe tener al menos 10 caracteres"),
-  synopsisEn: Yup.string(),
-  logLine: Yup.string(),
-  logLineEn: Yup.string(),
+    .min(10, "La sinopsis debe tener al menos 10 caracteres")
+    .max(300, "La sinopsis no puede superar los 300 caracteres"),
+  synopsisEn: Yup.string()
+    .max(300, "La sinopsis en inglés no puede superar los 300 caracteres"),
+  logLine: Yup.string()
+    .min(100, "El logline debe tener al menos 100 caracteres")
+    .max(200, "El logline no puede superar los 200 caracteres"),
+  logLineEn: Yup.string()
+    .min(100, "El logline en inglés debe tener al menos 100 caracteres")
+    .max(200, "El logline en inglés no puede superar los 200 caracteres"),
   projectNeed: Yup.string(),
   projectNeedEn: Yup.string(),
   directors: Yup.array(),
@@ -512,7 +518,16 @@ const validationSchema = Yup.object().shape({
   internationalRelease: Yup.object(),
   festivalNominations: Yup.array(),
   platforms: Yup.array(),
-  contacts: Yup.array(),
+  contacts: Yup.array()
+    .of(
+      Yup.object({
+        name: Yup.string().required("El nombre del contacto es obligatorio"),
+        role: Yup.string().required("El cargo es obligatorio"),
+        phone: Yup.string().required("El teléfono es obligatorio"),
+        email: Yup.string().email("Email inválido").required("El email es obligatorio"),
+      })
+    )
+    .min(1, "Debes agregar al menos un contacto"),
   contentBank: Yup.array(),
   filmingCitiesEc: Yup.array(),
   filmingCountries: Yup.array(),
@@ -1973,106 +1988,6 @@ export function MovieForm({
                     )}
                   </div>
                 </div>
-
-                <div className={styles.field}>
-                  <div className={styles.label}>Contacto</div>
-                  <div className={styles.crewList}>
-                    <div className={styles.crewRow}>
-                      <Input
-                        label="Nombre y apellido"
-                        name="contact-name"
-                        value={contactName}
-                        onChange={(event) => setContactName(event.target.value)}
-                        placeholder="Nombre del contacto"
-                      />
-
-                      <Select
-                        label="Cargo"
-                        name="contact-role"
-                        value={contactRole}
-                        onChange={(event) =>
-                          setContactRole(event.target.value as ContactPosition)
-                        }
-                      >
-                        <option value="">Selecciona un cargo</option>
-                        {CONTACT_POSITION_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </Select>
-
-                      <Input
-                        label="Teléfono"
-                        name="contact-phone"
-                        value={contactPhone}
-                        onChange={(event) => setContactPhone(event.target.value)}
-                        placeholder="Ej: +593 99 123 4567"
-                      />
-
-                      <Input
-                        label="Email"
-                        name="contact-email"
-                        type="email"
-                        value={contactEmail}
-                        onChange={(event) => setContactEmail(event.target.value)}
-                        placeholder="contacto@ejemplo.com"
-                      />
-
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={addContactEntry}
-                        disabled={
-                          !contactName.trim() ||
-                          !contactRole ||
-                          !contactPhone.trim() ||
-                          !contactEmail.trim()
-                        }
-                      >
-                        Agregar
-                      </Button>
-                    </div>
-
-                    {formik.values.contacts.length > 0 && (
-                      <div className={styles.internationalList}>
-                        {formik.values.contacts.map((entry, index) => {
-                          const roleLabel = CONTACT_POSITION_OPTIONS.find(
-                            (option) => option.value === entry.role,
-                          )?.label
-                          return (
-                            <div
-                              key={`contact-${index}`}
-                              className={styles.internationalItem}
-                            >
-                              <div className={styles.internationalInfo}>
-                                <p className={styles.internationalTitle}>
-                                  {entry.name}
-                                </p>
-                                <p className={styles.internationalMeta}>
-                                  {roleLabel ?? ""}
-                                </p>
-                                <p className={styles.internationalMeta}>
-                                  {entry.phone}
-                                  {entry.email ? ` • ${entry.email}` : ""}
-                                </p>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                className={styles.internationalRemove}
-                                aria-label="Quitar"
-                                onClick={() => removeContactRow(index)}
-                              >
-                                X
-                              </Button>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
               </section>
             )}
 
@@ -2580,6 +2495,8 @@ export function MovieForm({
                     placeholder="Describe brevemente la trama principal"
                     error={getFieldError("synopsis")}
                     className={styles.synopsisClamp}
+                    helper={`${formik.values.synopsis.length}/300 caracteres`}
+                    maxLength={300}
                   />
 
                   <Textarea
@@ -2589,6 +2506,9 @@ export function MovieForm({
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     placeholder="Frase que resuma el gancho"
+                    error={getFieldError("logLine")}
+                    helper={`${formik.values.logLine.length}/200 caracteres`}
+                    maxLength={200}
                   />
                 </div>
 
@@ -2622,6 +2542,122 @@ export function MovieForm({
                       </option>
                     ))}
                   </Select>
+                </div>
+                <div className={styles.field}>
+                  <div className={styles.label}>
+                    Contacto <span className={styles.required}>*</span>
+                  </div>
+                  <div className={styles.crewList}>
+                    <div className={styles.crewRow}>
+                      <Input
+                        label="Nombre y apellido *"
+                        name="contact-name"
+                        value={contactName}
+                        onChange={(event) => setContactName(event.target.value)}
+                        placeholder="Nombre del contacto"
+                      />
+
+                      <Select
+                        label="Cargo *"
+                        name="contact-role"
+                        value={contactRole}
+                        onChange={(event) =>
+                          setContactRole(event.target.value as ContactPosition)
+                        }
+                      >
+                        <option value="">Selecciona un cargo</option>
+                        {CONTACT_POSITION_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+
+                      <Input
+                        label="Teléfono *"
+                        name="contact-phone"
+                        value={contactPhone}
+                        onChange={(event) => setContactPhone(event.target.value)}
+                        placeholder="Ej: +593 99 123 4567"
+                      />
+
+                      <Input
+                        label="Email *"
+                        name="contact-email"
+                        type="email"
+                        value={contactEmail}
+                        onChange={(event) => setContactEmail(event.target.value)}
+                        placeholder="contacto@ejemplo.com"
+                      />
+
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={addContactEntry}
+                        disabled={
+                          !contactName.trim() ||
+                          !contactRole ||
+                          !contactPhone.trim() ||
+                          !contactEmail.trim()
+                        }
+                      >
+                        Agregar
+                      </Button>
+                    </div>
+
+                    {/* Mostrar errores de validación de contactos */}
+                    {getFieldError("contacts") && (
+                      <p className={styles.error}>{getFieldError("contacts")}</p>
+                    )}
+
+                    {formik.values.contacts.length > 0 && (
+                      <div className={styles.internationalList}>
+                        {formik.values.contacts.map((entry, index) => {
+                          const roleLabel = CONTACT_POSITION_OPTIONS.find(
+                            (option) => option.value === entry.role,
+                          )?.label
+                          return (
+                            <div
+                              key={`contact-${index}`}
+                              className={styles.internationalItem}
+                            >
+                              <div className={styles.internationalInfo}>
+                                <p className={styles.internationalTitle}>
+                                  {entry.name}
+                                </p>
+                                <p className={styles.internationalMeta}>
+                                  {roleLabel ?? ""}
+                                </p>
+                                <p className={styles.internationalMeta}>
+                                  {entry.phone}
+                                  {entry.email ? ` • ${entry.email}` : ""}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className={styles.internationalRemove}
+                                aria-label="Quitar"
+                                onClick={() => removeContactRow(index)}
+                              >
+                                X
+                              </Button>
+                              {/* Mostrar errores individuales de cada contacto */}
+                              {formik.errors.contacts &&
+                                Array.isArray(formik.errors.contacts) &&
+                                formik.errors.contacts[index] && (
+                                  <div className={styles.error}>
+                                    {Object.values(formik.errors.contacts[index] as any).map((msg, i) => (
+                                      <div key={i}>{msg as string}</div>
+                                    ))}
+                                  </div>
+                                )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </section>
             )}
@@ -3531,6 +3567,9 @@ export function MovieForm({
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     placeholder="Brief synopsis in English"
+                    error={getFieldError("synopsisEn")}
+                    helper={`${formik.values.synopsisEn.length}/300 caracteres`}
+                    maxLength={300}
                   />
 
                   <Textarea
@@ -3540,6 +3579,9 @@ export function MovieForm({
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     placeholder="English log line"
+                    error={getFieldError("logLineEn")}
+                    helper={`${formik.values.logLineEn.length}/200 caracteres`}
+                    maxLength={200}
                   />
                 </div>
 
@@ -3551,6 +3593,9 @@ export function MovieForm({
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     placeholder="Describe las necesidades de tu proyecto. Ejemplo: en busca de coproducción para finalizar la postproducción"
+                    error={getFieldError("projectNeed")}
+                    helper={`${formik.values.projectNeed.length}/500 caracteres`}
+                    maxLength={500}
                   />
 
                   <Textarea
@@ -3560,6 +3605,9 @@ export function MovieForm({
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     placeholder="Describe your project's needs in English. Example: seeking co-production to complete post-production"
+                    error={getFieldError("projectNeedEn")}
+                    helper={`${formik.values.projectNeedEn.length}/500 caracteres`}
+                    maxLength={500}
                   />
                 </div>
 

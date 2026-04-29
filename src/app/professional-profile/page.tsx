@@ -964,83 +964,59 @@ export default function ProfessionalProfilePage() {
               </div>
 
               <div className={styles.profileGrid}>
-                <div className={styles.profileBlock}>
-                  <h4 className={styles.blockTitle}>Información</h4>
-                  <div className={styles.profileDetails}>
-                    <div className={styles.detailItem}>
-                      <span className={styles.label}>Identificación</span>
-                      <span className={styles.value}>{claimData.dniNumber || "-"}</span>
+                <div className={styles.profileBlock} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, width: "100%", maxWidth: "100%" }}>
+                  <div style={{ flex: 1 }}>
+                    <h4 className={styles.blockTitle}>Información</h4>
+                    <div className={styles.profileDetails}>
+                      <div className={styles.detailItem}>
+                        <span className={styles.label}>Identificación</span>
+                        <span className={styles.value}>{claimData.dniNumber || "-"}</span>
+                      </div>
+                      <div className={styles.detailItem}>
+                        <span className={styles.label}>Teléfono</span>
+                        <span className={styles.value}>{professionalData?.phone || "-"}</span>
+                      </div>
+                      <div className={styles.detailItem}>
+                        <span className={styles.label}>Celular</span>
+                        <span className={styles.value}>{professionalData?.mobile || "-"}</span>
+                      </div>
+                      <div className={styles.detailItem}>
+                        <span className={styles.label}>Empresa</span>
+                        <span className={styles.value}>
+                          {professionalData?.companyNameCEO || "-"}
+                        </span>
+                      </div>
                     </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.label}>Teléfono</span>
-                      <span className={styles.value}>{professionalData?.phone || "-"}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.label}>Celular</span>
-                      <span className={styles.value}>{professionalData?.mobile || "-"}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.label}>Empresa</span>
-                      <span className={styles.value}>
-                        {professionalData?.companyNameCEO || "-"}
-                      </span>
-                    </div>
+                  </div>
+                  <div className={styles.profileActions} style={{ marginTop: 0, display: "flex", flexDirection: "column", gap: 12, width: "100%" }}>
+                    <Button
+                      onClick={() => {
+                        if (professionalData?.id) {
+                          window.open(`/public/professionals/${professionalData.id}`, "_blank")
+                        }
+                      }}
+                      className={styles.previewButton}
+                      style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}
+                    >
+                      <span role="img" aria-label="Vista previa">👁️</span> Vista previa
+                    </Button>
+                    <Button 
+                      onClick={() => router.push("/professional-profile/edit")}
+                      className={styles.editButton}
+                      style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}
+                    >
+                      <span role="img" aria-label="Editar">✏️</span> Editar Perfil
+                    </Button>
+                    <Button
+                      onClick={handleDownloadProfilePdf}
+                      className={styles.downloadButton}
+                      style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}
+                    >
+                      <span role="img" aria-label="Descargar">⬇️</span> Descargar PDF
+                    </Button>
                   </div>
                 </div>
 
-                <div className={styles.profileBlock}>
-                  <h4 className={styles.blockTitle}>Enlaces</h4>
-                  <div className={styles.linkList}>
-                    {professionalData?.website ? (
-                      <a
-                        href={professionalData.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={styles.profileLink}
-                      >
-                        Sitio web
-                      </a>
-                    ) : (
-                      <span className={styles.emptyValue}>Sin sitio web</span>
-                    )}
-                    {professionalData?.linkedin ? (
-                      <a
-                        href={professionalData.linkedin}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={styles.profileLink}
-                      >
-                        LinkedIn
-                      </a>
-                    ) : (
-                      <span className={styles.emptyValue}>Sin LinkedIn</span>
-                    )}
-                    {professionalData?.reelLink ? (
-                      <a
-                        href={professionalData.reelLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={styles.profileLink}
-                      >
-                        Reel
-                      </a>
-                    ) : (
-                      <span className={styles.emptyValue}>Sin reel</span>
-                    )}
-                    {professionalData?.rrss ? (
-                      <a
-                        href={professionalData.rrss}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={styles.profileLink}
-                      >
-                        Portafolio / RRSS
-                      </a>
-                    ) : (
-                      <span className={styles.emptyValue}>Sin portafolio / RRSS</span>
-                    )}
-                  </div>
-                </div>
               </div>
 
               <div className={styles.profileBlock}>
@@ -1061,62 +1037,7 @@ export default function ProfessionalProfilePage() {
                 </div>
               </div>
 
-              <div className={styles.rolesSection}>
-                <div className={styles.profileBlock}>
-                  <h4 className={styles.blockTitle}>Roles principales</h4>
-                  {primaryRoles.length > 0 ? (
-                    <div className={styles.chipList}>
-                      {primaryRoles.map((roleName) => (
-                        <span key={roleName} className={styles.roleChip}>
-                          {roleName}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={styles.participationHint}>Sin roles principales.</p>
-                  )}
-                </div>
 
-                <div className={styles.profileBlock}>
-                  <h4 className={styles.blockTitle}>Roles secundarios</h4>
-                  {secondaryRoles.length > 0 ? (
-                    <div className={styles.chipList}>
-                      {secondaryRoles.map((roleName) => (
-                        <span key={roleName} className={styles.roleChip}>
-                          {roleName}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={styles.participationHint}>Sin roles secundarios.</p>
-                  )}
-                </div>
-              </div>
-
-              <div className={styles.profileBlock}>
-                <h4 className={styles.blockTitle}>Galería</h4>
-                {displayPortfolioUrls.length > 0 ? (
-                  <div className={styles.galleryGrid}>
-                    {displayPortfolioUrls.map((url) => (
-                      <Image
-                        key={url}
-                        src={url}
-                        alt="Imagen de portafolio"
-                        className={styles.galleryImage}
-                        width={300}
-                        height={220}
-                        unoptimized
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.galleryPlaceholderGrid}>
-                    <div className={styles.galleryPlaceholder}>Sin imagen</div>
-                    <div className={styles.galleryPlaceholder}>Sin imagen</div>
-                    <div className={styles.galleryPlaceholder}>Sin imagen</div>
-                  </div>
-                )}
-              </div>
 
               <div className={styles.participationSection}>
                 <h4 className={styles.blockTitle}>Filmografía</h4>
@@ -1161,20 +1082,6 @@ export default function ProfessionalProfilePage() {
                 )}
               </div>
 
-              <div className={styles.profileActions}>
-                <Button
-                  onClick={handleDownloadProfilePdf}
-                  className={styles.downloadButton}
-                >
-                  Descargar PDF
-                </Button>
-                <Button 
-                  onClick={() => router.push("/professional-profile/edit")}
-                  className={styles.editButton}
-                >
-                  Editar Perfil
-                </Button>
-              </div>
             </div>
           )}
 

@@ -82,5 +82,5 @@ export const completeProfileValidationSchema = Yup.object().shape({
   phone: Yup.string()
     .trim()
     .matches(/^\d{10}$/, "El teléfono debe tener exactamente 10 dígitos")
-    .required("El teléfono es requerido"),
+      .notRequired(),
 })

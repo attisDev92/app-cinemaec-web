@@ -183,11 +183,7 @@ export default function PublicProfessionalProfilePage() {
       <PublicMenu />
 
       <main className={styles.main}>
-        <div className={styles.topActions}>
-          <Link href="/public/professionals" className={styles.backLink}>
-            ← Volver a profesionales
-          </Link>
-        </div>
+        {/* Enlace 'Volver a profesionales' eliminado */}
 
         {isLoading && (
           <div className={styles.stateBox}>
@@ -205,6 +201,7 @@ export default function PublicProfessionalProfilePage() {
         {!isLoading && !error && professional && professional.isPublic === false && (
           <>
           <section className={styles.hero}>
+
             <div className={styles.portraitColumn}>
               {profilePhotoUrl ? (
                 <img
@@ -214,6 +211,41 @@ export default function PublicProfessionalProfilePage() {
                 />
               ) : (
                 <div className={styles.portraitPlaceholder}>{getInitials(professional.name)}</div>
+              )}
+
+              {(rrssUrl || linkedinUrl || websiteUrl) && (
+                <div className={styles.linksActions} style={{ marginTop: '1.5rem' }}>
+                  {rrssUrl && (
+                    <a
+                      href={rrssUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={styles.actionButton}
+                    >
+                      Redes sociales
+                    </a>
+                  )}
+                  {linkedinUrl && (
+                    <a
+                      href={linkedinUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={styles.actionButton}
+                    >
+                      LinkedIn
+                    </a>
+                  )}
+                  {websiteUrl && (
+                    <a
+                      href={websiteUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={styles.actionButton}
+                    >
+                      Website
+                    </a>
+                  )}
+                </div>
               )}
             </div>
 
@@ -270,7 +302,7 @@ export default function PublicProfessionalProfilePage() {
                   return (
                     <Link
                       key={entry.id}
-                      href={`/public/catalog/${entry.movieId}`}
+                      href={`/public/movies/${entry.movieId}`}
                       className={styles.movieLink}
                     >
                       <article className={styles.movieCard}>
@@ -306,6 +338,7 @@ export default function PublicProfessionalProfilePage() {
         {!isLoading && !error && professional && professional.isPublic !== false && (
           <>
             <section className={styles.hero}>
+
               <div className={styles.portraitColumn}>
                 {profilePhotoUrl ? (
                   <img
@@ -315,6 +348,51 @@ export default function PublicProfessionalProfilePage() {
                   />
                 ) : (
                   <div className={styles.portraitPlaceholder}>{getInitials(professional.name)}</div>
+                )}
+
+                {(rrssUrl || linkedinUrl || websiteUrl || professional?.imdbProfile) && (
+                  <div className={styles.linksActions} style={{ marginTop: '1.5rem' }}>
+                    {rrssUrl && (
+                      <a
+                        href={rrssUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.actionButton}
+                      >
+                        Redes sociales
+                      </a>
+                    )}
+                    {linkedinUrl && (
+                      <a
+                        href={linkedinUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.actionButton}
+                      >
+                        LinkedIn
+                      </a>
+                    )}
+                    {websiteUrl && (
+                      <a
+                        href={websiteUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.actionButton}
+                      >
+                        Website
+                      </a>
+                    )}
+                    {professional?.imdbProfile && (
+                      <a
+                        href={professional.imdbProfile}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.actionButton}
+                      >
+                        IMDb
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -391,60 +469,21 @@ export default function PublicProfessionalProfilePage() {
               </div>
             </section>
 
-            {(reelEmbedUrl || rrssUrl || linkedinUrl || websiteUrl) && (
+            {reelEmbedUrl && (
               <section className={`${styles.linksBlock} ${styles.linksBlockFullWidth}`}>
-                {(rrssUrl || linkedinUrl || websiteUrl) && (
-                  <div className={styles.linksActions}>
-                    {rrssUrl && (
-                      <a
-                        href={rrssUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={styles.actionButton}
-                      >
-                        Redes sociales
-                      </a>
-                    )}
-
-                    {linkedinUrl && (
-                      <a
-                        href={linkedinUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={styles.actionButton}
-                      >
-                        LinkedIn
-                      </a>
-                    )}
-
-                    {websiteUrl && (
-                      <a
-                        href={websiteUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={styles.actionButton}
-                      >
-                        Website
-                      </a>
-                    )}
+                <div className={styles.reelBlock}>
+                  <p className={styles.reelTitle}>Reel Link</p>
+                  <div className={styles.reelFrameWrap}>
+                    <iframe
+                      src={reelEmbedUrl}
+                      title={`Reel de ${professional.name}`}
+                      className={styles.reelFrame}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    />
                   </div>
-                )}
-
-                {reelEmbedUrl && (
-                  <div className={styles.reelBlock}>
-                    <p className={styles.reelTitle}>Reel Link</p>
-                    <div className={styles.reelFrameWrap}>
-                      <iframe
-                        src={reelEmbedUrl}
-                        title={`Reel de ${professional.name}`}
-                        className={styles.reelFrame}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        referrerPolicy="strict-origin-when-cross-origin"
-                        allowFullScreen
-                      />
-                    </div>
-                  </div>
-                )}
+                </div>
               </section>
             )}
 
@@ -484,7 +523,7 @@ export default function PublicProfessionalProfilePage() {
                     return (
                       <Link
                         key={entry.id}
-                        href={`/public/catalog/${entry.movieId}`}
+                        href={`/public/movies/${entry.movieId}`}
                         className={styles.movieLink}
                       >
                         <article className={styles.movieCard}>
@@ -496,6 +535,16 @@ export default function PublicProfessionalProfilePage() {
                             )}
                           </div>
                           <div className={styles.movieBody}>
+                            {entry.accredited ? (
+                              <span className={styles.verifiedLabel}>
+                                <svg className={styles.verifiedIcon} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                  <path fillRule="evenodd" d="M16.707 7.293a1 1 0 00-1.414 0l-5.293 5.293-2.293-2.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l6-6a1 1 0 000-1.414z" clipRule="evenodd" />
+                                </svg>
+                                Verificado
+                              </span>
+                            ) : (
+                              <span className={styles.verifiedLabel} style={{ visibility: 'hidden' }}>-</span>
+                            )}
                             <span className={styles.movieRole}>
                               {entry.cinematicRole?.name || `Rol #${entry.cinematicRoleId}`}
                             </span>

@@ -748,11 +748,7 @@ export default function PublicCatalogMoviePage() {
       <PublicMenu />
 
       <main className={styles.main}>
-        <div className={styles.topActions}>
-          <Link href="/public/catalog" className={styles.backLink}>
-            ← Volver al catálogo
-          </Link>
-        </div>
+        {/* Botón de volver al catálogo eliminado por solicitud */}
 
         {isLoading && (
           <div className={styles.stateBox}>

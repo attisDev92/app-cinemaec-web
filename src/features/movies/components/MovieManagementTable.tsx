@@ -166,6 +166,14 @@ export function MovieManagementTable({
                 >
                   Editar
                 </Link>
+                <Link
+                  href={`/public/movies/${movie.id}`}
+                  className={styles.viewBtn}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Ver
+                </Link>
                 <button
                   onClick={() => handleDelete(movie.id)}
                   disabled={deletingIds.has(movie.id)}

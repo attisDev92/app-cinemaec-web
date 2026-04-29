@@ -154,6 +154,7 @@
 }
 
 .editBtn,
+.viewBtn,
 .deleteBtn {
   padding: 8px 16px;
   border: none;
@@ -169,6 +170,17 @@
 .editBtn {
   background-color: #0277bd;
   color: white;
+}
+
+.viewBtn {
+  background-color: #10b981;
+  color: white;
+}
+
+.viewBtn:hover {
+  background-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .editBtn:hover {

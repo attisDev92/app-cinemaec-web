@@ -505,13 +505,6 @@ export default function MoviesManagementPage() {
                         >
                           Editar
                         </button>
-                        <button
-                          type="button"
-                          className={styles.cardActionButton}
-                          onClick={() => handleDownloadTechnicalSheet(movie.id)}
-                        >
-                          Imprimir ficha técnica
-                        </button>
                       </div>
                     </article>
                   ))}
