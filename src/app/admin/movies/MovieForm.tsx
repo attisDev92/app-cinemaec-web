@@ -1373,7 +1373,12 @@ export function MovieForm({
   }
 
   const handleDirectorCreated = (professional: { id: number; name: string }) => {
-    addProfessional(professional)
+    // Crear un objeto Professional mínimo válido
+    addProfessional({
+      id: professional.id,
+      name: professional.name,
+      extendedBiofilmography: "",
+    })
     const currentIds = formik.values.directors
     if (!currentIds.includes(professional.id)) {
       formik.setFieldValue("directors", [...currentIds, professional.id])
@@ -1382,8 +1387,13 @@ export function MovieForm({
     setIsAddDirectorModalOpen(false)
   }
 
+
   const handleProducerCreated = (professional: { id: number; name: string }) => {
-    addProfessional(professional)
+    addProfessional({
+      id: professional.id,
+      name: professional.name,
+      extendedBiofilmography: "",
+    })
     const currentIds = formik.values.producers
     if (!currentIds.includes(professional.id)) {
       formik.setFieldValue("producers", [...currentIds, professional.id])
@@ -1392,8 +1402,13 @@ export function MovieForm({
     setIsAddProducerModalOpen(false)
   }
 
+
   const handleActorCreated = (professional: { id: number; name: string }) => {
-    addProfessional(professional)
+    addProfessional({
+      id: professional.id,
+      name: professional.name,
+      extendedBiofilmography: "",
+    })
     const currentIds = formik.values.mainActors
     if (!currentIds.includes(professional.id)) {
       formik.setFieldValue("mainActors", [...currentIds, professional.id])
@@ -1402,8 +1417,13 @@ export function MovieForm({
     setIsAddActorModalOpen(false)
   }
 
+
   const handleCrewCreated = (professional: { id: number; name: string }) => {
-    addProfessional(professional)
+    addProfessional({
+      id: professional.id,
+      name: professional.name,
+      extendedBiofilmography: "",
+    })
     setCrewProfessionalId(professional.id)
     setCrewProfessionalSearch("")
     setIsAddCrewModalOpen(false)

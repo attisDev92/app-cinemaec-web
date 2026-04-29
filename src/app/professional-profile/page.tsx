@@ -370,6 +370,7 @@ export default function ProfessionalProfilePage() {
         rrss: rrss || null,
         bio: bio || null,
         bioEn: bioEn || null,
+        extendedBiofilmography: "",
         profilePhotoAssetId,
         reelLink: reelLink || null,
         primaryActivityRoleId1: primaryRole1 ? Number(primaryRole1) : null,

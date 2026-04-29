@@ -44,6 +44,7 @@ export function AddProfessionalModal({
         const newProfessional = await professionalsService.create({
           name: values.name,
           dniNumber: values.dniNumber || null,
+          extendedBiofilmography: "",
         }) as Professional
 
         onProfessionalCreated(newProfessional)
