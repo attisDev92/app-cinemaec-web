@@ -23,10 +23,11 @@ export function useUserList(): UseUserListReturn {
     try {
       const data = await userService.getAllUsers()
       setUsers(data)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string }
       const message =
-        err?.response?.data?.message ||
-        err?.message ||
+        e?.response?.data?.message ||
+        e?.message ||
         "Error al cargar usuarios"
       setError(message)
     } finally {

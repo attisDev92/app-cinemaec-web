@@ -274,7 +274,7 @@ export default function RolesAdminPage() {
               <strong>1 permiso</strong> asignado
             </li>
             <li>
-              Click en <strong>"Gestionar"</strong> para editar el rol y
+              Click en <strong>&quot;Gestionar&quot;</strong> para editar el rol y
               permisos de cualquier usuario
             </li>
           </ul>

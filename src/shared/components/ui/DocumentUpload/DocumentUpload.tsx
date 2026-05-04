@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { assetService } from "@/features/assets/services/asset.service"
 import { AssetTypeEnum, AssetOwnerEnum } from "@/shared/types"
 import styles from "./document-upload.module.css"
@@ -37,6 +37,14 @@ export function DocumentUpload({
       : null,
   )
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setUploadedFile(
+      currentDocumentUrl
+        ? { name: "Documento actual", url: currentDocumentUrl }
+        : null,
+    )
+  }, [currentDocumentUrl])
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,

@@ -47,6 +47,14 @@ export default function AdminPage() {
       permission: PermissionEnum.ADMIN_MOVIES,
     },
     {
+      id: "festivals",
+      title: "Gestión de Festivales",
+      description: "Crear y administrar festivales, muestras y proyectos",
+      icon: "🎪",
+      route: "/admin/festivals-management",
+      permission: PermissionEnum.ADMIN_FESTIVALS,
+    },
+    {
       id: "movie-requests",
       title: "Solicitudes de Películas",
       description: "Aprobar o rechazar solicitudes (En desarrollo)",

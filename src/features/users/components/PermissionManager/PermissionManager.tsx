@@ -14,6 +14,7 @@ interface PermissionManagerProps {
 const PERMISSION_LABELS: Record<PermissionEnum, string> = {
   [PermissionEnum.ADMIN_SPACES]: "Revisar Espacios",
   [PermissionEnum.ADMIN_MOVIES]: "Gestionar Películas",
+  [PermissionEnum.ADMIN_FESTIVALS]: "Gestionar Festivales",
   [PermissionEnum.ADMIN_PROFESSIONALS]: "Gestionar Profesionales",
   [PermissionEnum.APPROVE_MOVIES_REQUEST]: "Aprobar Solicitudes de Películas",
   [PermissionEnum.ADMIN_USERS]: "Gestionar Usuarios",
@@ -43,15 +44,13 @@ export function PermissionManager({ userId, onClose }: PermissionManagerProps) {
     fetchUser(userId)
   }, [userId, fetchUser])
 
-  // Actualizar permisos seleccionados cuando se cargue el usuario
-  useEffect(() => {
-    if (user?.permissions) {
-      setSelectedPermissions(user.permissions)
-    }
-    if (user?.role) {
-      setSelectedRole(user.role)
-    }
-  }, [user])
+  // Ajustar estado local cuando llegue el usuario del servidor (patrón React)
+  const [prevUser, setPrevUser] = useState(user)
+  if (user !== prevUser) {
+    setPrevUser(user)
+    setSelectedPermissions(user?.permissions ?? [])
+    setSelectedRole(user?.role ?? UserRole.USER)
+  }
 
   const handlePermissionToggle = (permission: string) => {
     setSelectedPermissions((prev) =>

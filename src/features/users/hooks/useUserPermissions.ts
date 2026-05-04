@@ -37,10 +37,11 @@ export function useUserPermissions(): UseUserPermissionsReturn {
     try {
       const userData = await userService.getUserById(userId)
       setUser(userData)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string }
       const message =
-        err?.response?.data?.message ||
-        err?.message ||
+        e?.response?.data?.message ||
+        e?.message ||
         "Error al cargar usuario"
       setError(message)
     } finally {
@@ -65,10 +66,11 @@ export function useUserPermissions(): UseUserPermissionsReturn {
 
         // Auto-clear success message after 3 seconds
         setTimeout(() => setSuccess(false), 3000)
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { message?: string } }; message?: string }
         const message =
-          err?.response?.data?.message ||
-          err?.message ||
+          e?.response?.data?.message ||
+          e?.message ||
           "Error al actualizar permisos"
         setError(message)
       } finally {
@@ -92,10 +94,11 @@ export function useUserPermissions(): UseUserPermissionsReturn {
 
         // Auto-clear success message after 3 seconds
         setTimeout(() => setSuccess(false), 3000)
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { message?: string } }; message?: string }
         const message =
-          err?.response?.data?.message ||
-          err?.message ||
+          e?.response?.data?.message ||
+          e?.message ||
           "Error al actualizar rol"
         setError(message)
       } finally {

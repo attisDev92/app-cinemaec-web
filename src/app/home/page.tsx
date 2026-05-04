@@ -281,6 +281,20 @@ function HomePanels({
                     </Button>
                   </Card>
                 </div>
+                <div className={`${styles.moduleCard} ${styles.hazModule}`}>
+                  <Card title="Gestión de Festivales, Muestras y Proyectos de Exhibición">
+                    <p className={styles.cardContent}>
+                      Registra, organiza y actualiza información de festivales, muestras, ciclos y proyectos de exhibición o distribución.
+                    </p>
+                    <Button
+                      onClick={() => router.push("/festivals-management")}
+                      variant="secondary"
+                      className={styles.cardButton}
+                    >
+                      Gestionar Festivales y Proyectos →
+                    </Button>
+                  </Card>
+                </div>
               </div>
             )}
           </article>

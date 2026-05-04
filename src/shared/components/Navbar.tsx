@@ -83,6 +83,13 @@ export function Navbar() {
       permission: PermissionEnum.ADMIN_MOVIES,
     },
     {
+      id: "festivals",
+      label: "Gestión de Festivales",
+      icon: "🎪",
+      route: "/admin/festivals-management",
+      permission: PermissionEnum.ADMIN_FESTIVALS,
+    },
+    {
       id: "requests",
       label: "Solicitudes de Películas",
       icon: "📋",

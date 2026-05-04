@@ -2667,7 +2667,7 @@ export function MovieForm({
                                 Array.isArray(formik.errors.contacts) &&
                                 formik.errors.contacts[index] && (
                                   <div className={styles.error}>
-                                    {Object.values(formik.errors.contacts[index] as any).map((msg, i) => (
+                                    {Object.values(formik.errors.contacts[index] as Record<string, unknown>).map((msg, i) => (
                                       <div key={i}>{msg as string}</div>
                                     ))}
                                   </div>

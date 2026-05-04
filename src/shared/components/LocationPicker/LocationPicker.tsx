@@ -100,15 +100,21 @@ export function LocationPicker({
   }
 
   // Seleccionar sugerencia
-  const handleSelectSuggestion = (suggestion: any) => {
+  const handleSelectSuggestion = (suggestion: {
+    place_id: number
+    display_name: string
+    lat: string
+    lon: string
+    address?: Record<string, string>
+  }) => {
     // Extraer provincia y ciudad del address
-    const address = suggestion.address || {}
-    const province = address.state || address.province || ""
+    const address = suggestion.address ?? {}
+    const province = address.state ?? address.province ?? ""
     const city =
-      address.city ||
-      address.town ||
-      address.village ||
-      address.municipality ||
+      address.city ??
+      address.town ??
+      address.village ??
+      address.municipality ??
       ""
 
     onChange({

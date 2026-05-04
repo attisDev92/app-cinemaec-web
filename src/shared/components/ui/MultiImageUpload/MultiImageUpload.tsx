@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ImageUpload } from "../ImageUpload"
 import { AssetTypeEnum, AssetOwnerEnum } from "@/shared/types"
 import styles from "./multi-image-upload.module.css"
@@ -31,6 +31,10 @@ export function MultiImageUpload({
   label = "Fotos del espacio",
 }: MultiImageUploadProps) {
   const [images, setImages] = useState<ImageData[]>(currentImages)
+
+  useEffect(() => {
+    setImages(currentImages)
+  }, [currentImages])
 
   const handleUploadComplete = (id: number, url: string) => {
     const newImage: ImageData = {

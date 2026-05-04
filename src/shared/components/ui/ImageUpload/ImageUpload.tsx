@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { assetService } from "@/features/assets/services/asset.service"
 import { AssetTypeEnum, AssetOwnerEnum } from "@/shared/types"
 import styles from "./image-upload.module.css"
@@ -36,6 +36,10 @@ export function ImageUpload({
     currentImageUrl || null,
   )
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setPreviewUrl(currentImageUrl || null)
+  }, [currentImageUrl])
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,

@@ -1,0 +1,188 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+.hero {
+  background: #f3f4f6;
+  border-radius: 12px;
+  padding: 32px 24px 24px 24px;
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.heroContent {
+  text-align: center;
+}
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #111827;
+}
+.titleIcon {
+  font-size: 2.5rem;
+  margin-right: 8px;
+}
+.subtitle {
+  font-size: 1.2rem;
+  color: #6b7280;
+}
+.content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.actionBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+.createButton {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.createButton:hover {
+  background: #1d4ed8;
+}
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.tabButton {
+  background: #f3f4f6;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tabButtonActive {
+  background: #fff;
+  color: #2563eb;
+  border-bottom: 2px solid #2563eb;
+}
+.statsRow {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.statCard {
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 16px 32px;
+  text-align: center;
+}
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+.statLabel {
+  font-size: 1rem;
+  color: #6b7280;
+}
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.sectionTitle {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #111827;
+  display: flex;
+  align-items: center;
+}
+.sectionIcon {
+  font-size: 1.5rem;
+  margin-right: 8px;
+}
+.festivalsCount {
+  font-size: 1rem;
+  color: #6b7280;
+}
+.festivalsSection {
+  margin-bottom: 32px;
+}
+.festivalsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+.festivalCard {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 20px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+.cardDescription {
+  color: #6b7280;
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.cardInfo {
+  display: flex;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: #374151;
+}
+.cardActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.cardActionButton {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cardActionButton:hover {
+  background: #1d4ed8;
+}
+.emptyState {
+  text-align: center;
+  color: #888;
+  padding: 40px;
+}
+.emptyIcon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+.emptyTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.emptyText {
+  color: #6b7280;
+  font-size: 1rem;
+}

@@ -31,4 +31,4 @@ export interface CreateCompanyDto {
 }
 
 // Update Company DTO
-export interface UpdateCompanyDto extends Partial<CreateCompanyDto> {}
+export type UpdateCompanyDto = Partial<CreateCompanyDto>
