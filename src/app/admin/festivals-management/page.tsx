@@ -54,9 +54,25 @@ export default function FestivalsAdminPage() {
       setError(null)
       const data = await festivalService.getAll()
       setFestivals(data)
-    } catch (err) {
+    } catch (err: unknown) {
+      const apiError = err as {
+        message?: string
+        statusCode?: number
+        isNetworkError?: boolean
+      }
+
+      if (apiError.statusCode === 401) {
+        setError("Tu sesión expiró. Inicia sesión nuevamente.")
+        return
+      }
+
+      if (apiError.isNetworkError) {
+        setError("No se pudo conectar con el servidor.")
+        return
+      }
+
       console.error("Error loading festivals:", err)
-      setError("Error al cargar los festivales")
+      setError(apiError.message || "Error al cargar los festivales")
     } finally {
       setFestivalsLoading(false)
     }

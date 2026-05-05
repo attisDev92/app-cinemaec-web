@@ -87,7 +87,19 @@ export const NotificationDropdown = () => {
     try {
       const count = await notificationService.getUnreadCount()
       setUnreadCount(count)
-    } catch (error) {
+    } catch (error: unknown) {
+      const apiError = error as { statusCode?: number; isNetworkError?: boolean }
+
+      if (apiError.statusCode === 401) {
+        setUnreadCount(0)
+        return
+      }
+
+      if (apiError.isNetworkError) {
+        setUnreadCount(0)
+        return
+      }
+
       console.error("Error al cargar contador de notificaciones:", error)
     }
   }

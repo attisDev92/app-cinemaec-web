@@ -42,13 +42,28 @@ class ApiClient {
     options: RequestInit = {},
     includeAuth = true,
   ): Promise<T> {
-    const response = await fetch(buildUrl(endpoint), {
-      ...options,
-      headers: {
-        ...this.getHeaders(includeAuth),
-        ...options.headers,
-      },
-    })
+    let response: Response
+
+    try {
+      response = await fetch(buildUrl(endpoint), {
+        ...options,
+        headers: {
+          ...this.getHeaders(includeAuth),
+          ...options.headers,
+        },
+      })
+    } catch (error) {
+      const networkError = {
+        message: "No se pudo conectar con el servidor",
+        statusCode: 0,
+        isNetworkError: true,
+        endpoint,
+        details: error,
+      }
+
+      console.error("❌ API Network Error:", networkError)
+      throw networkError
+    }
 
     if (!response.ok) {
       // Si es 401 Unauthorized, limpiar sesión y redirigir al login
@@ -93,6 +108,7 @@ class ApiClient {
       throw {
         message: errorMessage,
         statusCode: response.status,
+        isNetworkError: false,
         errors: error.errors,
         details: error,
       }
