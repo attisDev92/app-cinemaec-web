@@ -216,10 +216,14 @@ export default function PublicAdminCatalogDetailPage() {
                           href={`/public/professionals/${professional.id}`}
                           className={styles.entityCardLink}
                         >
-                          <article className={styles.entityCard}>
-                            <div className={styles.entityMedia}>
+                          <article className={`${styles.entityCard} ${styles.professionalCard}`}>
+                            <div className={`${styles.entityMedia} ${styles.professionalMedia}`}>
                               {photoUrl ? (
-                                <img src={photoUrl} alt={professional.name} className={styles.entityImage} />
+                                <img
+                                  src={photoUrl}
+                                  alt={professional.name}
+                                  className={`${styles.entityImage} ${styles.professionalImage}`}
+                                />
                               ) : (
                                 <div className={styles.placeholder}>{initials(professional.name)}</div>
                               )}
