@@ -9,6 +9,20 @@ export function useProfessionals() {
 
   useEffect(() => {
     const fetchProfessionals = async () => {
+      const isPublicFestivalDetailRoute =
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/public/festivals/")
+
+      if (
+        isPublicFestivalDetailRoute ||
+        (typeof window !== "undefined" && !localStorage.getItem("token"))
+      ) {
+        setProfessionals([])
+        setError(null)
+        setIsLoading(false)
+        return
+      }
+
       try {
         setIsLoading(true)
         const data = await professionalsService.getAll()

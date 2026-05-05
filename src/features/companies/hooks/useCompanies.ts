@@ -9,6 +9,20 @@ export function useCompanies() {
 
   useEffect(() => {
     const fetchCompanies = async () => {
+      const isPublicFestivalDetailRoute =
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/public/festivals/")
+
+      if (
+        isPublicFestivalDetailRoute ||
+        (typeof window !== "undefined" && !localStorage.getItem("token"))
+      ) {
+        setCompanies([])
+        setError(null)
+        setIsLoading(false)
+        return
+      }
+
       try {
         setIsLoading(true)
         const data = await companiesService.getAll()

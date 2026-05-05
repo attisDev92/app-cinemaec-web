@@ -100,19 +100,44 @@ export default function FestivalDetailPage() {
         setIsLoading(false)
         return
       }
+
+      const isPublicFestivalDetailRoute =
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/public/festivals/")
+
       try {
         setIsLoading(true)
-        const data = await festivalService.getById(festivalId)
+        const data = isPublicFestivalDetailRoute
+          ? await festivalService.getPublicById(festivalId)
+          : await festivalService
+              .getById(festivalId)
+              .catch(async () => festivalService.getPublicById(festivalId))
         setFestival(data)
 
-        if (data.posterId) {
+        if (data.posterUrl) {
+          setPosterUrl(
+            assetService.getPublicAssetUrl({
+              id: data.posterId ?? 0,
+              url: data.posterUrl,
+            } as Parameters<typeof assetService.getPublicAssetUrl>[0]),
+          )
+        } else if (data.posterId) {
           try {
             const a = await assetService.getAsset(data.posterId)
             setPosterUrl(a.url ?? null)
           } catch { /* ignore */ }
         }
 
-        if (data.stillsIds?.length) {
+        if (data.stillUrls?.length) {
+          setStillUrls(
+            data.stillUrls.map((url) =>
+              assetService.getPublicAssetUrl({
+                id: 0,
+                url,
+              } as Parameters<typeof assetService.getPublicAssetUrl>[0]),
+            ),
+          )
+        } else if (data.stillsIds?.length) {
           const urls = await Promise.all(
             data.stillsIds.map(async (id) => {
               try {
@@ -124,14 +149,28 @@ export default function FestivalDetailPage() {
           setStillUrls(urls.filter((u): u is string => Boolean(u)))
         }
 
-        if (data.dossierEsId) {
+        if (data.dossierEsUrl) {
+          setDossierEsUrl(
+            assetService.getPublicAssetUrl({
+              id: data.dossierEsId ?? 0,
+              url: data.dossierEsUrl,
+            } as Parameters<typeof assetService.getPublicAssetUrl>[0]),
+          )
+        } else if (data.dossierEsId) {
           try {
             const a = await assetService.getAsset(data.dossierEsId)
             setDossierEsUrl(a.url ?? null)
           } catch { /* ignore */ }
         }
 
-        if (data.dossierEnId) {
+        if (data.dossierEnUrl) {
+          setDossierEnUrl(
+            assetService.getPublicAssetUrl({
+              id: data.dossierEnId ?? 0,
+              url: data.dossierEnUrl,
+            } as Parameters<typeof assetService.getPublicAssetUrl>[0]),
+          )
+        } else if (data.dossierEnId) {
           try {
             const a = await assetService.getAsset(data.dossierEnId)
             setDossierEnUrl(a.url ?? null)

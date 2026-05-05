@@ -15,6 +15,7 @@ const PERMISSION_LABELS: Record<PermissionEnum, string> = {
   [PermissionEnum.ADMIN_SPACES]: "Revisar Espacios",
   [PermissionEnum.ADMIN_MOVIES]: "Gestionar Películas",
   [PermissionEnum.ADMIN_FESTIVALS]: "Gestionar Festivales",
+  [PermissionEnum.ADMIN_CATALOGS]: "Gestionar Catálogos",
   [PermissionEnum.ADMIN_PROFESSIONALS]: "Gestionar Profesionales",
   [PermissionEnum.APPROVE_MOVIES_REQUEST]: "Aprobar Solicitudes de Películas",
   [PermissionEnum.ADMIN_USERS]: "Gestionar Usuarios",

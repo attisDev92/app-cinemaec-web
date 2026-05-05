@@ -9,6 +9,20 @@ export function useCities() {
 
   useEffect(() => {
     const fetchCities = async () => {
+      const isPublicFestivalDetailRoute =
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/public/festivals/")
+
+      if (
+        isPublicFestivalDetailRoute ||
+        (typeof window !== "undefined" && !localStorage.getItem("token"))
+      ) {
+        setCities([])
+        setError(null)
+        setIsLoading(false)
+        return
+      }
+
       try {
         setIsLoading(true)
         const data = await catalogService.getCities()

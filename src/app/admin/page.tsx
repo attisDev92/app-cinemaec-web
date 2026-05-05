@@ -55,6 +55,14 @@ export default function AdminPage() {
       permission: PermissionEnum.ADMIN_FESTIVALS,
     },
     {
+      id: "catalogs",
+      title: "Gestión de Catálogos",
+      description: "Crear y administrar catálogos institucionales",
+      icon: "📚",
+      route: "/admin/catalogs-management",
+      permission: PermissionEnum.ADMIN_CATALOGS,
+    },
+    {
       id: "movie-requests",
       title: "Solicitudes de Películas",
       description: "Aprobar o rechazar solicitudes (En desarrollo)",

@@ -34,12 +34,16 @@ export interface Festival {
   contactEmail: string
   contactPhone: string
   posterId?: number | null
+  posterUrl?: string | null
   trailer?: string | null
   stillsIds: number[]
+  stillUrls?: string[]
   needs?: string | null
   needsEn?: string | null
   dossierEsId?: number | null
+  dossierEsUrl?: string | null
   dossierEnId?: number | null
+  dossierEnUrl?: string | null
   sections: FestivalSection[]
   hasCall: boolean
   callProcess?: string | null

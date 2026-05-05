@@ -12,6 +12,7 @@ export enum PermissionEnum {
   ADMIN_SPACES = "admin_spaces",
   ADMIN_MOVIES = "admin_movies",
   ADMIN_FESTIVALS = "admin_festivals",
+  ADMIN_CATALOGS = "admin_catalogs",
   ADMIN_PROFESSIONALS = "admin_professionals",
   APPROVE_MOVIES_REQUEST = "approve_movies_request",
   ADMIN_USERS = "admin_users",
@@ -52,6 +53,7 @@ export enum AssetOwnerEnum {
   MOVIE_DOSSIER = "movie_dossier",
   MOVIE_DOSSIER_EN = "movie_dossier_en",
   MOVIE_PEDAGOGICAL_GUIDE = "movie_pedagogical_guide",
+  CATALOG_IMAGE = "catalog_image",
 }
 
 // Space Types (alineados con backend)

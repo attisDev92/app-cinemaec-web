@@ -10,6 +10,10 @@ export const festivalService = {
     return apiClient.get<Festival[]>("/festivals")
   },
 
+  async getPublicById(id: number): Promise<Festival> {
+    return apiClient.get<Festival>(`/public/festivals/${id}`, false)
+  },
+
   async getById(id: number): Promise<Festival> {
     return apiClient.get<Festival>(`/festivals/${id}`)
   },

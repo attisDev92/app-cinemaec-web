@@ -18,10 +18,6 @@ export default function HomeClient() {
 
       <main className={styles.main}>
         <div className={styles.header}>
-          <h1 className={styles.title}>Bienvenido a Cinema EC</h1>
-          <p className={styles.subtitle}>
-            La plataforma de servicios del Cine Ecuatoriano
-          </p>
           <div className={styles.buttonGroup}>
             {!isAuthenticated ? (
               <>
@@ -39,6 +35,8 @@ export default function HomeClient() {
             )}
           </div>
         </div>
+
+        <CatalogBanner />
 
         <div className={styles.groupsGrid}>
           <article className={`${styles.serviceGroup} ${styles.viveGroup}`}>
@@ -89,8 +87,6 @@ export default function HomeClient() {
             </ul>
           </article>
         </div>
-
-        <CatalogBanner />
 
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
