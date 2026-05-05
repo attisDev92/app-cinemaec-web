@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { useFormik } from "formik"
 import * as Yup from "yup"
@@ -658,6 +659,9 @@ export function MovieForm({
   const [contentGeoblockOpen, setContentGeoblockOpen] = useState(false)
   const [filmingCitySearch, setFilmingCitySearch] = useState("")
   const [filmingCountrySearch, setFilmingCountrySearch] = useState("")
+  const [showValidationModal, setShowValidationModal] = useState(false)
+  const [validationModalErrors, setValidationModalErrors] = useState<{ tab: string; messages: string[] }[]>([])
+
   const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false)
   const [isAddCoProducerCompanyModalOpen, setIsAddCoProducerCompanyModalOpen] = useState(false)
   const [isAddFundModalOpen, setIsAddFundModalOpen] = useState(false)
@@ -711,6 +715,28 @@ export function MovieForm({
       }
     }
   }, [isAuthenticated, isLoading, user, router, mode])
+
+  useEffect(() => {
+    if (!showValidationModal) {
+      document.body.style.overflow = ""
+      return
+    }
+
+    document.body.style.overflow = "hidden"
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowValidationModal(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape)
+
+    return () => {
+      document.body.style.overflow = ""
+      window.removeEventListener("keydown", handleEscape)
+    }
+  }, [showValidationModal])
 
   const formInitialValues = useMemo(
     () => (initialMovie ? mapMovieToFormValues(initialMovie) : initialValues),
@@ -1455,14 +1481,66 @@ export function MovieForm({
     return true
   }
 
+  const FIELD_LABELS: Record<string, { label: string; tab: string }> = {
+    title: { label: "Título", tab: "Información básica" },
+    durationMinutes: { label: "Duración", tab: "Información básica" },
+    type: { label: "Tipo de película", tab: "Información básica" },
+    genre: { label: "Género", tab: "Información básica" },
+    subGenres: { label: "Subgéneros", tab: "Información básica" },
+    countryId: { label: "País de origen", tab: "Información básica" },
+    synopsis: { label: "Sinopsis", tab: "Información básica" },
+    projectStatus: { label: "Estado del proyecto", tab: "Información básica" },
+    contacts: { label: "Contactos", tab: "Equipo y Actores" },
+    directors: { label: "Directores", tab: "Equipo y Actores" },
+    producers: { label: "Productores", tab: "Equipo y Actores" },
+    mainActors: { label: "Actores principales", tab: "Equipo y Actores" },
+    crew: { label: "Equipo técnico", tab: "Equipo y Actores" },
+    funding: { label: "Financiamiento", tab: "Datos económicos" },
+    festivalNominations: { label: "Festivales", tab: "Promoción internacional" },
+    platforms: { label: "Plataformas", tab: "Circulación y Distribución" },
+    contentBank: { label: "Banco de Contenidos", tab: "Banco de Contenidos ICCA" },
+  }
+
+  const buildValidationGroups = (errors: Record<string, unknown>) => {
+    const grouped: Record<string, string[]> = {}
+
+    const addToGroup = (tab: string, message: string) => {
+      if (!grouped[tab]) grouped[tab] = []
+      if (!grouped[tab].includes(message)) grouped[tab].push(message)
+    }
+
+    const walk = (obj: unknown, path: string) => {
+      if (typeof obj === "string") {
+        const info = FIELD_LABELS[path] ?? { label: path, tab: "General" }
+        addToGroup(info.tab, obj)
+      } else if (Array.isArray(obj)) {
+        obj.forEach((item, i) => walk(item, `${path}[${i}]`))
+      } else if (obj && typeof obj === "object") {
+        Object.entries(obj as Record<string, unknown>).forEach(([k, v]) => {
+          walk(v, path ? `${path}.${k}` : k)
+        })
+      }
+    }
+
+    Object.entries(errors).forEach(([key, val]) => walk(val, key))
+
+    return Object.entries(grouped).map(([tab, messages]) => ({ tab, messages }))
+  }
+
   const handleSaveClick = async () => {
     const errors = await formik.validateForm()
     if (Object.keys(errors).length > 0) {
       formik.setTouched(markAllTouched(formik.values) as typeof formik.touched, true)
-      formik.setStatus({ error: "Completa los campos obligatorios." })
+      const groups = buildValidationGroups(errors as Record<string, unknown>)
+      setValidationModalErrors(groups)
+      setShowValidationModal(true)
       return
     }
     formik.handleSubmit()
+  }
+
+  const closeValidationModal = () => {
+    setShowValidationModal(false)
   }
 
   const getCrewProfessionals = (searchValue: string) => {
@@ -3924,7 +4002,10 @@ export function MovieForm({
 
             <div className={styles.actions}>
               {formik.status?.error && (
-                <div className={styles.errorBanner}>{formik.status.error}</div>
+                <div className={styles.errorBanner}>
+                  <span className={styles.errorBannerIcon}>⚠</span>
+                  {formik.status.error}
+                </div>
               )}
               {formik.status?.success && (
                 <div className={styles.badge}>{formik.status.success}</div>
@@ -4029,6 +4110,254 @@ export function MovieForm({
           onProfessionalCreated={handleCrewCreated}
           isLoading={isCreatingCompany}
         />
+
+        {showValidationModal && typeof document !== "undefined" && createPortal(
+          <div
+            className={styles.validationModalBackdrop}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="validation-modal-title"
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 99999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+              background: "rgba(15, 23, 42, 0.58)",
+              backdropFilter: "blur(3px)",
+            }}
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                closeValidationModal()
+              }
+            }}
+          >
+            <div
+              className={styles.validationModal}
+              onClick={(event) => event.stopPropagation()}
+              style={{
+                width: "100%",
+                maxWidth: "680px",
+                maxHeight: "84vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                background: "#ffffff",
+                borderRadius: "18px",
+                border: "1px solid rgba(203, 213, 225, 0.9)",
+                boxShadow: "0 25px 55px rgba(15, 23, 42, 0.28)",
+              }}
+            >
+              <div
+                className={styles.validationModalHeader}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.85rem",
+                  padding: "1.15rem 1.25rem",
+                  borderBottom: "1px solid #e2e8f0",
+                  background: "linear-gradient(180deg, rgba(254, 242, 242, 0.9) 0%, rgba(255, 255, 255, 1) 100%)",
+                }}
+              >
+                <div
+                  className={styles.validationModalIcon}
+                  style={{
+                    width: "34px",
+                    height: "34px",
+                    borderRadius: "999px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "1rem",
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    marginTop: "2px",
+                    color: "#fff",
+                    background: "#ef4444",
+                    boxShadow: "0 8px 20px rgba(239, 68, 68, 0.35)",
+                    flexShrink: 0,
+                  }}
+                >
+                  !
+                </div>
+                <div>
+                  <h2
+                    id="validation-modal-title"
+                    className={styles.validationModalTitle}
+                    style={{
+                      margin: "0 0 0.35rem",
+                      fontSize: "1.2rem",
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    Revisa estos campos antes de guardar
+                  </h2>
+                  <p
+                    className={styles.validationModalSubtitle}
+                    style={{
+                      margin: 0,
+                      fontSize: "0.92rem",
+                      color: "#475569",
+                    }}
+                  >
+                    Tu proyecto no se guardo porque faltan datos obligatorios. Corrigelos y vuelve a intentarlo.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className={styles.validationModalClose}
+                  onClick={closeValidationModal}
+                  aria-label="Cerrar"
+                  style={{
+                    marginLeft: "auto",
+                    width: "2rem",
+                    height: "2rem",
+                    borderRadius: "999px",
+                    border: "1px solid rgba(148, 163, 184, 0.35)",
+                    background: "#fff",
+                    color: "#1f2937",
+                    fontSize: "1.4rem",
+                    lineHeight: 1,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              <div
+                className={styles.validationModalBody}
+                style={{
+                  overflowY: "auto",
+                  padding: "1rem 1.25rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.85rem",
+                }}
+              >
+                {validationModalErrors.length === 0 && (
+                  <div
+                    className={styles.validationModalGroup}
+                    style={{
+                      background: "#fff7f7",
+                      border: "1px solid rgba(239, 68, 68, 0.23)",
+                      borderRadius: "12px",
+                      padding: "0.82rem 0.9rem",
+                    }}
+                  >
+                    <p
+                      className={styles.validationModalGroupTitle}
+                      style={{
+                        margin: "0 0 0.45rem",
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: "#b91c1c",
+                      }}
+                    >
+                      General
+                    </p>
+                    <ul className={styles.validationModalList} style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                      <li className={styles.validationModalItem} style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", fontSize: "0.9rem", color: "#1e293b" }}>
+                        <span className={styles.validationModalDot} style={{ width: "7px", height: "7px", borderRadius: "999px", background: "#ef4444", flexShrink: 0, position: "relative", top: "-1px" }} />
+                        Revisa los campos marcados en rojo dentro del formulario.
+                      </li>
+                    </ul>
+                  </div>
+                )}
+                {validationModalErrors.map(({ tab, messages }) => (
+                  <div
+                    key={tab}
+                    className={styles.validationModalGroup}
+                    style={{
+                      background: "#fff7f7",
+                      border: "1px solid rgba(239, 68, 68, 0.23)",
+                      borderRadius: "12px",
+                      padding: "0.82rem 0.9rem",
+                    }}
+                  >
+                    <p
+                      className={styles.validationModalGroupTitle}
+                      style={{
+                        margin: "0 0 0.45rem",
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: "#b91c1c",
+                      }}
+                    >
+                      {tab}
+                    </p>
+                    <ul className={styles.validationModalList} style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                      {messages.map((msg, i) => (
+                        <li key={i} className={styles.validationModalItem} style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", fontSize: "0.9rem", color: "#1e293b" }}>
+                          <span className={styles.validationModalDot} style={{ width: "7px", height: "7px", borderRadius: "999px", background: "#ef4444", flexShrink: 0, position: "relative", top: "-1px" }} />
+                          {msg}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <div
+                className={styles.validationModalFooter}
+                style={{
+                  padding: "0.95rem 1.25rem",
+                  borderTop: "1px solid #e2e8f0",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "0.6rem",
+                  background: "#f8fafc",
+                }}
+              >
+                <button
+                  type="button"
+                  className={styles.validationModalSecondaryBtn}
+                  onClick={closeValidationModal}
+                  style={{
+                    background: "#fff",
+                    color: "#334155",
+                    border: "1px solid rgba(148, 163, 184, 0.45)",
+                    borderRadius: "10px",
+                    padding: "0.65rem 1.2rem",
+                    fontSize: "0.87rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cerrar
+                </button>
+                <button
+                  type="button"
+                  className={styles.validationModalBtn}
+                  onClick={closeValidationModal}
+                  style={{
+                    background: "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "10px",
+                    padding: "0.65rem 1.5rem",
+                    fontSize: "0.87rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Entendido, revisar formulario
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
       </main>
     </div>
   )
