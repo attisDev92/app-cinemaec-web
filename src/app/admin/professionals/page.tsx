@@ -18,6 +18,7 @@ export default function AdminProfessionalsPage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set())
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set())
   const [filters, setFilters] = useState({
     name: "",
     dniNumber: "",
@@ -101,6 +102,37 @@ export default function AdminProfessionalsPage() {
       )
     } finally {
       setTogglingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(professional.id)
+        return next
+      })
+    }
+  }
+
+  const handleDeleteProfessional = async (professional: Professional) => {
+    const confirmed = confirm(
+      `¿Seguro que deseas eliminar a ${professional.name}? Esta acción no se puede deshacer.`,
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setError(null)
+    setMessage(null)
+    setDeletingIds((prev) => new Set(prev).add(professional.id))
+
+    try {
+      await professionalsService.delete(professional.id)
+      setProfessionals((prev) => prev.filter((item) => item.id !== professional.id))
+      setMessage(`Profesional ${professional.name} eliminado correctamente.`)
+    } catch (err) {
+      setError(
+        (err as { message?: string })?.message ||
+          "No se pudo eliminar el profesional",
+      )
+    } finally {
+      setDeletingIds((prev) => {
         const next = new Set(prev)
         next.delete(professional.id)
         return next
@@ -271,7 +303,7 @@ export default function AdminProfessionalsPage() {
                 <tbody>
                   {filteredProfessionals.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className={styles.emptyState}>
+                      <td colSpan={7} className={styles.emptyState}>
                         No hay profesionales que coincidan con los filtros
                       </td>
                     </tr>
@@ -315,14 +347,26 @@ export default function AdminProfessionalsPage() {
                             </button>
                           </td>
                           <td>
-                            <a
-                              href={`/public/professionals/${professional.id}`}
-                              className={styles.viewBtn}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Ver
-                            </a>
+                            <div className={styles.actionButtons}>
+                              <a
+                                href={`/public/professionals/${professional.id}`}
+                                className={styles.viewBtn}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Ver
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteProfessional(professional)}
+                                disabled={deletingIds.has(professional.id)}
+                                className={styles.deleteBtn}
+                              >
+                                {deletingIds.has(professional.id)
+                                  ? "Eliminando..."
+                                  : "Eliminar"}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))

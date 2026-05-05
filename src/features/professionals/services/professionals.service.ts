@@ -73,4 +73,8 @@ export const professionalsService = {
   ): Promise<Professional> {
     return apiClient.put<Professional>(`/professionals/${professionalId}`, payload)
   },
+
+  async delete(professionalId: number): Promise<void> {
+    return apiClient.delete<void>(`/professionals/${professionalId}`)
+  },
 }

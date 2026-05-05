@@ -84,9 +84,21 @@ class ApiClient {
         }
       }
 
-      const error = await response.json().catch(() => ({
-        message: "Error al procesar la solicitud",
-      }))
+      const responseText = await response.text().catch(() => "")
+
+      let error: {
+        message?: string
+        error?: string
+        errors?: string[]
+      } = { message: "Error al procesar la solicitud" }
+
+      if (responseText) {
+        try {
+          error = JSON.parse(responseText)
+        } catch {
+          error = { message: responseText }
+        }
+      }
 
       // Registrar error en consola para debugging
       console.error("❌ API Error:", {
@@ -114,7 +126,20 @@ class ApiClient {
       }
     }
 
-    return response.json()
+    if (response.status === 204) {
+      return undefined as T
+    }
+
+    const responseText = await response.text().catch(() => "")
+    if (!responseText) {
+      return undefined as T
+    }
+
+    try {
+      return JSON.parse(responseText) as T
+    } catch {
+      return responseText as T
+    }
   }
 
   async get<T>(endpoint: string, includeAuth = true): Promise<T> {
