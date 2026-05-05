@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { Button, Card, Checkbox, Input, Select, Textarea } from '@/shared/components/ui'
 import { useCompanies } from '@/features/companies/hooks/useCompanies'
@@ -185,6 +186,8 @@ export default function FestivalForm({ festivalId }: FestivalFormProps) {
   )
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [showValidationModal, setShowValidationModal] = useState(false)
+  const [validationModalErrors, setValidationModalErrors] = useState<{ label: string }[]>([])
   const [posterPreviewUrl, setPosterPreviewUrl] = useState<string | null>(null)
   const [stillsPreviewImages, setStillsPreviewImages] = useState<UploadedImageData[]>([])
   const [dossierEsPreviewUrl, setDossierEsPreviewUrl] = useState<string | null>(null)
@@ -472,81 +475,25 @@ export default function FestivalForm({ festivalId }: FestivalFormProps) {
     setError(null)
     setSuccess(false)
 
-    if (!form.name.trim()) {
-      setError('El nombre es obligatorio')
-      setActiveTab(0)
-      return
-    }
+    const errors: { label: string }[] = []
 
-    if (!form.editionCount.trim()) {
-      setError('El número de ediciones es obligatorio')
-      setActiveTab(0)
-      return
-    }
+    if (!form.name.trim()) errors.push({ label: 'El nombre es obligatorio' })
+    if (!form.editionCount.trim()) errors.push({ label: 'El número de ediciones es obligatorio' })
+    if (!form.firstEditionYear.trim()) errors.push({ label: 'El año de la primera edición es obligatorio' })
+    if (!form.type.trim()) errors.push({ label: 'El tipo es obligatorio' })
+    if (form.hostCities.length === 0) errors.push({ label: 'Selecciona al menos una ciudad sede' })
+    if (form.modality.length === 0) errors.push({ label: 'Selecciona al menos una modalidad' })
+    if (form.mainVenue === '') errors.push({ label: 'La sede principal es obligatoria' })
+    if (!form.theme.trim()) errors.push({ label: 'La temática es obligatoria' })
+    if (!form.classification.trim()) errors.push({ label: 'La clasificación es obligatoria' })
+    if (!form.contactName.trim()) errors.push({ label: 'El nombre de contacto es obligatorio' })
+    if (!form.contactEmail.trim()) errors.push({ label: 'El correo electrónico es obligatorio' })
+    if (!form.contactPhone.trim()) errors.push({ label: 'El teléfono es obligatorio' })
+    if (!form.description.trim()) errors.push({ label: 'La descripción es obligatoria' })
 
-    if (!form.firstEditionYear.trim()) {
-      setError('El año de la primera edición es obligatorio')
-      setActiveTab(0)
-      return
-    }
-
-    if (!form.type.trim()) {
-      setError('El tipo es obligatorio')
-      setActiveTab(0)
-      return
-    }
-
-    if (form.hostCities.length === 0) {
-      setError('Selecciona al menos una ciudad sede')
-      setActiveTab(0)
-      return
-    }
-
-    if (form.modality.length === 0) {
-      setError('Selecciona al menos una modalidad')
-      setActiveTab(0)
-      return
-    }
-
-    if (form.mainVenue === '') {
-      setError('La sede principal es obligatoria')
-      setActiveTab(0)
-      return
-    }
-
-    if (!form.theme.trim()) {
-      setError('La temática es obligatoria')
-      setActiveTab(0)
-      return
-    }
-
-    if (!form.classification.trim()) {
-      setError('La clasificación es obligatoria')
-      setActiveTab(0)
-      return
-    }
-
-    if (!form.contactName.trim()) {
-      setError('El nombre de contacto es obligatorio')
-      setActiveTab(0)
-      return
-    }
-
-    if (!form.contactEmail.trim()) {
-      setError('El correo electrónico es obligatorio')
-      setActiveTab(0)
-      return
-    }
-
-    if (!form.contactPhone.trim()) {
-      setError('El teléfono es obligatorio')
-      setActiveTab(0)
-      return
-    }
-
-    if (!form.description.trim()) {
-      setError('La descripción es obligatoria')
-      setActiveTab(0)
+    if (errors.length > 0) {
+      setValidationModalErrors(errors)
+      setShowValidationModal(true)
       return
     }
 
@@ -574,6 +521,22 @@ export default function FestivalForm({ festivalId }: FestivalFormProps) {
       setSaving(false)
     }
   }
+
+  useEffect(() => {
+    if (!showValidationModal) {
+      document.body.style.overflow = ''
+      return
+    }
+    document.body.style.overflow = 'hidden'
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowValidationModal(false)
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [showValidationModal])
 
   const renderSelectedPeople = (
     ids: number[],
@@ -1037,6 +1000,197 @@ export default function FestivalForm({ festivalId }: FestivalFormProps) {
           </Button>
         </form>
       </main>
+
+      {showValidationModal && typeof document !== 'undefined' && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="festival-validation-modal-title"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            background: 'rgba(15, 23, 42, 0.58)',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setShowValidationModal(false)
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '560px',
+              maxHeight: '84vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              background: '#ffffff',
+              borderRadius: '18px',
+              border: '1px solid rgba(203, 213, 225, 0.9)',
+              boxShadow: '0 25px 55px rgba(15, 23, 42, 0.28)',
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.85rem',
+                padding: '1.15rem 1.25rem',
+                borderBottom: '1px solid #e2e8f0',
+                background: 'linear-gradient(180deg, rgba(254, 242, 242, 0.9) 0%, rgba(255, 255, 255, 1) 100%)',
+              }}
+            >
+              <div
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '999px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1rem',
+                  fontWeight: 800,
+                  color: '#fff',
+                  background: '#ef4444',
+                  boxShadow: '0 8px 20px rgba(239, 68, 68, 0.35)',
+                  flexShrink: 0,
+                  marginTop: '2px',
+                }}
+              >
+                !
+              </div>
+              <div style={{ flex: 1 }}>
+                <h2
+                  id="festival-validation-modal-title"
+                  style={{ margin: '0 0 0.35rem', fontSize: '1.2rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}
+                >
+                  Revisa estos campos antes de guardar
+                </h2>
+                <p style={{ margin: 0, fontSize: '0.92rem', color: '#475569' }}>
+                  El festival no se guardó porque faltan datos obligatorios.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowValidationModal(false)}
+                aria-label="Cerrar"
+                style={{
+                  marginLeft: 'auto',
+                  width: '2rem',
+                  height: '2rem',
+                  borderRadius: '999px',
+                  border: '1px solid rgba(148, 163, 184, 0.35)',
+                  background: '#fff',
+                  color: '#1f2937',
+                  fontSize: '1.4rem',
+                  lineHeight: 1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Body */}
+            <div
+              style={{
+                overflowY: 'auto',
+                padding: '1rem 1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+              }}
+            >
+              <div
+                style={{
+                  background: '#fff7f7',
+                  border: '1px solid rgba(239, 68, 68, 0.23)',
+                  borderRadius: '12px',
+                  padding: '0.82rem 0.9rem',
+                }}
+              >
+                <p
+                  style={{
+                    margin: '0 0 0.45rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: '#b91c1c',
+                  }}
+                >
+                  Información básica
+                </p>
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                  {validationModalErrors.map((err, i) => (
+                    <li key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', fontSize: '0.9rem', color: '#1e293b' }}>
+                      <span style={{ width: '7px', height: '7px', borderRadius: '999px', background: '#ef4444', flexShrink: 0, position: 'relative', top: '-1px', display: 'inline-block' }} />
+                      {err.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                padding: '0.95rem 1.25rem',
+                borderTop: '1px solid #e2e8f0',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.6rem',
+                background: '#f8fafc',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowValidationModal(false)}
+                style={{
+                  background: '#fff',
+                  color: '#334155',
+                  border: '1px solid rgba(148, 163, 184, 0.45)',
+                  borderRadius: '10px',
+                  padding: '0.65rem 1.2rem',
+                  fontSize: '0.87rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowValidationModal(false)}
+                style={{
+                  background: 'linear-gradient(180deg, #ef4444 0%, #dc2626 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '0.65rem 1.5rem',
+                  fontSize: '0.87rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Entendido, revisar formulario
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }
