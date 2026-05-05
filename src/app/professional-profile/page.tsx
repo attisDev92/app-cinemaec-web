@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import jsPDF from "jspdf"
+import { createPortal } from "react-dom"
 import { useAuth } from "@/features/auth/hooks"
 import { useProfile } from "@/features/profile/hooks/useProfile"
 import { LegalStatus } from "@/features/profile/types"
@@ -29,6 +30,8 @@ import { AssetOwnerEnum, AssetTypeEnum } from "@/shared/types"
 import styles from "./page.module.css"
 
 export default function ProfessionalProfilePage() {
+  const MOBILE_PATTERN = /^\+?[0-9()\-\s]{7,30}$/
+
   const router = useRouter()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const { profile, loadProfile } = useProfile()
@@ -37,6 +40,8 @@ export default function ProfessionalProfilePage() {
   const [movies, setMovies] = useState<Movie[]>([])
   const [isLoadingMovies, setIsLoadingMovies] = useState(false)
   const [movieSearch, setMovieSearch] = useState("")
+  const [showLoadErrorModal, setShowLoadErrorModal] = useState(false)
+  const [loadErrorMessages, setLoadErrorMessages] = useState<string[]>([])
   const [claimData, setClaimData] = useState<ProfessionalClaimCheckResponse | null>(
     null,
   )
@@ -64,6 +69,13 @@ export default function ProfessionalProfilePage() {
   const [rrss, setRrss] = useState("")
   const [bio, setBio] = useState("")
   const [bioEn, setBioEn] = useState("")
+  const [bioError, setBioError] = useState("")
+  const [bioEnError, setBioEnError] = useState("")
+  const [mobileError, setMobileError] = useState("")
+  const [profilePhotoError, setProfilePhotoError] = useState("")
+  const [extendedBiofilmography, setExtendedBiofilmography] = useState("")
+  const [extendedBioError, setExtendedBioError] = useState("")
+  const [imdbProfile, setImdbProfile] = useState("")
   const [profilePhotoAssetId, setProfilePhotoAssetId] = useState<number | null>(
     null,
   )
@@ -94,6 +106,15 @@ export default function ProfessionalProfilePage() {
   >([])
   const [isLoadingParticipations, setIsLoadingParticipations] = useState(false)
 
+  const openLoadErrorModal = (messages: string[]) => {
+    setLoadErrorMessages(messages)
+    setShowLoadErrorModal(true)
+  }
+
+  const closeLoadErrorModal = () => {
+    setShowLoadErrorModal(false)
+  }
+
   const toProfileImageProxyUrl = (url: string): string =>
     `/api/image-proxy?url=${encodeURIComponent(url)}`
 
@@ -122,6 +143,13 @@ export default function ProfessionalProfilePage() {
     setRrss("")
     setBio("")
     setBioEn("")
+    setBioError("")
+    setBioEnError("")
+    setMobileError("")
+    setProfilePhotoError("")
+    setExtendedBiofilmography("")
+    setExtendedBioError("")
+    setImdbProfile("")
     setProfilePhotoAssetId(null)
     setProfilePhotoUrl(null)
     setReelLink("")
@@ -149,6 +177,10 @@ export default function ProfessionalProfilePage() {
         setMovies(data)
       } catch (err) {
         console.error(err)
+        openLoadErrorModal([
+          "No se pudo cargar el listado de películas.",
+          "Revisa tu conexión y vuelve a intentarlo.",
+        ])
       } finally {
         setIsLoadingMovies(false)
       }
@@ -183,17 +215,44 @@ export default function ProfessionalProfilePage() {
         setSelectedProfessionalId(null)
         setIsChecking(false)
       } catch (err) {
-        setError(
+        const message =
           err instanceof Error
             ? err.message
-            : "No se pudo verificar el perfil profesional",
-        )
+            : "No se pudo verificar el perfil profesional"
+
+        setError(message)
+        openLoadErrorModal([
+          "Ocurrió un error al verificar tu perfil profesional.",
+          message,
+        ])
         setIsChecking(false)
       }
     }
 
     runCheck()
   }, [user, profile, authLoading, loadProfile])
+
+  useEffect(() => {
+    if (!showLoadErrorModal) {
+      document.body.style.overflow = ""
+      return
+    }
+
+    document.body.style.overflow = "hidden"
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeLoadErrorModal()
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape)
+
+    return () => {
+      document.body.style.overflow = ""
+      window.removeEventListener("keydown", handleEscape)
+    }
+  }, [showLoadErrorModal])
 
   useEffect(() => {
     const loadProfessionalData = async () => {
@@ -237,7 +296,13 @@ export default function ProfessionalProfilePage() {
           ),
         ])
 
-        const profilePhoto = profilePhotoAssets[0]
+        const profilePhoto =
+          profilePhotoAssets[0] ||
+          (professionalData?.profilePhotoAssetId
+            ? await assetService
+                .getAsset(professionalData.profilePhotoAssetId)
+                .catch(() => null)
+            : null)
         setDisplayProfilePhotoUrl(
           profilePhoto
             ? toProfileImageProxyUrl(assetService.getPublicAssetUrl(profilePhoto))
@@ -257,7 +322,11 @@ export default function ProfessionalProfilePage() {
     }
 
     loadProfessionalAssets()
-  }, [claimData?.alreadyClaimedByYou, claimData?.professionalId])
+  }, [
+    claimData?.alreadyClaimedByYou,
+    claimData?.professionalId,
+    professionalData?.profilePhotoAssetId,
+  ])
 
   useEffect(() => {
     const loadParticipations = async () => {
@@ -351,8 +420,58 @@ export default function ProfessionalProfilePage() {
   }
 
   const handleCreateProfessional = async () => {
+    setBioError("")
+    setBioEnError("")
+    setMobileError("")
+    setProfilePhotoError("")
+    setExtendedBioError("")
+
     if (!profile?.fullName || !user?.cedula) {
       setError("Completa tu perfil para registrar un profesional")
+      return
+    }
+
+    let hasError = false
+
+    const trimmedMobile = mobile.trim()
+    const trimmedBio = bio.trim()
+    const trimmedExtendedBio = extendedBiofilmography.trim()
+
+    if (trimmedMobile && !MOBILE_PATTERN.test(trimmedMobile)) {
+      setMobileError("Ingresa un número de celular válido")
+      hasError = true
+    }
+
+    if (!profilePhotoAssetId) {
+      setProfilePhotoError("La foto de perfil es obligatoria")
+      hasError = true
+    }
+
+    if (!trimmedBio) {
+      setBioError("La biofilmografía en español es obligatoria")
+      hasError = true
+    }
+
+    if (bio.length > 300) {
+      setBioError("Máximo 300 caracteres")
+      hasError = true
+    }
+
+    if (bioEn.length > 300) {
+      setBioEnError("Máximo 300 caracteres")
+      hasError = true
+    }
+
+    if (!trimmedExtendedBio) {
+      setExtendedBioError("Este campo es obligatorio")
+      hasError = true
+    } else if (extendedBiofilmography.length > 1000) {
+      setExtendedBioError("Máximo 1000 caracteres")
+      hasError = true
+    }
+
+    if (hasError) {
+      setError("Revisa los campos obligatorios y los límites de caracteres.")
       return
     }
 
@@ -364,13 +483,14 @@ export default function ProfessionalProfilePage() {
         nickName: nickName || null,
         dniNumber: user.cedula,
         phone: phone || null,
-        mobile: mobile || null,
+        mobile: trimmedMobile || null,
         website: website || null,
         linkedin: linkedin || null,
         rrss: rrss || null,
-        bio: bio || null,
-        bioEn: bioEn || null,
-        extendedBiofilmography: "",
+        bio: trimmedBio,
+        bioEn: bioEn.trim() || null,
+        extendedBiofilmography: trimmedExtendedBio,
+        imdbProfile: imdbProfile.trim() || null,
         profilePhotoAssetId,
         reelLink: reelLink || null,
         primaryActivityRoleId1: primaryRole1 ? Number(primaryRole1) : null,
@@ -1130,10 +1250,14 @@ export default function ProfessionalProfilePage() {
                   <Input
                     label="Celular"
                     value={mobile}
-                    onChange={(event) => setMobile(event.target.value)}
+                    onChange={(event) => {
+                      setMobile(event.target.value)
+                      setMobileError("")
+                    }}
                     placeholder="Ej: 0999999999"
                     type="tel"
-                    inputMode="numeric"
+                    inputMode="tel"
+                    error={mobileError}
                   />
                 </div>
               </div>
@@ -1170,6 +1294,12 @@ export default function ProfessionalProfilePage() {
                     placeholder="https://..."
                   />
                   <Input
+                    label="Perfil de IMDB"
+                    value={imdbProfile}
+                    onChange={(event) => setImdbProfile(event.target.value)}
+                    placeholder="https://www.imdb.com/name/nm0000000/"
+                  />
+                  <Input
                     label="Reel (YouTube o Vimeo)"
                     value={reelLink}
                     onChange={(event) => setReelLink(event.target.value)}
@@ -1185,12 +1315,17 @@ export default function ProfessionalProfilePage() {
                       onUploadComplete={(id, url) => {
                         setProfilePhotoAssetId(id)
                         setProfilePhotoUrl(url)
+                        setProfilePhotoError("")
                       }}
                       onRemove={() => {
                         setProfilePhotoAssetId(null)
                         setProfilePhotoUrl(null)
+                        setProfilePhotoError("La foto de perfil es obligatoria")
                       }}
                     />
+                    {profilePhotoError && (
+                      <p className={styles.fieldError}>{profilePhotoError}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1545,20 +1680,56 @@ export default function ProfessionalProfilePage() {
                 <div className={styles.formSectionContent}>
                   <div className={styles.fullWidthField}>
                     <Textarea
-                      label="Biofilmografía"
+                      label="Biofilmografía (español)"
                       value={bio}
-                      onChange={(event) => setBio(event.target.value)}
-                      placeholder="Cuéntanos sobre tu experiencia y filmografía"
+                      onChange={(event) => {
+                        if (event.target.value.length <= 300) {
+                          setBio(event.target.value)
+                          setBioError("")
+                        } else {
+                          setBio(event.target.value.slice(0, 300))
+                          setBioError("Máximo 300 caracteres")
+                        }
+                      }}
                       rows={4}
+                      maxLength={300}
+                      error={bioError}
+                      helper={`${bio.length}/300 caracteres`}
+                      required
                     />
                   </div>
                   <div className={styles.fullWidthField}>
                     <Textarea
-                      label="Biofilmografía (Inglés)"
+                      label="Biofilmografía (inglés)"
                       value={bioEn}
-                      onChange={(event) => setBioEn(event.target.value)}
-                      placeholder="Tell us about your experience and filmography"
+                      onChange={(event) => {
+                        if (event.target.value.length <= 300) {
+                          setBioEn(event.target.value)
+                          setBioEnError("")
+                        } else {
+                          setBioEn(event.target.value.slice(0, 300))
+                          setBioEnError("Máximo 300 caracteres")
+                        }
+                      }}
                       rows={4}
+                      maxLength={300}
+                      error={bioEnError}
+                      helper={`${bioEn.length}/300 caracteres`}
+                    />
+                  </div>
+                  <div className={styles.fullWidthField}>
+                    <Textarea
+                      label="Biofilmografía extendida (español) *"
+                      value={extendedBiofilmography}
+                      onChange={(event) => {
+                        setExtendedBiofilmography(event.target.value.slice(0, 1000))
+                        setExtendedBioError("")
+                      }}
+                      rows={6}
+                      maxLength={1000}
+                      error={extendedBioError}
+                      helper={`${extendedBiofilmography.length}/1000 caracteres`}
+                      required
                     />
                   </div>
                 </div>
@@ -1598,6 +1769,231 @@ export default function ProfessionalProfilePage() {
             </div>
           )}
         </Card>
+
+        {showLoadErrorModal && typeof document !== "undefined" &&
+          createPortal(
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="load-error-modal-title"
+              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 99999,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "20px",
+                background: "rgba(15, 23, 42, 0.58)",
+                backdropFilter: "blur(3px)",
+              }}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  closeLoadErrorModal()
+                }
+              }}
+            >
+              <div
+                onClick={(event) => event.stopPropagation()}
+                style={{
+                  width: "100%",
+                  maxWidth: "680px",
+                  maxHeight: "84vh",
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "hidden",
+                  background: "#ffffff",
+                  borderRadius: "18px",
+                  border: "1px solid rgba(203, 213, 225, 0.9)",
+                  boxShadow: "0 25px 55px rgba(15, 23, 42, 0.28)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "0.85rem",
+                    padding: "1.15rem 1.25rem",
+                    borderBottom: "1px solid #e2e8f0",
+                    background:
+                      "linear-gradient(180deg, rgba(254, 242, 242, 0.9) 0%, rgba(255, 255, 255, 1) 100%)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "34px",
+                      height: "34px",
+                      borderRadius: "999px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "1rem",
+                      fontWeight: 800,
+                      lineHeight: 1,
+                      marginTop: "2px",
+                      color: "#fff",
+                      background: "#ef4444",
+                      boxShadow: "0 8px 20px rgba(239, 68, 68, 0.35)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    !
+                  </div>
+                  <div>
+                    <h2
+                      id="load-error-modal-title"
+                      style={{
+                        margin: "0 0 0.35rem",
+                        fontSize: "1.2rem",
+                        fontWeight: 700,
+                        color: "#0f172a",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      Ocurrió un error al cargar datos
+                    </h2>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "0.92rem",
+                        color: "#475569",
+                      }}
+                    >
+                      Revisa los mensajes y vuelve a intentar la carga.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeLoadErrorModal}
+                    aria-label="Cerrar"
+                    style={{
+                      marginLeft: "auto",
+                      width: "2rem",
+                      height: "2rem",
+                      borderRadius: "999px",
+                      border: "1px solid rgba(148, 163, 184, 0.35)",
+                      background: "#fff",
+                      color: "#1f2937",
+                      fontSize: "1.4rem",
+                      lineHeight: 1,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    overflowY: "auto",
+                    padding: "1rem 1.25rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.85rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      background: "#fff7f7",
+                      border: "1px solid rgba(239, 68, 68, 0.23)",
+                      borderRadius: "12px",
+                      padding: "0.82rem 0.9rem",
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: "0 0 0.45rem",
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: "#b91c1c",
+                      }}
+                    >
+                      Error
+                    </p>
+                    <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                      {loadErrorMessages.map((msg, i) => (
+                        <li
+                          key={i}
+                          style={{
+                            display: "flex",
+                            alignItems: "baseline",
+                            gap: "0.5rem",
+                            fontSize: "0.9rem",
+                            color: "#1e293b",
+                            marginBottom: i === loadErrorMessages.length - 1 ? 0 : "0.4rem",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "7px",
+                              height: "7px",
+                              borderRadius: "999px",
+                              background: "#ef4444",
+                              flexShrink: 0,
+                              position: "relative",
+                              top: "-1px",
+                            }}
+                          />
+                          {msg}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    padding: "0.95rem 1.25rem",
+                    borderTop: "1px solid #e2e8f0",
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: "0.6rem",
+                    background: "#f8fafc",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={closeLoadErrorModal}
+                    style={{
+                      background: "#fff",
+                      color: "#334155",
+                      border: "1px solid rgba(148, 163, 184, 0.45)",
+                      borderRadius: "10px",
+                      padding: "0.65rem 1.2rem",
+                      fontSize: "0.87rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeLoadErrorModal}
+                    style={{
+                      background: "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "0.65rem 1.5rem",
+                      fontSize: "0.87rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )}
       </div>
     </div>
   )

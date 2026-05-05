@@ -23,16 +23,20 @@ interface MultiImageUploadProps {
 
 export function MultiImageUpload({
   onImagesChange,
-  currentImages = [],
+  currentImages,
   documentType,
   ownerType,
   ownerId,
   maxImages = 10,
   label = "Fotos del espacio",
 }: MultiImageUploadProps) {
-  const [images, setImages] = useState<ImageData[]>(currentImages)
+  const [images, setImages] = useState<ImageData[]>(currentImages ?? [])
 
   useEffect(() => {
+    if (!currentImages) {
+      return
+    }
+
     setImages(currentImages)
   }, [currentImages])
 
