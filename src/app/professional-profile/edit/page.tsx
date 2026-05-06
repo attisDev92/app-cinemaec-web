@@ -272,19 +272,75 @@ export default function EditProfessionalProfilePage() {
       return
     }
 
-    const getAreaByRoleId = (roleIdValue: string): string => {
+    let hasInvalidPersistedRole = false
+
+    const syncRoleAndArea = (
+      roleIdValue: string,
+      currentAreaValue: string,
+      setRole: React.Dispatch<React.SetStateAction<string>>,
+      setArea: React.Dispatch<React.SetStateAction<string>>,
+    ) => {
       if (!roleIdValue) {
-        return ""
+        return
       }
+
       const role = roles.find((item) => item.id === Number(roleIdValue))
-      return role?.idRoleCategory ? String(role.idRoleCategory) : ""
+
+      // If persisted role ID no longer exists in catalog, clear that slot.
+      if (!role) {
+        hasInvalidPersistedRole = true
+        setRole("")
+        setArea("")
+        return
+      }
+
+      const nextAreaValue = role.idRoleCategory
+        ? String(role.idRoleCategory)
+        : ""
+
+      if (nextAreaValue !== currentAreaValue) {
+        setArea(nextAreaValue)
+      }
     }
 
-    setPrimaryArea1(getAreaByRoleId(primaryRole1))
-    setPrimaryArea2(getAreaByRoleId(primaryRole2))
-    setSecondaryArea1(getAreaByRoleId(secondaryRole1))
-    setSecondaryArea2(getAreaByRoleId(secondaryRole2))
-  }, [roles, primaryRole1, primaryRole2, secondaryRole1, secondaryRole2])
+    syncRoleAndArea(primaryRole1, primaryArea1, setPrimaryRole1, setPrimaryArea1)
+    syncRoleAndArea(primaryRole2, primaryArea2, setPrimaryRole2, setPrimaryArea2)
+    syncRoleAndArea(
+      secondaryRole1,
+      secondaryArea1,
+      setSecondaryRole1,
+      setSecondaryArea1,
+    )
+    syncRoleAndArea(
+      secondaryRole2,
+      secondaryArea2,
+      setSecondaryRole2,
+      setSecondaryArea2,
+    )
+
+    if (hasInvalidPersistedRole) {
+      setError((prev) =>
+        prev ||
+        "Algunos roles guardados ya no existen en el catálogo. Vuelve a seleccionarlos y guarda.",
+      )
+    } else if (
+      error ===
+      "Algunos roles guardados ya no existen en el catálogo. Vuelve a seleccionarlos y guarda."
+    ) {
+      setError("")
+    }
+  }, [
+    roles,
+    primaryRole1,
+    primaryRole2,
+    secondaryRole1,
+    secondaryRole2,
+    primaryArea1,
+    primaryArea2,
+    secondaryArea1,
+    secondaryArea2,
+    error,
+  ])
 
   const selectedMovieTitle = participationMovieId
     ? movies.find((movie) => movie.id === Number(participationMovieId))?.title
@@ -616,9 +672,7 @@ export default function EditProfessionalProfilePage() {
                   onChange={(event) => {
                     const nextValue = event.target.value
                     setPrimaryArea1(nextValue)
-                    if (!nextValue) {
-                      setPrimaryRole1("")
-                    }
+                    setPrimaryRole1("")
                   }}
                   placeholder="Selecciona un área"
                   options={categories.map((category) => ({
@@ -648,9 +702,7 @@ export default function EditProfessionalProfilePage() {
                   onChange={(event) => {
                     const nextValue = event.target.value
                     setPrimaryArea2(nextValue)
-                    if (!nextValue) {
-                      setPrimaryRole2("")
-                    }
+                    setPrimaryRole2("")
                   }}
                   placeholder="Selecciona un área"
                   options={categories.map((category) => ({
@@ -680,9 +732,7 @@ export default function EditProfessionalProfilePage() {
                   onChange={(event) => {
                     const nextValue = event.target.value
                     setSecondaryArea1(nextValue)
-                    if (!nextValue) {
-                      setSecondaryRole1("")
-                    }
+                    setSecondaryRole1("")
                   }}
                   placeholder="Selecciona un área"
                   options={categories.map((category) => ({
@@ -714,9 +764,7 @@ export default function EditProfessionalProfilePage() {
                   onChange={(event) => {
                     const nextValue = event.target.value
                     setSecondaryArea2(nextValue)
-                    if (!nextValue) {
-                      setSecondaryRole2("")
-                    }
+                    setSecondaryRole2("")
                   }}
                   placeholder="Selecciona un área"
                   options={categories.map((category) => ({
