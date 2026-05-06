@@ -586,6 +586,7 @@ export default function EditProfessionalProfilePage() {
                   ownerId={professionalId || undefined}
                   maxImages={5}
                   currentImages={portfolioCurrentImages}
+                  deleteAssetOnRemove={true}
                   onImagesChange={setPortfolioImageAssetIds}
                 />
               </div>

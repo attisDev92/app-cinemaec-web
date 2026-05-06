@@ -74,6 +74,51 @@ export default function PublicAdminCatalogDetailPage() {
   }, [catalogId])
 
   const movies = useMemo(() => catalog?.movies || [], [catalog])
+  const sortedMovies = useMemo(() => {
+    const typeOrder: Record<string, number> = {
+      largometraje: 0,
+      cortometraje: 1,
+    }
+
+    const statusOrder: Record<string, number> = {
+      desarrollo: 0,
+      produccion: 1,
+      postproduccion: 2,
+      distribucion: 3,
+    }
+
+    const genreOrder: Record<string, number> = {
+      documental: 0,
+      ficcion: 1,
+    }
+
+    const normalize = (value?: string | null) =>
+      String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+
+    return [...movies].sort((a, b) => {
+      const aType = typeOrder[normalize(a.type)] ?? Number.MAX_SAFE_INTEGER
+      const bType = typeOrder[normalize(b.type)] ?? Number.MAX_SAFE_INTEGER
+      if (aType !== bType) return aType - bType
+
+      const aStatus =
+        statusOrder[normalize(a.projectStatus)] ?? Number.MAX_SAFE_INTEGER
+      const bStatus =
+        statusOrder[normalize(b.projectStatus)] ?? Number.MAX_SAFE_INTEGER
+      if (aStatus !== bStatus) return aStatus - bStatus
+
+      const aGenre = genreOrder[normalize(a.genre)] ?? Number.MAX_SAFE_INTEGER
+      const bGenre = genreOrder[normalize(b.genre)] ?? Number.MAX_SAFE_INTEGER
+      if (aGenre !== bGenre) return aGenre - bGenre
+
+      return (a.title || "").localeCompare(b.title || "", "es", {
+        sensitivity: "base",
+      })
+    })
+  }, [movies])
   const festivals = useMemo(() => catalog?.festivals || [], [catalog])
   const professionals = useMemo(() => catalog?.professionals || [], [catalog])
 
@@ -153,7 +198,7 @@ export default function PublicAdminCatalogDetailPage() {
                   <div className={styles.emptyBox}>No hay películas relacionadas en este catálogo.</div>
                 ) : (
                   <div className={styles.moviesGallery}>
-                    {movies.map((movie) => (
+                    {sortedMovies.map((movie) => (
                       <MovieCard key={movie.id} movie={movie as unknown as Movie} />
                     ))}
                   </div>

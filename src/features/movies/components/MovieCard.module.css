@@ -89,12 +89,36 @@
   overflow: hidden;
 }
 
-.country {
+.metaRow {
+  font-size: var(--font-size-xs);
+  color: #cfd9e1;
+  margin: 0;
+}
+
+.creditLine {
   font-size: var(--font-size-xs);
   color: #c1ccd4;
   margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  display: flex;
+  gap: 0.25rem;
+  align-items: flex-start;
+}
+
+.creditLabel {
+  color: #ffffff;
+  font-weight: var(--font-weight-semibold);
+  flex: 0 0 auto;
+}
+
+.creditNames {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.creditNameItem {
+  line-height: 1.35;
 }
 
 .year {

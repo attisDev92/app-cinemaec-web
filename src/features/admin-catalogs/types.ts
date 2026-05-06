@@ -1,12 +1,28 @@
 import { Asset } from "@/shared/types"
 
+interface CatalogMovieProfessional {
+  id: number
+  professional?: {
+    id?: number
+    name?: string | null
+    fullName?: string | null
+  } | null
+  cinematicRole?: {
+    id?: number
+    name?: string | null
+  } | null
+}
+
 export interface CatalogMovie {
   id: number
   title: string
   releaseYear?: number | null
+  type?: string | null
+  genre?: string | null
   projectStatus?: string | null
   country?: { name?: string | null } | null
   posterAsset?: Asset | null
+  professionals?: CatalogMovieProfessional[] | null
 }
 
 export interface CatalogFestival {

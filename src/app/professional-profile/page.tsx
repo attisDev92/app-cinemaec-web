@@ -1751,6 +1751,7 @@ export default function ProfessionalProfilePage() {
                       documentType={AssetTypeEnum.IMAGE}
                       ownerType={AssetOwnerEnum.PROFESSIONAL_PORTFOLIO_IMAGE}
                       maxImages={5}
+                      deleteAssetOnRemove={true}
                       onImagesChange={setPortfolioImageAssetIds}
                     />
                   </div>

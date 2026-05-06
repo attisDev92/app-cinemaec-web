@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { ImageUpload } from "../ImageUpload"
+import { assetService } from "@/features/assets/services/asset.service"
 import { AssetTypeEnum, AssetOwnerEnum } from "@/shared/types"
 import styles from "./multi-image-upload.module.css"
 
@@ -19,6 +20,7 @@ interface MultiImageUploadProps {
   ownerId?: number
   maxImages?: number
   label?: string
+  deleteAssetOnRemove?: boolean
 }
 
 export function MultiImageUpload({
@@ -29,8 +31,10 @@ export function MultiImageUpload({
   ownerId,
   maxImages = 10,
   label = "Fotos del espacio",
+  deleteAssetOnRemove = false,
 }: MultiImageUploadProps) {
   const [images, setImages] = useState<ImageData[]>(currentImages ?? [])
+  const [isRemoving, setIsRemoving] = useState(false)
 
   useEffect(() => {
     if (!currentImages) {
@@ -51,7 +55,24 @@ export function MultiImageUpload({
     onImagesChange(updatedImages.map((img) => img.id))
   }
 
-  const handleRemoveImage = (localId: string) => {
+  const handleRemoveImage = async (localId: string) => {
+    const imageToRemove = images.find((img) => img.localId === localId)
+    if (!imageToRemove) {
+      return
+    }
+
+    if (deleteAssetOnRemove) {
+      try {
+        setIsRemoving(true)
+        await assetService.deleteAsset(imageToRemove.id)
+      } catch (error) {
+        console.error("No se pudo eliminar la imagen", error)
+        return
+      } finally {
+        setIsRemoving(false)
+      }
+    }
+
     const updatedImages = images.filter((img) => img.localId !== localId)
     setImages(updatedImages)
     onImagesChange(updatedImages.map((img) => img.id))
@@ -76,6 +97,7 @@ export function MultiImageUpload({
               type="button"
               onClick={() => handleRemoveImage(image.localId)}
               className={styles.removeButton}
+              disabled={isRemoving}
             >
               ✕
             </button>
