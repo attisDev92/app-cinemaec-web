@@ -173,22 +173,48 @@ const roleIdOf = (entry?: ProfessionalEntry): number | undefined => {
   return entry?.cinematicRoleId ?? entry?.cinematicRole?.id
 }
 
+const DIRECTOR_ROLE_LABELS = new Set(["director", "directora", "director/a", "direccion", "direction"])
+const PRODUCER_ROLE_LABELS = new Set(["productor", "productora", "produccion", "producer", "production"])
+
+const roleSegments = (value: unknown): string[] => {
+  const normalized = normalizeForMap(value).replace(/\s+/g, " ").trim()
+  if (!normalized) return []
+
+  return normalized
+    .split(/\s*[/,;|]\s*/)
+    .flatMap((segment) => segment.split(/\s+y\s+|\s+and\s+/))
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+}
+
+const roleFlagsFromName = (value: unknown): { isDirector: boolean; isProducer: boolean } => {
+  const segments = roleSegments(value)
+  if (!segments.length) {
+    return { isDirector: false, isProducer: false }
+  }
+
+  return {
+    isDirector: segments.some((segment) => DIRECTOR_ROLE_LABELS.has(segment)),
+    isProducer: segments.some((segment) => PRODUCER_ROLE_LABELS.has(segment)),
+  }
+}
+
 const isDirectorEntry = (entry?: ProfessionalEntry): boolean => {
   if (!entry) return false
   const roleId = roleIdOf(entry)
   if (roleId === 1) return true
+  if (roleId !== undefined && roleId !== null) return false
 
-  const roleName = normalizeForMap(entry.cinematicRole?.name)
-  return roleName.includes("director") || roleName.includes("direccion")
+  return roleFlagsFromName(entry.cinematicRole?.name).isDirector
 }
 
 const isProducerEntry = (entry?: ProfessionalEntry): boolean => {
   if (!entry) return false
   const roleId = roleIdOf(entry)
   if (roleId === 2) return true
+  if (roleId !== undefined && roleId !== null) return false
 
-  const roleName = normalizeForMap(entry.cinematicRole?.name)
-  return roleName.includes("productor") || roleName.includes("produccion") || roleName.includes("producer")
+  return roleFlagsFromName(entry.cinematicRole?.name).isProducer
 }
 
 const professionalIdentityKey = (entry?: ProfessionalEntry): string => {
@@ -255,27 +281,7 @@ const buildDirectorProducerSlots = (entries?: ProfessionalEntry[]): Professional
   }
 
   const groups = Array.from(grouped.values()).sort((a, b) => a.firstIndex - b.firstIndex)
-  const slots: Group[] = []
-
-  const mergedRolePerson = groups.find((group) => group.hasDirector && group.hasProducer)
-  if (mergedRolePerson) {
-    slots.push(mergedRolePerson)
-    const nextDifferent = groups.find((group) => group.key !== mergedRolePerson.key)
-    if (nextDifferent) slots.push(nextDifferent)
-  } else {
-    const firstDirector = groups.find((group) => group.hasDirector)
-    if (firstDirector) slots.push(firstDirector)
-
-    const firstProducer = groups.find((group) => group.hasProducer && group.key !== slots[0]?.key)
-    if (firstProducer) slots.push(firstProducer)
-
-    if (slots.length < 2) {
-      const fallback = groups.find((group) => group.key !== slots[0]?.key)
-      if (fallback) slots.push(fallback)
-    }
-  }
-
-  return slots.slice(0, 2).map((group) => {
+  return groups.map((group) => {
     if (group.hasDirector && group.hasProducer) {
       return {
         entry: group.entry,
@@ -606,7 +612,7 @@ export default function PublicCatalogMoviePage() {
 
     const fromContacts =
       movie?.contacts
-        ?.filter((contact) => (contact.role || "").toLowerCase().includes("director"))
+        ?.filter((contact) => roleFlagsFromName(contact.role).isDirector)
         .map((contact) => contact.name || "")
         .filter(Boolean) || []
 
@@ -622,7 +628,7 @@ export default function PublicCatalogMoviePage() {
 
     const fromContacts =
       movie?.contacts
-        ?.filter((contact) => (contact.role || "").toLowerCase().includes("productor"))
+        ?.filter((contact) => roleFlagsFromName(contact.role).isProducer)
         .map((contact) => contact.name || "")
         .filter(Boolean) || []
 
@@ -664,6 +670,16 @@ export default function PublicCatalogMoviePage() {
   const professionalSlots = useMemo(() => {
     return buildDirectorProducerSlots(movie?.professionals)
   }, [movie])
+
+  const firstDirectorSlotIndex = useMemo(
+    () => professionalSlots.findIndex((slot) => isDirectorEntry(slot.entry)),
+    [professionalSlots],
+  )
+
+  const firstProducerSlotIndex = useMemo(
+    () => professionalSlots.findIndex((slot) => isProducerEntry(slot.entry)),
+    [professionalSlots],
+  )
 
   const directorPhotoUrl = useMemo(() => professionalPhotoUrl(directorEntry), [directorEntry])
   const producerPhotoUrl = useMemo(() => professionalPhotoUrl(producerEntry), [producerEntry])
@@ -1033,7 +1049,12 @@ export default function PublicCatalogMoviePage() {
                       const photoUrl = professionalPhotoUrl(entry)
                       const bio = professionalBio(entry)
                       const name = textValue(entry?.professional?.fullName || entry?.professional?.name)
-                      const photoElementId = index === 0 ? directorImageId : producerImageId
+                      const photoElementId =
+                        index === firstDirectorSlotIndex
+                          ? directorImageId
+                          : index === firstProducerSlotIndex
+                            ? producerImageId
+                            : undefined
                       return (
                         <div key={`${professionalIdentityKey(entry)}-${roleEs}`} className={styles.professionalCard}>
                           {photoUrl ? (
@@ -1258,12 +1279,12 @@ export default function PublicCatalogMoviePage() {
                 </h3>
                 <div className={styles.downloadButtons}>
                   {movie.dossierAsset?.url && (
-                    <a href={movie.dossierAsset.url} download className={styles.downloadBtn}>
+                    <a href={movie.dossierAsset.url} target="_blank" rel="noopener noreferrer" className={styles.downloadBtn}>
                       📄 Dossier Español
                     </a>
                   )}
                   {movie.dossierAssetEn?.url && (
-                    <a href={movie.dossierAssetEn.url} download className={styles.downloadBtn}>
+                    <a href={movie.dossierAssetEn.url} target="_blank" rel="noopener noreferrer" className={styles.downloadBtn}>
                       📄 Dossier English
                     </a>
                   )}
