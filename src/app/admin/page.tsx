@@ -63,6 +63,14 @@ export default function AdminPage() {
       permission: PermissionEnum.ADMIN_CATALOGS,
     },
     {
+      id: "contact-messages",
+      title: "Mensajes de Contacto",
+      description: "Revisar mensajes enviados desde el formulario público",
+      icon: "✉️",
+      route: "/admin/contact-messages",
+      permission: PermissionEnum.ADMIN_CONTACT_MESSAGES,
+    },
+    {
       id: "movie-requests",
       title: "Solicitudes de Películas",
       description: "Aprobar o rechazar solicitudes (En desarrollo)",

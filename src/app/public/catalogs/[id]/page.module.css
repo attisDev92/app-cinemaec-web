@@ -13,6 +13,12 @@
   padding: var(--spacing-2xl) var(--spacing-md) var(--spacing-3xl);
 }
 
+.contactButtonDock {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-lg);
+}
+
 .backLink {
   display: inline-flex;
   align-items: center;
@@ -51,6 +57,12 @@
   inset: auto 0 0 0;
   padding: 2rem;
   z-index: 1;
+}
+
+.headerTopBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-lg);
 }
 
 .title {
@@ -245,12 +257,20 @@
     padding: var(--spacing-lg) var(--spacing-md) var(--spacing-2xl);
   }
 
+  .contactButtonDock {
+    justify-content: stretch;
+  }
+
   .header {
     min-height: 250px;
   }
 
   .headerContent {
     padding: 1.25rem;
+  }
+
+  .headerTopBar {
+    margin-bottom: var(--spacing-md);
   }
 
   .moviesGallery,

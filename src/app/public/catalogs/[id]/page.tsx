@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { Navbar } from "@/shared/components/Navbar"
 import { PublicMenu } from "@/shared/components/PublicMenu"
+import { ContactUsButton } from "@/shared/components/ContactUsButton"
 import { MovieCard } from "@/features/movies/components/MovieCard"
 import type { Movie } from "@/features/movies/types"
 import { assetService } from "@/features/assets/services/asset.service"
@@ -77,7 +78,12 @@ export default function PublicAdminCatalogDetailPage() {
   const sortedMovies = useMemo(() => {
     const typeOrder: Record<string, number> = {
       largometraje: 0,
-      cortometraje: 1,
+      series: 1,
+      serie: 1,
+      "series web": 1,
+      "serie web": 1,
+      webserie: 1,
+      cortometraje: 2,
     }
 
     const statusOrder: Record<string, number> = {
@@ -157,6 +163,9 @@ export default function PublicAdminCatalogDetailPage() {
             >
               <div className={styles.headerOverlay}></div>
               <div className={styles.headerContent}>
+                <div className={styles.headerTopBar}>
+                  <ContactUsButton className={styles.contactButtonDock} />
+                </div>
                 <h1 className={styles.title}>{catalog.name}</h1>
                 <p className={styles.year}>{catalog.year}</p>
                 {catalog.description && (

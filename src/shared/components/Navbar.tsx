@@ -97,6 +97,13 @@ export function Navbar() {
       permission: PermissionEnum.APPROVE_MOVIES_REQUEST,
     },
     {
+      id: "contact-messages",
+      label: "Mensajes de Contacto",
+      icon: "✉️",
+      route: "/admin/contact-messages",
+      permission: PermissionEnum.ADMIN_CONTACT_MESSAGES,
+    },
+    {
       id: "users",
       label: "Gestión de Usuarios",
       icon: "👥",
