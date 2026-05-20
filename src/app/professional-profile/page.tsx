@@ -296,16 +296,21 @@ export default function ProfessionalProfilePage() {
           ),
         ])
 
-        const profilePhoto =
-          profilePhotoAssets[0] ||
-          (professionalData?.profilePhotoAssetId
-            ? await assetService
-                .getAsset(professionalData.profilePhotoAssetId)
-                .catch(() => null)
-            : null)
+        const profilePhotoFromProfessional = professionalData?.profilePhotoAssetId
+          ? await assetService
+              .getAsset(professionalData.profilePhotoAssetId)
+              .catch(() => null)
+          : null
+
+        // Fallback seguro: si no existe assetId en el perfil, usar solo un asset subido
+        // por el usuario autenticado para evitar mostrar fotos de terceros.
+        const profilePhotoFallback =
+          profilePhotoAssets.find((asset) => asset.userId === user?.id) || null
+
+        const profilePhoto = profilePhotoFromProfessional || profilePhotoFallback
         setDisplayProfilePhotoUrl(
           profilePhoto
-            ? toProfileImageProxyUrl(assetService.getPublicAssetUrl(profilePhoto))
+            ? `${toProfileImageProxyUrl(assetService.getPublicAssetUrl(profilePhoto))}&v=${profilePhoto.id}`
             : null,
         )
 
@@ -326,6 +331,7 @@ export default function ProfessionalProfilePage() {
     claimData?.alreadyClaimedByYou,
     claimData?.professionalId,
     professionalData?.profilePhotoAssetId,
+    user?.id,
   ])
 
   useEffect(() => {
@@ -648,6 +654,7 @@ export default function ProfessionalProfilePage() {
     const [textR, textG, textB] = hexToRgb("#111827")
     const [mutedR, mutedG, mutedB] = hexToRgb("#6b7280")
     const [surfaceR, surfaceG, surfaceB] = hexToRgb("#f9fafb")
+    const [linkR, linkG, linkB] = hexToRgb("#1d4ed8")
 
     const loadImageWithSize = async (
       src: string,
@@ -733,30 +740,109 @@ export default function ProfessionalProfilePage() {
       }
     }
 
+    const iccaLogo = await loadImageWithSize("/images/logos/logo icca.png")
+    const hazLogo = await loadImageWithSize(
+      "/images/logos/hazcine-horizontal-oscuro1.png",
+    )
+    const profileTitle =
+      professionalData?.nickName?.trim() || claimData.professionalName || "-"
+    const embeddedProfilePhoto = getCircularAvatarFromRenderedImage(300)
+
     const pdf = new jsPDF()
     const pageWidth = pdf.internal.pageSize.getWidth()
     const pageHeight = pdf.internal.pageSize.getHeight()
     const margin = 16
     const maxWidth = pageWidth - margin * 2
-    let y = 14
+    const contentTop = 46
+    const bottomLimit = pageHeight - margin
+    const labelWidth = 54
+    const valueX = margin + labelWidth
+    const valueWidth = maxWidth - labelWidth
+    let y = contentTop
 
-    const paintPageBackground = () => {
-      pdf.setFillColor(255, 255, 255)
-      pdf.rect(0, 0, pageWidth, pageHeight, "F")
+    const normalizeExternalUrl = (value?: string | null): string | null => {
+      const raw = String(value || "").trim()
+      if (!raw) {
+        return null
+      }
+      if (/^https?:\/\//i.test(raw)) {
+        return raw
+      }
+      return `https://${raw}`
     }
 
-    paintPageBackground()
+    const toPrintable = (value?: string | null): string => {
+      const text = String(value || "").trim()
+      return text || "-"
+    }
 
-    const ensureSpace = (needed = 8) => {
-      if (y + needed > pageHeight - margin) {
-        pdf.addPage()
-        paintPageBackground()
-        y = margin
+    const drawPageHeader = () => {
+      pdf.setFillColor(248, 250, 252)
+      pdf.rect(0, 0, pageWidth, 40, "F")
+      pdf.setFillColor(hazBlueR, hazBlueG, hazBlueB)
+      pdf.rect(0, 0, pageWidth, 7, "F")
+      pdf.setFillColor(primaryR, primaryG, primaryB)
+      pdf.rect(0, 33, pageWidth, 7, "F")
+
+      if (iccaLogo) {
+        const logoMaxWidth = 52
+        const logoMaxHeight = 20
+        const logoRatio = iccaLogo.width / iccaLogo.height
+        let renderWidth = logoMaxWidth
+        let renderHeight = renderWidth / logoRatio
+
+        if (renderHeight > logoMaxHeight) {
+          renderHeight = logoMaxHeight
+          renderWidth = renderHeight * logoRatio
+        }
+
+        pdf.addImage(
+          iccaLogo.dataUrl,
+          "PNG",
+          margin,
+          10 + (logoMaxHeight - renderHeight) / 2,
+          renderWidth,
+          renderHeight,
+        )
+      }
+
+      if (hazLogo) {
+        const hazMaxWidth = 54
+        const hazMaxHeight = 22
+        const hazRatio = hazLogo.width / hazLogo.height
+        let hazRenderWidth = hazMaxWidth
+        let hazRenderHeight = hazRenderWidth / hazRatio
+
+        if (hazRenderHeight > hazMaxHeight) {
+          hazRenderHeight = hazMaxHeight
+          hazRenderWidth = hazRenderHeight * hazRatio
+        }
+
+        pdf.addImage(
+          hazLogo.dataUrl,
+          "PNG",
+          pageWidth - margin - hazRenderWidth,
+          9 + (hazMaxHeight - hazRenderHeight) / 2,
+          hazRenderWidth,
+          hazRenderHeight,
+        )
       }
     }
 
-    const addTitle = (title: string) => {
-      ensureSpace(12)
+    const addPage = () => {
+      pdf.addPage()
+      drawPageHeader()
+      y = contentTop
+    }
+
+    const ensureSpace = (needed = 6) => {
+      if (y + needed > bottomLimit) {
+        addPage()
+      }
+    }
+
+    const drawSectionTitle = (title: string) => {
+      ensureSpace(11)
       pdf.setFillColor(surfaceR, surfaceG, surfaceB)
       pdf.rect(margin, y - 5, maxWidth, 9, "F")
       pdf.setTextColor(primaryR, primaryG, primaryB)
@@ -766,22 +852,61 @@ export default function ProfessionalProfilePage() {
       y += 10
     }
 
-    const addField = (label: string, value?: string | null) => {
-      ensureSpace(8)
+    const drawWrappedText = (
+      text: string,
+      x: number,
+      width: number,
+      options?: {
+        lineHeight?: number
+        color?: [number, number, number]
+        linkUrl?: string
+      },
+    ) => {
+      const lineHeight = options?.lineHeight ?? 5
+      const lines = pdf.splitTextToSize(text, width) as string[]
+      const color = options?.color || [mutedR, mutedG, mutedB]
+
+      pdf.setTextColor(color[0], color[1], color[2])
+      lines.forEach((line) => {
+        ensureSpace(lineHeight + 1)
+        pdf.text(line, x, y)
+
+        if (options?.linkUrl) {
+          const textWidth = Math.min(pdf.getTextWidth(line), width)
+          pdf.link(x, y - lineHeight + 1, textWidth, lineHeight, {
+            url: options.linkUrl,
+          })
+        }
+
+        y += lineHeight
+      })
+    }
+
+    const addField = (
+      label: string,
+      value?: string | null,
+      options?: { link?: boolean },
+    ) => {
+      ensureSpace(7)
       pdf.setFont("helvetica", "bold")
       pdf.setFontSize(10)
       pdf.setTextColor(textR, textG, textB)
       pdf.text(`${label}:`, margin, y)
 
-      const printable = value && value.trim() ? value : "-"
-      const wrapped = pdf.splitTextToSize(printable, maxWidth - 38)
+      const printable = toPrintable(value)
+      const linkUrl = options?.link ? normalizeExternalUrl(value) : null
+
       pdf.setFont("helvetica", "normal")
-      pdf.setTextColor(mutedR, mutedG, mutedB)
-      pdf.text(wrapped, margin + 38, y)
-      y += Math.max(7, wrapped.length * 5)
+      drawWrappedText(printable, valueX, valueWidth, {
+        lineHeight: 5,
+        color: linkUrl ? [linkR, linkG, linkB] : [mutedR, mutedG, mutedB],
+        linkUrl: linkUrl || undefined,
+      })
+
+      y += 1
     }
 
-    const addList = (label: string, items: string[]) => {
+    const addListField = (label: string, items: string[]) => {
       ensureSpace(8)
       pdf.setFont("helvetica", "bold")
       pdf.setFontSize(10)
@@ -791,156 +916,88 @@ export default function ProfessionalProfilePage() {
 
       if (items.length === 0) {
         pdf.setFont("helvetica", "normal")
-        pdf.setTextColor(mutedR, mutedG, mutedB)
-        pdf.text("-", margin + 4, y)
-        y += 6
+        drawWrappedText("-", margin + 4, maxWidth - 4)
+        y += 1
         return
       }
 
+      pdf.setFont("helvetica", "normal")
       items.forEach((item) => {
-        ensureSpace(6)
-        const wrapped = pdf.splitTextToSize(`• ${item}`, maxWidth - 4)
-        pdf.setFont("helvetica", "normal")
-        pdf.setTextColor(mutedR, mutedG, mutedB)
-        pdf.text(wrapped, margin + 4, y)
-        y += wrapped.length * 5
+        drawWrappedText(`• ${item}`, margin + 4, maxWidth - 4)
       })
+      y += 1
     }
 
-    const profileTitle =
-      professionalData?.nickName?.trim() || claimData.professionalName || "-"
+    drawPageHeader()
 
-    const iccaLogo = await loadImageWithSize("/images/logos/logo icca.png")
-    const hazLogo = await loadImageWithSize(
-      "/images/logos/hazcine-horizontal-oscuro1.png",
-    )
-
-    pdf.setFillColor(248, 250, 252)
-    pdf.rect(0, 0, pageWidth, 40, "F")
-    pdf.setFillColor(hazBlueR, hazBlueG, hazBlueB)
-    pdf.rect(0, 0, pageWidth, 7, "F")
-    pdf.setFillColor(primaryR, primaryG, primaryB)
-    pdf.rect(0, 33, pageWidth, 7, "F")
-
-    if (iccaLogo) {
-      const logoMaxWidth = 52
-      const logoMaxHeight = 20
-      const logoRatio = iccaLogo.width / iccaLogo.height
-      let renderWidth = logoMaxWidth
-      let renderHeight = renderWidth / logoRatio
-
-      if (renderHeight > logoMaxHeight) {
-        renderHeight = logoMaxHeight
-        renderWidth = renderHeight * logoRatio
-      }
-
-      pdf.addImage(
-        iccaLogo.dataUrl,
-        "PNG",
-        margin,
-        10 + (logoMaxHeight - renderHeight) / 2,
-        renderWidth,
-        renderHeight,
-      )
-    } else {
-      pdf.setTextColor(hazBlueR, hazBlueG, hazBlueB)
-      pdf.setFont("helvetica", "bold")
-      pdf.setFontSize(10)
-      pdf.text("ICCA", margin, 23)
-    }
-
-    if (hazLogo) {
-      const hazMaxWidth = 54
-      const hazMaxHeight = 22
-      const hazRatio = hazLogo.width / hazLogo.height
-      let hazRenderWidth = hazMaxWidth
-      let hazRenderHeight = hazRenderWidth / hazRatio
-
-      if (hazRenderHeight > hazMaxHeight) {
-        hazRenderHeight = hazMaxHeight
-        hazRenderWidth = hazRenderHeight * hazRatio
-      }
-
-      pdf.addImage(
-        hazLogo.dataUrl,
-        "PNG",
-        pageWidth - margin - hazRenderWidth,
-        9 + (hazMaxHeight - hazRenderHeight) / 2,
-        hazRenderWidth,
-        hazRenderHeight,
-      )
-    }
-
-    const photoSize = 40
+    const photoSize = 28
     const photoX = margin
-    const photoY = 48
-
-    const embeddedProfilePhoto = getCircularAvatarFromRenderedImage(300)
+    const photoY = 49
 
     if (embeddedProfilePhoto) {
       pdf.addImage(embeddedProfilePhoto, "PNG", photoX, photoY, photoSize, photoSize)
     } else {
       const initial = (profileTitle || "P").trim().charAt(0).toUpperCase() || "P"
       pdf.setDrawColor(hazVioletR, hazVioletG, hazVioletB)
-      pdf.setLineWidth(1.6)
+      pdf.setLineWidth(1.2)
       pdf.circle(photoX + photoSize / 2, photoY + photoSize / 2, photoSize / 2 + 1)
       pdf.setFillColor(primaryR, primaryG, primaryB)
       pdf.circle(photoX + photoSize / 2, photoY + photoSize / 2, photoSize / 2, "F")
       pdf.setTextColor(255, 255, 255)
       pdf.setFont("helvetica", "bold")
-      pdf.setFontSize(18)
+      pdf.setFontSize(13)
       pdf.text(initial, photoX + photoSize / 2, photoY + photoSize / 2 + 2, {
         align: "center",
       })
     }
 
-    const infoX = photoX + photoSize + 10
-    const infoWidth = pageWidth - margin - infoX
-    let infoY = 55
-
-    const addSummaryField = (label: string, value?: string | null) => {
-      const printable = value && value.trim() ? value : "-"
-      pdf.setFont("helvetica", "bold")
-      pdf.setFontSize(10)
-      pdf.setTextColor(textR, textG, textB)
-      pdf.text(`${label}:`, infoX, infoY)
-
-      const wrapped = pdf.splitTextToSize(printable, infoWidth - 28)
-      pdf.setFont("helvetica", "normal")
-      pdf.setTextColor(mutedR, mutedG, mutedB)
-      pdf.text(wrapped, infoX + 28, infoY)
-      infoY += Math.max(6, wrapped.length * 4.5)
-    }
-
     pdf.setTextColor(hazBlueR, hazBlueG, hazBlueB)
     pdf.setFont("helvetica", "bold")
-    pdf.setFontSize(20)
-    pdf.text(profileTitle, infoX, 52)
+    pdf.setFontSize(16)
+    pdf.text(profileTitle, margin + photoSize + 8, 61)
 
-    addSummaryField("Nickname", professionalData?.nickName || "")
-    addSummaryField("Nombre", claimData.professionalName)
-    addSummaryField("Cédula", claimData.dniNumber || "")
-    addSummaryField("Teléfono", professionalData?.phone || "")
-    addSummaryField("Celular", professionalData?.mobile || "")
+    y = 84
 
-    pdf.setFont("helvetica", "normal")
-    if (professionalData?.companyNameCEO?.trim()) {
-      addSummaryField("Empresa", professionalData.companyNameCEO)
-      addSummaryField("Cargo", "CEO")
-    }
+    const primaryRoleText = (primaryRoles as string[]).join(", ")
+    const secondaryRoleText = (secondaryRoles as string[]).join(", ")
+    const ceoText = professionalData?.companyNameCEO?.trim()
+      ? `Si. ${professionalData.companyNameCEO.trim()}`
+      : "No especificado"
+    const emailText =
+      String(professionalData?.email || "").trim() ||
+      String(user?.email || "").trim() ||
+      "-"
+    const publicProfileLink = `${window.location.origin}/public/professionals/${claimData.professionalId}`
 
-    y = Math.max(photoY + photoSize + 10, infoY + 4)
+    const links = [
+      { label: "Sitio web", value: professionalData?.website || null },
+      { label: "LinkedIn", value: professionalData?.linkedin || null },
+      { label: "Portafolio / RRSS", value: professionalData?.rrss || null },
+      { label: "Reel", value: professionalData?.reelLink || null },
+      { label: "IMDb", value: professionalData?.imdbProfile || null },
+      { label: "Perfil público", value: publicProfileLink },
+    ]
 
-    addTitle("Biofilmografía")
-    addField("Español", professionalData?.bio || "")
-    addField("Inglés", professionalData?.bioEn || "")
+    drawSectionTitle("Información general")
+    addField("Nombre artístico", professionalData?.nickName || "")
+    addField("Nombre", claimData.professionalName || professionalData?.name || "")
+    addField("Si es CEO de una empresa", ceoText)
+    addField("Actividad principal", primaryRoleText)
+    addField("Actividades secundarias", secondaryRoleText)
+    addField("Email", emailText)
 
-    addTitle("Roles")
-    addList("Principales", primaryRoles as string[])
-    addList("Secundarios", secondaryRoles as string[])
+    drawSectionTitle("Links")
+    links.forEach((link) => {
+      addField(link.label, link.value, { link: true })
+    })
 
-    addTitle("Filmografía")
-    addList(
+    drawSectionTitle("Biofilmografía")
+    addField("Bio en español", professionalData?.bio || "")
+    addField("Bio en inglés", professionalData?.bioEn || "")
+    addField("Bio larga", professionalData?.extendedBiofilmography || "")
+
+    drawSectionTitle("Filmografía")
+    addListField(
       "Participaciones",
       participationEntries.map((entry) => {
         const movieTitle =
@@ -954,12 +1011,6 @@ export default function ProfessionalProfilePage() {
         return `${movieTitle} — ${roleName}`
       }),
     )
-
-    addTitle("Enlaces")
-    addField("Sitio web", professionalData?.website || "")
-    addField("LinkedIn", professionalData?.linkedin || "")
-    addField("Reel", professionalData?.reelLink || "")
-    addField("Portafolio / RRSS", professionalData?.rrss || "")
 
     const safeName = (claimData.professionalName || "perfil-profesional")
       .toLowerCase()

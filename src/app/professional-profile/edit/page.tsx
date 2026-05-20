@@ -197,13 +197,16 @@ export default function EditProfessionalProfilePage() {
             : "",
         )
 
-        const profilePhotoAsset =
-          profilePhotoAssets[0] ||
-          (professional.profilePhotoAssetId
+        const profilePhotoAssetFromProfessional =
+          professional.profilePhotoAssetId
             ? await assetService
                 .getAsset(professional.profilePhotoAssetId)
                 .catch(() => null)
-            : null)
+            : null
+        const profilePhotoAssetFallback =
+          profilePhotoAssets.find((asset) => asset.userId === user.id) || null
+        const profilePhotoAsset =
+          profilePhotoAssetFromProfessional || profilePhotoAssetFallback
         setProfilePhotoAssetId(profilePhotoAsset?.id || null)
         setProfilePhotoUrl(
           profilePhotoAsset ? assetService.getPublicAssetUrl(profilePhotoAsset) : null,
