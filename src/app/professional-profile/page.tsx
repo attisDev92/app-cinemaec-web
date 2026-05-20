@@ -648,9 +648,9 @@ export default function ProfessionalProfilePage() {
       ]
     }
 
-    const [primaryR, primaryG, primaryB] = hexToRgb("#6d2d8f")
-    const [hazBlueR, hazBlueG, hazBlueB] = hexToRgb("#0f3554")
-    const [hazVioletR, hazVioletG, hazVioletB] = hexToRgb("#b784cc")
+    const [primaryR, primaryG, primaryB] = hexToRgb("#ff6b6b")
+    const [hazBlueR, hazBlueG, hazBlueB] = hexToRgb("#1a1f2e")
+    const [hazVioletR, hazVioletG, hazVioletB] = hexToRgb("#9aa7b2")
     const [textR, textG, textB] = hexToRgb("#111827")
     const [mutedR, mutedG, mutedB] = hexToRgb("#6b7280")
     const [surfaceR, surfaceG, surfaceB] = hexToRgb("#f9fafb")
@@ -777,7 +777,7 @@ export default function ProfessionalProfilePage() {
     }
 
     const drawPageHeader = () => {
-      pdf.setFillColor(248, 250, 252)
+      pdf.setFillColor(245, 247, 250)
       pdf.rect(0, 0, pageWidth, 40, "F")
       pdf.setFillColor(hazBlueR, hazBlueG, hazBlueB)
       pdf.rect(0, 0, pageWidth, 7, "F")
@@ -843,8 +843,11 @@ export default function ProfessionalProfilePage() {
 
     const drawSectionTitle = (title: string) => {
       ensureSpace(11)
-      pdf.setFillColor(surfaceR, surfaceG, surfaceB)
-      pdf.rect(margin, y - 5, maxWidth, 9, "F")
+      pdf.setFillColor(250, 250, 250)
+      pdf.roundedRect(margin, y - 6, maxWidth, 10, 2, 2, "F")
+      pdf.setDrawColor(229, 231, 235)
+      pdf.setLineWidth(0.3)
+      pdf.line(margin, y + 5, margin + maxWidth, y + 5)
       pdf.setTextColor(primaryR, primaryG, primaryB)
       pdf.setFont("helvetica", "bold")
       pdf.setFontSize(12)
@@ -928,6 +931,55 @@ export default function ProfessionalProfilePage() {
       y += 1
     }
 
+    const addChipField = (label: string, items: string[], isPrimary = true) => {
+      ensureSpace(10)
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(10)
+      pdf.setTextColor(textR, textG, textB)
+      pdf.text(`${label}:`, margin, y)
+      y += 5
+
+      if (items.length === 0) {
+        pdf.setFont("helvetica", "normal")
+        drawWrappedText("-", margin + 4, maxWidth - 4)
+        y += 1
+        return
+      }
+
+      let chipX = margin + 2
+      const chipHeight = 6
+
+      items.forEach((item) => {
+        const text = String(item || "").trim()
+        if (!text) {
+          return
+        }
+
+        pdf.setFont("helvetica", "normal")
+        pdf.setFontSize(9)
+        const chipWidth = Math.min(pdf.getTextWidth(text) + 7, maxWidth - 2)
+
+        if (chipX + chipWidth > margin + maxWidth - 1) {
+          chipX = margin + 2
+          y += chipHeight + 2
+        }
+
+        ensureSpace(chipHeight + 2)
+        if (isPrimary) {
+          pdf.setFillColor(255, 236, 236)
+          pdf.setTextColor(185, 28, 28)
+        } else {
+          pdf.setFillColor(241, 245, 249)
+          pdf.setTextColor(100, 116, 139)
+        }
+        pdf.roundedRect(chipX, y - 4.7, chipWidth, chipHeight, 2, 2, "F")
+        pdf.text(text, chipX + 3.5, y - 0.5)
+        chipX += chipWidth + 2
+      })
+
+      y += chipHeight + 3
+    }
+
     drawPageHeader()
 
     const photoSize = 28
@@ -951,10 +1003,28 @@ export default function ProfessionalProfilePage() {
       })
     }
 
+    if (professionalData?.nickName?.trim()) {
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(8)
+      pdf.setTextColor(primaryR, primaryG, primaryB)
+      pdf.text("NOMBRE ARTISTICO", margin + photoSize + 8, 54)
+    }
+
     pdf.setTextColor(hazBlueR, hazBlueG, hazBlueB)
     pdf.setFont("helvetica", "bold")
     pdf.setFontSize(16)
     pdf.text(profileTitle, margin + photoSize + 8, 61)
+
+    if (professionalData?.nickName?.trim()) {
+      pdf.setFont("helvetica", "normal")
+      pdf.setFontSize(10)
+      pdf.setTextColor(mutedR, mutedG, mutedB)
+      pdf.text(claimData.professionalName || "-", margin + photoSize + 8, 67)
+    }
+
+    pdf.setDrawColor(229, 231, 235)
+    pdf.setLineWidth(0.5)
+    pdf.line(margin, 78, margin + maxWidth, 78)
 
     y = 84
 
@@ -982,8 +1052,8 @@ export default function ProfessionalProfilePage() {
     addField("Nombre artístico", professionalData?.nickName || "")
     addField("Nombre", claimData.professionalName || professionalData?.name || "")
     addField("Si es CEO de una empresa", ceoText)
-    addField("Actividad principal", primaryRoleText)
-    addField("Actividades secundarias", secondaryRoleText)
+    addChipField("Actividad principal", primaryRoles as string[], true)
+    addChipField("Actividades secundarias", secondaryRoles as string[], false)
     addField("Email", emailText)
 
     drawSectionTitle("Links")
@@ -1011,6 +1081,17 @@ export default function ProfessionalProfilePage() {
         return `${movieTitle} — ${roleName}`
       }),
     )
+
+    const totalPages = pdf.getNumberOfPages()
+    for (let i = 1; i <= totalPages; i += 1) {
+      pdf.setPage(i)
+      pdf.setFont("helvetica", "normal")
+      pdf.setFontSize(8)
+      pdf.setTextColor(148, 163, 184)
+      pdf.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 8, {
+        align: "right",
+      })
+    }
 
     const safeName = (claimData.professionalName || "perfil-profesional")
       .toLowerCase()

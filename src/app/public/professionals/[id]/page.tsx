@@ -455,7 +455,7 @@ export default function PublicProfessionalProfilePage() {
                   </div>
                 </div>
 
-                {(professional.bio || professional.bioEn) && (
+                {(professional.bio || professional.bioEn || professional.extendedBiofilmography) && (
                   <div className={styles.contentBlock}>
                     <h2 className={styles.sectionTitle}>
                       Biofilmografia
@@ -463,6 +463,14 @@ export default function PublicProfessionalProfilePage() {
                     </h2>
                     {professional.bio && <p className={styles.contentText}>{professional.bio}</p>}
                     {professional.bioEn && <p className={styles.contentTextEn}>{professional.bioEn}</p>}
+                    {professional.extendedBiofilmography?.trim() && (
+                      <>
+                        <p className={styles.metaLabel} style={{ marginTop: "1rem" }}>
+                          Biografia extendida
+                        </p>
+                        <p className={styles.contentText}>{professional.extendedBiofilmography}</p>
+                      </>
+                    )}
                   </div>
                 )}
 
