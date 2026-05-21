@@ -557,7 +557,7 @@ export default function EditProfessionalProfilePage() {
                 placeholder="Ej: 02 234 5678"
               />
               <Input
-                label="Celular"
+                label="Teléfono móvil"
                 value={mobile}
                 onChange={(event) => {
                   setMobile(event.target.value)
