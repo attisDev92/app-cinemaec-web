@@ -96,6 +96,9 @@ type PublicMovieDetail = {
   title?: string | null
   titleEn?: string | null
   durationMinutes?: number | null
+  episodeCount?: number | null
+  seasonCount?: number | null
+  episodeDurationMinutes?: number | null
   type?: string | null
   genre?: string | null
   releaseYear?: number | null
@@ -974,6 +977,33 @@ export default function PublicCatalogMoviePage() {
                     </p>
                   </div>
                 </div>
+
+                {/* Metadata Row 3: Series Fields (only for Series type) */}
+                {String(movie.type || "").toLowerCase() === "series" && (
+                  <div className={styles.metaRow}>
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>Cantidad de temporadas</span>
+                      <span className={styles.metaLabelSecondary}>Number of Seasons</span>
+                      <p className={styles.metaValue}>
+                        {movie.seasonCount ?? EMPTY_LABEL}
+                      </p>
+                    </div>
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>Número de episodios</span>
+                      <span className={styles.metaLabelSecondary}>Number of Episodes</span>
+                      <p className={styles.metaValue}>
+                        {movie.episodeCount ?? EMPTY_LABEL}
+                      </p>
+                    </div>
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>Duración por episodio</span>
+                      <span className={styles.metaLabelSecondary}>Episode Duration</span>
+                      <p className={styles.metaValue}>
+                        {movie.episodeDurationMinutes ? `${movie.episodeDurationMinutes} min` : EMPTY_LABEL}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Países coproductores */}
                 {fillingCountriesText !== EMPTY_LABEL && (

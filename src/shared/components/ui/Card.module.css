@@ -3,8 +3,21 @@
   border: var(--border-width-thin) solid var(--color-border);
   border-radius: var(--border-radius-lg);
   padding: var(--spacing-xl);
+  min-width: 0;
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-base);
+}
+
+.title {
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  line-height: 1.2;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-wrap: balance;
 }
 
 .card:hover {

@@ -97,6 +97,9 @@ export interface CreateMoviePayload {
   title: string
   titleEn?: string
   durationMinutes: number
+  episodeCount?: number
+  seasonCount?: number
+  episodeDurationMinutes?: number
   type: MovieType
   genre: MovieGenre
   subGenreIds?: number[]

@@ -56,6 +56,9 @@ interface FormValues {
   title: string
   titleEn: string
   durationMinutes: number | ""
+  episodeCount: number | ""
+  seasonCount: number | ""
+  episodeDurationMinutes: number | ""
   type: MovieType
   genre: MovieGenre
   subGenres: number[]
@@ -146,6 +149,9 @@ type MovieDetail = {
   title?: string
   titleEn?: string | null
   durationMinutes?: number
+  episodeCount?: number | null
+  seasonCount?: number | null
+  episodeDurationMinutes?: number | null
   type?: MovieType
   genre?: MovieGenre
   subgenres?: Array<{ id: number }>
@@ -295,6 +301,9 @@ const mapMovieToFormValues = (movie: MovieDetail): FormValues => {
     title: movie.title ?? "",
     titleEn: movie.titleEn ?? "",
     durationMinutes: toNumberValue(movie.durationMinutes),
+    episodeCount: toNumberValue(movie.episodeCount),
+    seasonCount: toNumberValue(movie.seasonCount),
+    episodeDurationMinutes: toNumberValue(movie.episodeDurationMinutes),
     type: movie.type ?? initialValues.type,
     genre: movie.genre ?? initialValues.genre,
     subGenres: movie.subgenres?.map((subgenre) => subgenre.id) ?? [],
@@ -472,6 +481,45 @@ const validationSchema = Yup.object().shape({
     .required("La duración es obligatoria")
     .positive("La duración debe ser mayor a 0")
     .integer("La duración debe ser un número entero"),
+  episodeCount: Yup.number()
+    .transform((value, originalValue) =>
+      originalValue === "" ? undefined : value,
+    )
+    .when("type", {
+      is: "Series",
+      then: (schema) =>
+        schema
+          .required("El número de episodios es obligatorio para series")
+          .positive("El número de episodios debe ser mayor a 0")
+          .integer("El número de episodios debe ser un número entero"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+  seasonCount: Yup.number()
+    .transform((value, originalValue) =>
+      originalValue === "" ? undefined : value,
+    )
+    .when("type", {
+      is: "Series",
+      then: (schema) =>
+        schema
+          .required("La cantidad de temporadas es obligatoria para series")
+          .positive("La cantidad de temporadas debe ser mayor a 0")
+          .integer("La cantidad de temporadas debe ser un número entero"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+  episodeDurationMinutes: Yup.number()
+    .transform((value, originalValue) =>
+      originalValue === "" ? undefined : value,
+    )
+    .when("type", {
+      is: "Series",
+      then: (schema) =>
+        schema
+          .required("La duración por episodio es obligatoria para series")
+          .positive("La duración por episodio debe ser mayor a 0")
+          .integer("La duración por episodio debe ser un número entero"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
   type: Yup.string().required("El tipo de película es obligatorio"),
   genre: Yup.string().required("El género es obligatorio"),
   subGenres: Yup.array()
@@ -540,6 +588,9 @@ const initialValues: FormValues = {
   title: "",
   titleEn: "",
   durationMinutes: "",
+  episodeCount: "",
+  seasonCount: "",
+  episodeDurationMinutes: "",
   type: "Sin catalogar",
   genre: "Sin catalogar",
   subGenres: [],
@@ -779,6 +830,18 @@ export function MovieForm({
           title: values.title.trim(),
           titleEn: values.titleEn.trim() || undefined,
           durationMinutes: Number(values.durationMinutes),
+          episodeCount:
+            values.type === "Series" && values.episodeCount !== ""
+              ? Number(values.episodeCount)
+              : undefined,
+          seasonCount:
+            values.type === "Series" && values.seasonCount !== ""
+              ? Number(values.seasonCount)
+              : undefined,
+          episodeDurationMinutes:
+            values.type === "Series" && values.episodeDurationMinutes !== ""
+              ? Number(values.episodeDurationMinutes)
+              : undefined,
           type: values.type,
           genre: values.genre,
           subGenreIds: values.subGenres,
@@ -934,6 +997,20 @@ export function MovieForm({
       }
     },
   })
+
+  useEffect(() => {
+    if (formik.values.type !== "Series") {
+      if (formik.values.episodeCount !== "") {
+        formik.setFieldValue("episodeCount", "", false)
+      }
+      if (formik.values.seasonCount !== "") {
+        formik.setFieldValue("seasonCount", "", false)
+      }
+      if (formik.values.episodeDurationMinutes !== "") {
+        formik.setFieldValue("episodeDurationMinutes", "", false)
+      }
+    }
+  }, [formik, formik.values.type, formik.values.episodeCount, formik.values.seasonCount, formik.values.episodeDurationMinutes])
 
   const sortedCountries = useMemo(() => {
     const normalizedEcuador = "ecuador"
@@ -1484,6 +1561,12 @@ export function MovieForm({
   const FIELD_LABELS: Record<string, { label: string; tab: string }> = {
     title: { label: "Título", tab: "Información básica" },
     durationMinutes: { label: "Duración", tab: "Información básica" },
+    episodeCount: { label: "Número de episodios", tab: "Información básica" },
+    seasonCount: { label: "Cantidad de temporadas", tab: "Información básica" },
+    episodeDurationMinutes: {
+      label: "Duración por episodio",
+      tab: "Información básica",
+    },
     type: { label: "Tipo de película", tab: "Información básica" },
     genre: { label: "Género", tab: "Información básica" },
     subGenres: { label: "Subgéneros", tab: "Información básica" },
@@ -2141,6 +2224,46 @@ export function MovieForm({
                     <option value="Videojuegos">Videojuegos</option>
                     <option value="Sin catalogar">Sin catalogar</option>
                   </Select>
+
+                  {formik.values.type === "Series" && (
+                    <div className={styles.seriesFieldsRow}>
+                      <Input
+                        label="Cantidad de temporadas *"
+                        type="number"
+                        name="seasonCount"
+                        min={1}
+                        value={formik.values.seasonCount}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        placeholder="Ej: 2"
+                        error={getFieldError("seasonCount")}
+                      />
+
+                      <Input
+                        label="Número de episodios *"
+                        type="number"
+                        name="episodeCount"
+                        min={1}
+                        value={formik.values.episodeCount}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        placeholder="Ej: 8"
+                        error={getFieldError("episodeCount")}
+                      />
+
+                      <Input
+                        label="Duración por episodio (minutos) *"
+                        type="number"
+                        name="episodeDurationMinutes"
+                        min={1}
+                        value={formik.values.episodeDurationMinutes}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        placeholder="Ej: 45"
+                        error={getFieldError("episodeDurationMinutes")}
+                      />
+                    </div>
+                  )}
 
                   <Input
                     label="Año de estreno"
@@ -2808,17 +2931,6 @@ export function MovieForm({
                       currentDocumentUrl={documentUrls.dossier || undefined}
                       onUploadComplete={(id: number) => handleDossierUpload(id)}
                       onRemove={handleDossierRemove}
-                    />
-                  </div>
-
-                  <div className={styles.field}>
-                    <DocumentUpload
-                      label="Guía pedagógica"
-                      documentType={AssetTypeEnum.DOCUMENT}
-                      ownerType={AssetOwnerEnum.MOVIE_PEDAGOGICAL_GUIDE}
-                      currentDocumentUrl={documentUrls.guide || undefined}
-                      onUploadComplete={(id: number) => handleGuideUpload(id)}
-                      onRemove={handleGuideRemove}
                     />
                   </div>
                 </div>
@@ -3735,6 +3847,17 @@ export function MovieForm({
                 </div>
 
                 <div className={styles.crewList}>
+                  <div className={styles.field}>
+                    <DocumentUpload
+                      label="Guía pedagógica"
+                      documentType={AssetTypeEnum.DOCUMENT}
+                      ownerType={AssetOwnerEnum.MOVIE_PEDAGOGICAL_GUIDE}
+                      currentDocumentUrl={documentUrls.guide || undefined}
+                      onUploadComplete={(id: number) => handleGuideUpload(id)}
+                      onRemove={handleGuideRemove}
+                    />
+                  </div>
+
                   {(() => {
                     const usedTerritories = new Set(
                       formik.values.contentBank

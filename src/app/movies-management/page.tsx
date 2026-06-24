@@ -392,7 +392,7 @@ export default function MoviesManagementPage() {
           <div className={styles.heroContent}>
             <h1 className={styles.title}>
               <span className={styles.titleIcon}>🎬</span>
-              Gestión de Películas
+              Gestión de Proyectos Cinematográficos y Audiovisuales
             </h1>
             <p className={styles.subtitle}>
               Consulta tus películas registradas y su estado dentro del sistema.
@@ -453,7 +453,7 @@ export default function MoviesManagementPage() {
               <div className={styles.sectionHeader}>
                 <h2 className={styles.sectionTitle}>
                   <span className={styles.sectionIcon}>🎞️</span>
-                  Mis películas registradas
+                  Proyectos registrados
                 </h2>
                 <div className={styles.moviesCount}>
                   {movies.length} {movies.length === 1 ? "película" : "películas"}

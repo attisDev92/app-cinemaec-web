@@ -267,7 +267,7 @@ function HomePanels({
                 </div>
 
                 <div className={`${styles.moduleCard} ${styles.hazModule}`}>
-                  <Card title="Gestión de Películas">
+                  <Card title="Gestión de Proyectos Cinematográficos y Audiovisuales">
                     <p className={styles.cardContent}>
                       Registra, organiza y actualiza la información de tus
                       producciones audiovisuales.
@@ -277,7 +277,7 @@ function HomePanels({
                       variant="secondary"
                       className={styles.cardButton}
                     >
-                      Gestionar Películas →
+                      Gestión de Proyectos →
                     </Button>
                   </Card>
                 </div>

@@ -138,6 +138,13 @@
   gap: var(--spacing-lg);
 }
 
+.seriesFieldsRow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+}
+
 .singleColumn {
   grid-template-columns: 1fr;
 }
@@ -672,6 +679,12 @@
   min-height: 40vh;
 }
 
+@media (max-width: 1100px) {
+  .seriesFieldsRow {
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
   .main {
     padding: var(--spacing-xl) var(--spacing-md);
@@ -717,5 +730,9 @@
   .validationModalBtn {
     width: 100%;
     min-height: 42px;
+  }
+
+  .seriesFieldsRow {
+    grid-template-columns: 1fr;
   }
 }
